@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "obsidian-link-plugin",
+	"name": "Obsidian Link Plugin",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "This is a plugin for Obsidian that handles links",
+	"author": "Jeff Knowles Jr",
+	"authorUrl": "https://github.com/jeffknowlesjr",
+	"fundingUrl": "https://patreon.com/jeffslink",
 	"isDesktopOnly": false
 }
