@@ -1,76 +1,88 @@
 # Obsidian Link Plugin
 
-This is a plugin for Obsidian (https://obsidian.md).
+A plugin for Obsidian that helps manage and enhance link functionality.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Development Guide
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+### Prerequisites
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+-   NodeJS (v16+)
+-   npm or yarn
+-   Basic understanding of TypeScript and Obsidian API
 
--   Adds a ribbon icon, which shows a Notice when clicked.
--   Adds a command "Open Sample Modal" which opens a Modal.
--   Adds a plugin setting tab to the settings page.
--   Registers a global click event and output 'click' to the console.
--   Registers a global interval which logs 'setInterval' to the console.
+### Project Structure
 
-## First time developing plugins?
+### Getting Started
 
-Quick starting guide for new plugin devs:
+1. Clone and Setup:
 
--   Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
--   Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
--   Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
--   Install NodeJS, then run `npm i` in the command line under your repo folder.
--   Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
--   Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
--   Reload Obsidian to load the new version of your plugin.
--   Enable plugin in settings window.
--   For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+    ```bash
+    git clone <repository-url>
+    cd obsidian-link-plugin
+    npm install
+    ```
 
-## Releasing new releases
+2. Development:
 
--   Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
--   Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
--   Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
--   Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
--   Publish the release.
+    ```bash
+    npm run dev
+    ```
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+3. Building:
+    ```bash
+    npm run build
+    ```
 
-## Adding your plugin to the community plugin list
+### Development Best Practices
 
--   Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
--   Publish an initial version.
--   Make sure you have a `README.md` file in the root of your repo.
--   Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+#### Code Organization
 
-## How to use
+-   Follow the established folder structure for new features
+-   Place business logic in services
+-   Keep UI components in modals/components
+-   Use TypeScript interfaces for type definitions
 
--   Clone this repo.
--   Make sure your NodeJS is at least v16 (`node --version`).
--   `npm i` or `yarn` to install dependencies.
--   `npm run dev` to start compilation in watch mode.
+#### Resource Management
 
-## Manually installing the plugin
+-   Use `this.app` instead of global `app`
+-   Clean up resources in `onunload()`
+-   Use `registerEvent()` for event listeners
+-   Use `addCommand()` for commands
 
--   Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+#### API Guidelines
 
-## Improve code quality with eslint (optional)
+-   Prefer Vault API (`app.vault`) over Adapter API
+-   Use `normalizePath()` for file/folder paths
+-   Use `getActiveViewOfType()` instead of `workspace.activeLeaf`
+-   Use Editor API over `Vault.modify` for active file changes
 
--   [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
--   To use eslint with this project, make sure to install eslint from terminal:
-    -   `npm install -g eslint`
--   To use eslint to analyze this project use this command:
-    -   `eslint main.ts`
-    -   eslint will then create a report with suggestions for code improvement by file and line number.
--   If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-    -   `eslint .\src\`
+#### Cross-Platform Compatibility
 
-## Funding URL
+-   Avoid Node.js and Electron APIs
+-   Test on both desktop and mobile
+-   Be careful with lookbehind in regex (iOS compatibility)
 
-You can include funding URLs where people who use your plugin can financially support it.
+#### UI Development
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+-   Use sentence case in UI text
+-   Use `setHeading()` instead of HTML headings
+-   Avoid setting default hotkeys
+-   Use CSS classes instead of hardcoded styles
+
+### Build System
+
+-   ESBuild is configured for bundling
+-   TypeScript compilation checks are run before build
+-   Source maps are enabled in development
+
+### Code Quality
+
+-   ESLint is configured for code quality
+-   Run `npm run lint` before committing
+-   Follow TypeScript strict mode guidelines
+
+### Version Control
+
+-   Don't commit `main.js` (built file)
+-   Don't commit `node_modules`
+-   Update version numbers using `npm run version`
