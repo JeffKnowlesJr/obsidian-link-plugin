@@ -1,4 +1,4 @@
-# Link Plugin Documentation for Obsidian
+# Link Plugin Documentation v.01 for Obsidian
 
 This guide provides an overview of using the "Link" plugin in Obsidian for efficient note-taking through structured templates, metadata management, and systematic organization.
 
