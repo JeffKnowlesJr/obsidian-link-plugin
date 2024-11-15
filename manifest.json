@@ -1,0 +1,12 @@
+{
+  "id": "obsidian-link-plugin",
+  "name": "Link Plugin",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "A plugin for managing links in Obsidian",
+  "author": "Jeff Knowles Jr",
+  "authorUrl": "https://github.com/jeffknowlesjr",
+  "isDesktopOnly": false,
+  "fundingUrl": "",
+  "repo": "jeffknowlesjr/obsidian-link-plugin"
+}
