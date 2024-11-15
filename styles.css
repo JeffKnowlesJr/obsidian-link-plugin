@@ -1,0 +1,48 @@
+/* Help Modal Styles */
+.help-section {
+  margin-bottom: 24px;
+}
+
+.help-section h3 {
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.help-item {
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.help-item h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-accent);
+}
+
+.help-item p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Dark mode adjustments */
+.theme-dark .help-item {
+  background-color: var(--background-primary-alt);
+}
+
+.link-plugin-ribbon-icon {
+  color: var(--text-muted);
+  transition: color 0.2s ease-in-out;
+}
+
+.link-plugin-ribbon-icon:hover {
+  color: var(--text-normal);
+}
