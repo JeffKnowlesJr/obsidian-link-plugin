@@ -1,42 +1,13 @@
+/**
+ * @file createLinkedNote.ts
+ * @description Creates a new note and links to it from the current selection.
+ */
+
 import { Editor, Notice, TFile } from 'obsidian'
-import { createMarkdownLink, createWikiLink } from '../utils/linkUtils'
 import { sanitizeFileName } from '../utils/fileUtils'
 import { NewNoteModal } from '../modals/newNoteModal'
 import type { LinkPlugin } from '../main'
-import {
-  LinkPluginError,
-  ErrorCode,
-  handleError,
-  getUserFriendlyMessage
-} from '../utils/errorUtils'
-
-interface NoteType {
-  type: 'daily' | 'project' | 'resource' | 'archive'
-  template: string
-  folder: string
-  tags: string[]
-}
-
-const NOTE_TYPES: Record<string, NoteType> = {
-  daily: {
-    type: 'daily',
-    template: 'DailyNoteTemplate',
-    folder: 'DailyNotes',
-    tags: ['daily', 'journal']
-  },
-  project: {
-    type: 'project',
-    template: 'ProjectTemplate',
-    folder: 'Projects',
-    tags: ['project', 'active']
-  },
-  resource: {
-    type: 'resource',
-    template: 'ResourceTemplate',
-    folder: 'Resources',
-    tags: ['resource', 'reference']
-  }
-}
+import { LinkPluginError, ErrorCode, handleError } from '../utils/errorUtils'
 
 export async function createLinkedNote(
   plugin: LinkPlugin,
@@ -63,20 +34,18 @@ export async function createLinkedNote(
       )
     }
 
-    const noteType = await determineNoteType(plugin, noteName)
     const fileName = sanitizeFileName(noteName)
-
-    const newNote = await createNote(plugin, fileName, noteName, noteType)
+    const newNote = await createNote(plugin, fileName, noteName)
 
     if (newNote) {
       console.debug('Note created successfully:', newNote.path)
-      insertNoteLink(plugin, editor, fileName, noteName)
+      insertNoteLink(editor, fileName)
       new Notice(`Created new note: ${fileName}`)
     }
   } catch (error) {
     const pluginError = handleError(error)
     console.error('Error creating linked note:', pluginError)
-    new Notice(getUserFriendlyMessage(pluginError))
+    new Notice(pluginError.message)
   }
 }
 
@@ -89,101 +58,38 @@ async function promptForNoteName(plugin: LinkPlugin): Promise<string | null> {
   })
 }
 
-async function determineNoteType(
-  plugin: LinkPlugin,
-  noteName: string
-): Promise<NoteType> {
-  // TODO: Add logic to determine note type based on name or user selection
-  // For now, default to project type
-  return NOTE_TYPES.project
-}
-
 async function createNote(
   plugin: LinkPlugin,
   fileName: string,
-  noteName: string,
-  noteType: NoteType
+  noteName: string
 ): Promise<TFile> {
-  try {
-    // Check if folder exists, create if it doesn't
-    const folderPath = noteType.folder
-    if (!(await plugin.app.vault.adapter.exists(folderPath))) {
-      try {
-        await plugin.app.vault.createFolder(folderPath)
-      } catch (error) {
-        throw new LinkPluginError(
-          `Failed to create folder: ${folderPath}`,
-          ErrorCode.FOLDER_CREATION_FAILED,
-          error
-        )
-      }
-    }
+  const fullPath = `${fileName}.md`
 
-    // Check if note already exists
-    const fullPath = `${folderPath}/${fileName}.md`
-    const exists = await plugin.app.vault.adapter.exists(fullPath)
-    if (exists) {
-      throw new LinkPluginError(
-        `Note "${fileName}" already exists`,
-        ErrorCode.FILE_ALREADY_EXISTS,
-        { path: fullPath }
-      )
-    }
-
-    // Get and validate template content
-    const content = await getTemplateContent(plugin, noteType, noteName)
-
-    // Create the note
-    return await plugin.app.vault.create(fullPath, content)
-  } catch (error) {
-    throw handleError(error)
+  // Check if note already exists
+  const exists = await plugin.app.vault.adapter.exists(fullPath)
+  if (exists) {
+    throw new LinkPluginError(
+      `Note "${fileName}" already exists`,
+      ErrorCode.FILE_ALREADY_EXISTS,
+      { path: fullPath }
+    )
   }
+
+  // Create the note with a simple header
+  const content = `# ${noteName}\n\n`
+  return await plugin.app.vault.create(fullPath, content)
 }
 
-async function getTemplateContent(
-  plugin: LinkPlugin,
-  noteType: NoteType,
-  noteName: string
-): Promise<string> {
-  try {
-    const templatePath = `Templates/${noteType.template}.md`
-    const templateFile = plugin.app.vault.getAbstractFileByPath(templatePath)
-
-    if (templateFile instanceof TFile) {
-      const content = await plugin.app.vault.read(templateFile)
-      return processTemplate(content, noteName, noteType)
-    }
-
-    console.debug('Template not found, using default')
-    return getDefaultTemplate(noteName, noteType)
-  } catch (error) {
-    console.warn('Error loading template:', error)
-    return getDefaultTemplate(noteName, noteType)
-  }
-}
-
-function getDefaultTemplate(noteName: string, noteType: NoteType): string {
-  // Implement logic to generate default template content based on note type
-  // For now, return a simple template
-  return `# ${noteName}\n\n`
-}
-
-function insertNoteLink(
-  plugin: LinkPlugin,
-  editor: Editor,
-  fileName: string,
-  noteName: string
-): void {
-  const linkText =
-    plugin.settings.defaultLinkStyle === 'wiki'
-      ? createWikiLink(fileName)
-      : createMarkdownLink(fileName, noteName)
-  editor.replaceSelection(linkText)
+function insertNoteLink(editor: Editor, fileName: string): void {
+  editor.replaceSelection(`[[${fileName}]]`)
 }
 
 function isValidNoteName(name: string): boolean {
-  // Add validation rules for note names
   return Boolean(
-    name && name.length > 0 && name.length <= 255 && !name.includes('/') // Add other invalid characters as needed
+    name &&
+      name.length > 0 &&
+      name.length <= 255 &&
+      !name.includes('/') &&
+      !name.includes('\\')
   )
 }
