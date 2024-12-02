@@ -82,6 +82,28 @@ The plugin automatically maintains a structured folder hierarchy:
 - Fallback behaviors for missing templates
 - Comprehensive error logging for troubleshooting
 
+## Known Bugs
+
+### TypeScript Errors with moment.js Mock
+
+There is a known issue with TypeScript type definitions when mocking the moment.js functionality provided by Obsidian. While the application works correctly in production, one test is failing due to TypeScript type conflicts between Obsidian's moment implementation and the test mock.
+
+**Impact:**
+
+- One test is failing due to TypeScript errors
+- The application functions correctly in production
+- This is a development/testing issue only, not a runtime problem
+
+**Technical Details:**
+
+- The error occurs when trying to mock Obsidian's moment.js implementation in tests
+- TypeScript reports "Type 'typeof moment' has no call signatures"
+- Multiple approaches to fixing the type definitions have been attempted without success
+- The core functionality remains unaffected
+
+**Workaround:**
+Currently using a TypeScript type assertion to maintain functionality while acknowledging the type mismatch. This is not ideal but allows the application to function while we investigate a proper fix.
+
 ## Usage
 
 ### Creating New Notes

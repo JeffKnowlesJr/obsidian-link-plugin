@@ -1,8 +1,11 @@
 import moment from 'moment'
 
 // Mock Obsidian's moment implementation
-// Export moment as a callable function that matches Obsidian's API
-export const moment = ((date?: any) => moment(date)) as typeof moment
+const momentFn: typeof moment = Object.assign(
+  (date?: any) => moment(date),
+  moment
+)
+export { momentFn as moment }
 
 // Other Obsidian mocks
 export class Plugin {}
