@@ -1,21 +1,23 @@
-import { App, Modal } from 'obsidian'
+import { App } from 'obsidian'
+import { BasePluginModal } from './baseModal'
 
-export class NewNoteModal extends Modal {
-  onSubmit: (result: string) => void
+export class NewNoteModal extends BasePluginModal {
+  private onSubmit: (result: string) => void
 
   constructor(app: App, onSubmit: (result: string) => void) {
     super(app)
     this.onSubmit = onSubmit
   }
 
-  onOpen() {
-    const { contentEl } = this
-    contentEl.createEl('h2', { text: 'Enter note name' })
+  renderContent() {
+    this.contentEl.createEl('h2', { text: 'Enter note name' })
 
-    const inputEl = contentEl.createEl('input', {
+    const inputEl = this.contentEl.createEl('input', {
       type: 'text',
       placeholder: 'Note name'
     })
+
+    // Handle enter key
     inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         this.close()
@@ -23,17 +25,26 @@ export class NewNoteModal extends Modal {
       }
     })
 
-    const buttonEl = contentEl.createEl('button', {
-      text: 'Create'
-    })
-    buttonEl.addEventListener('click', () => {
-      this.close()
-      this.onSubmit(inputEl.value)
-    })
-  }
+    // Add action buttons
+    this.addActionButtons([
+      {
+        text: 'Create',
+        isCta: true,
+        onClick: () => {
+          this.close()
+          this.onSubmit(inputEl.value)
+        }
+      },
+      {
+        text: 'Cancel',
+        onClick: () => {
+          this.close()
+          this.onSubmit(null)
+        }
+      }
+    ])
 
-  onClose() {
-    const { contentEl } = this
-    contentEl.empty()
+    // Focus input
+    inputEl.focus()
   }
 }

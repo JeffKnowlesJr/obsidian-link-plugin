@@ -1,15 +1,15 @@
-import { App, Modal, Setting } from 'obsidian'
+import { App } from 'obsidian'
+import { BasePluginModal, ModalItem } from './baseModal'
 
-export class HelpModal extends Modal {
+export class HelpModal extends BasePluginModal {
   constructor(app: App) {
     super(app)
   }
 
-  onOpen() {
-    const { contentEl } = this
+  renderContent() {
+    this.contentEl.createEl('h2', { text: 'Link Plugin Help' })
 
-    contentEl.createEl('h2', { text: 'Link Plugin Help' })
-
+    // Core features section
     this.createSection('Core Features', [
       {
         title: '📝 Creating Linked Notes',
@@ -18,6 +18,7 @@ export class HelpModal extends Modal {
       }
     ])
 
+    // Settings section
     this.createSection('Settings', [
       {
         title: '⚙️ Plugin Settings',
@@ -26,41 +27,21 @@ export class HelpModal extends Modal {
       }
     ])
 
-    const buttons = new Setting(contentEl)
-    buttons
-      .addButton((btn) =>
-        btn.setButtonText('Open Settings').onClick(() => {
+    // Add action buttons
+    this.addActionButtons([
+      {
+        text: 'Open Settings',
+        onClick: () => {
           this.close()
           // @ts-ignore
           this.app.setting.openTabById('obsidian-link-plugin')
-        })
-      )
-      .addButton((btn) =>
-        btn
-          .setButtonText('Close')
-          .setCta()
-          .onClick(() => {
-            this.close()
-          })
-      )
-  }
-
-  private createSection(
-    title: string,
-    items: { title: string; description: string }[]
-  ) {
-    const section = this.contentEl.createEl('div', { cls: 'help-section' })
-    section.createEl('h3', { text: title })
-
-    const list = section.createEl('div', { cls: 'help-list' })
-    items.forEach((item) => {
-      const itemEl = list.createEl('div', { cls: 'help-item' })
-      itemEl.createEl('h4', { text: item.title })
-      itemEl.createEl('p', { text: item.description })
-    })
-  }
-
-  onClose() {
-    this.contentEl.empty()
+        }
+      },
+      {
+        text: 'Close',
+        isCta: true,
+        onClick: () => this.close()
+      }
+    ])
   }
 }

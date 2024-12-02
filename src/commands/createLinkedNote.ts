@@ -3,53 +3,48 @@
  * @description Creates a new note and links to it from the current selection.
  */
 
-import { Editor, Notice, TFile } from 'obsidian'
+import { Editor, Notice, TFile, App } from 'obsidian'
 import { sanitizeFileName } from '../utils/fileUtils'
 import { NewNoteModal } from '../modals/newNoteModal'
-import type { LinkPlugin } from '../main'
-import { LinkPluginError, ErrorCode, handleError } from '../utils/errorUtils'
+import {
+  handlePluginError,
+  LinkPluginError,
+  ErrorCode
+} from '../utils/errorHandler'
+
+export interface LinkPlugin {
+  app: App
+}
 
 export async function createLinkedNote(
   plugin: LinkPlugin,
   editor: Editor
 ): Promise<void> {
   try {
-    console.debug('Creating linked note...')
-    let noteName = editor.getSelection()
-
+    const noteName = await getNoteName(editor, plugin)
     if (!noteName) {
-      noteName = await promptForNoteName(plugin)
-      if (!noteName) {
-        console.debug('Note creation cancelled')
-        return
-      }
+      return
     }
 
-    // Validate note name
-    if (!isValidNoteName(noteName)) {
-      throw new LinkPluginError(
-        'Invalid note name',
-        ErrorCode.INVALID_NOTE_NAME,
-        { noteName }
-      )
-    }
+    const fileName = await validateAndSanitizeFileName(noteName)
+    const newNote = await createNoteFile(plugin, fileName, noteName)
+    await insertNoteLinkInEditor(editor, fileName)
 
-    const fileName = sanitizeFileName(noteName)
-    const newNote = await createNote(plugin, fileName, noteName)
-
-    if (newNote) {
-      console.debug('Note created successfully:', newNote.path)
-      insertNoteLink(editor, fileName)
-      new Notice(`Created new note: ${fileName}`)
-    }
+    new Notice(`Created new note: ${fileName}`)
   } catch (error) {
-    const pluginError = handleError(error)
-    console.error('Error creating linked note:', pluginError)
-    new Notice(pluginError.message)
+    handlePluginError(error, 'Failed to create linked note')
   }
 }
 
-async function promptForNoteName(plugin: LinkPlugin): Promise<string | null> {
+async function getNoteName(
+  editor: Editor,
+  plugin: LinkPlugin
+): Promise<string | null> {
+  const selection = editor.getSelection()
+  if (selection) {
+    return selection
+  }
+
   return new Promise((resolve) => {
     const modal = new NewNoteModal(plugin.app, (result) => {
       resolve(result)
@@ -58,30 +53,56 @@ async function promptForNoteName(plugin: LinkPlugin): Promise<string | null> {
   })
 }
 
-async function createNote(
+async function validateAndSanitizeFileName(name: string): Promise<string> {
+  if (!isValidNoteName(name)) {
+    throw new LinkPluginError('Invalid note name', ErrorCode.INVALID_NOTE_NAME)
+  }
+  return sanitizeFileName(name)
+}
+
+async function createNoteFile(
   plugin: LinkPlugin,
   fileName: string,
   noteName: string
 ): Promise<TFile> {
   const fullPath = `${fileName}.md`
 
-  // Check if note already exists
-  const exists = await plugin.app.vault.adapter.exists(fullPath)
-  if (exists) {
+  try {
+    const exists = await plugin.app.vault.adapter.exists(fullPath)
+    if (exists) {
+      throw new LinkPluginError(
+        `Note "${fileName}" already exists`,
+        ErrorCode.FILE_ALREADY_EXISTS
+      )
+    }
+
+    const content = `# ${noteName}\n\n`
+    return await plugin.app.vault.create(fullPath, content)
+  } catch (error) {
+    if (error instanceof LinkPluginError) {
+      throw error
+    }
     throw new LinkPluginError(
-      `Note "${fileName}" already exists`,
-      ErrorCode.FILE_ALREADY_EXISTS,
-      { path: fullPath }
+      'Failed to create note file',
+      ErrorCode.FILE_OPERATION_FAILED,
+      error instanceof Error ? error : undefined
     )
   }
-
-  // Create the note with a simple header
-  const content = `# ${noteName}\n\n`
-  return await plugin.app.vault.create(fullPath, content)
 }
 
-function insertNoteLink(editor: Editor, fileName: string): void {
-  editor.replaceSelection(`[[${fileName}]]`)
+async function insertNoteLinkInEditor(
+  editor: Editor,
+  fileName: string
+): Promise<void> {
+  try {
+    editor.replaceSelection(`[[${fileName}]]`)
+  } catch (error) {
+    throw new LinkPluginError(
+      'Failed to insert note link',
+      ErrorCode.LINK_INSERTION_FAILED,
+      error instanceof Error ? error : undefined
+    )
+  }
 }
 
 function isValidNoteName(name: string): boolean {
