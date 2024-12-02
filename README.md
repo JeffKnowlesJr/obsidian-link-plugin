@@ -1,14 +1,90 @@
 # Obsidian Link Plugin
 
-A simple plugin for Obsidian that helps you create and link notes quickly.
+A powerful plugin for Obsidian that helps you create and manage notes with an organized folder structure.
 
 ## Features
 
-- **Quick Note Creation**: Create new notes directly from selected text or via a prompt
-- **Automatic Linking**: Automatically creates wiki-style links (`[[note-name]]`) to newly created notes
-- **Smart File Names**: Automatically sanitizes file names to be compatible with your file system
+### Quick Note Creation and Linking
+
+- Create new notes directly from selected text or via a modern modal interface
+- Automatically creates wiki-style links (`[[note-name]]`) to newly created notes
+- Choose destination folder from a dropdown menu
+- Pre-fills note name if text is selected
+- Smart file name sanitization for system compatibility
+- Keyboard navigation support (Enter to create)
+
+### Automatic Folder Structure
+
+The plugin automatically maintains a structured folder hierarchy:
+
+```
+/_Link
+  /_Journal
+    /y_2024
+      /m_12_Dec
+        /2024-12-02 Monday.md
+        /2024-12-03 Tuesday.md
+        ...
+    /y_2025
+  /Documents
+    /Images
+    /Videos
+    /Audio
+    /Other
+  /Templates
+    /Daily Note Template.md
+    /Weekly Review Template.md
+    /Project Plan Template.md
+    ...
+  /_Workspace
+    /Client-X
+      /Project-Alpha
+        /SRS.md
+        /Requirements.md
+        ...
+    /Client-Y
+      /Project-Beta
+        ...
+    /Client-Self
+      /Project-Zen
+        ...
+  /_References
+    /Books
+      /Technology
+      /Business
+    /Articles
+      /Blog-Posts
+      /Research
+    /Courses
+      /Online
+      /Certifications
+  /Archive
+    /Completed-Projects
+    /Old-References
+    /Old-Templates
+```
+
+### Daily Notes Management
+
+- Automatically creates and maintains year/month folders in the Journal section
+- Creates and manages a default daily note template if none exists
+- Automatically updates daily notes location based on current month
+- Updates Obsidian's core daily notes settings to match the current structure
+- Default template includes sections for tasks, notes, journal entries, and links
+
+### Auto-Updates and Error Handling
+
+- Hourly checks for month changes to update daily notes location
+- Creates new year/month folders as needed
+- Maintains consistent folder structure across vault
+- Graceful handling of duplicate files
+- Clear error messages for invalid note names
+- Fallback behaviors for missing templates
+- Comprehensive error logging for troubleshooting
 
 ## Usage
+
+### Creating New Notes
 
 1. **Create a Note from Selection**:
 
@@ -20,7 +96,14 @@ A simple plugin for Obsidian that helps you create and link notes quickly.
 2. **Create a Note from Prompt**:
    - Without any text selected, use the command "Create new linked note"
    - Enter the desired note name in the popup dialog
+   - Choose the destination folder from the dropdown
    - A new note will be created and linked at your cursor position
+
+### Daily Notes
+
+- Daily notes are automatically created in the correct year/month folder
+- Template is automatically applied
+- Folder structure is maintained automatically
 
 ## Installation
 
@@ -28,6 +111,107 @@ A simple plugin for Obsidian that helps you create and link notes quickly.
 2. Go to Community Plugins and disable Safe Mode
 3. Click Browse and search for "Link Plugin"
 4. Install the plugin and enable it
+5. The plugin will automatically create the necessary folder structure
+6. Daily notes settings will be configured automatically
+
+## Configuration
+
+- The plugin maintains its own settings and coordinates with Obsidian's core daily notes settings
+- Folder structure is created and maintained automatically
+- Templates are created if they don't exist
+
+## Technical Architecture
+
+### Core Components
+
+1. **Main Plugin Class (`main.ts`)**
+
+   - Entry point for the plugin
+   - Handles plugin lifecycle (load/unload)
+   - Registers commands
+   - Manages plugin initialization
+
+2. **Commands (`src/commands/`)**
+
+   - `createLinkedNote.ts`: Core functionality for creating and linking notes
+   - Modular functions for each operation
+   - Strong type safety with TypeScript
+   - Comprehensive error handling
+   - Clear separation of concerns:
+     - Note name acquisition
+     - File name validation
+     - File creation
+     - Link insertion
+
+3. **Modals (`src/modals/`)**
+
+   - `helpModal.ts`: Displays plugin documentation and settings access
+   - `newNoteModal.ts`: Handles note name input with validation
+
+4. **Utilities (`src/utils/`)**
+   - `fileUtils.ts`: File system operations and path handling
+   - `errorHandler.ts`: Centralized error handling with custom error types
+
+### Data Flow
+
+1. **Note Creation Flow**
+
+   ```
+   User Action (Selection/Command)
+   ↓
+   Get Note Name (Selection/Modal)
+   ↓
+   Validate & Sanitize Filename
+   ↓
+   Create Note File
+   ↓
+   Insert Link
+   ↓
+   Show Success Notice
+   ```
+
+2. **Error Handling Flow**
+   ```
+   Error Occurs
+   ↓
+   Error Wrapped as LinkPluginError
+   ↓
+   Context Added
+   ↓
+   Error Logged
+   ↓
+   User Notified
+   ↓
+   Error Propagated
+   ```
+
+### Dependencies
+
+- **Obsidian API**: Core functionality for file operations and UI
+- **TypeScript**: Type safety and modern JavaScript features
+- **tslib**: TypeScript helper functions
+
+### Best Practices
+
+1. **Code Organization**
+
+   - Single responsibility functions
+   - Clear error boundaries
+   - Type-safe interfaces
+   - Async operation handling
+
+2. **Error Handling**
+
+   - Always use `LinkPluginError`
+   - Preserve error context
+   - Provide user-friendly messages
+   - Log for debugging
+
+3. **File Operations**
+   - Validate before operations
+   - Handle existence checks
+   - Proper error propagation
+   - Clean error messages
 
 ## Support
 
