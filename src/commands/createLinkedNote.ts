@@ -11,6 +11,7 @@ import {
   LinkPluginError,
   ErrorCode
 } from '../utils/errorHandler'
+import { ROOT_FOLDER } from '../utils/folderUtils'
 
 export interface LinkPlugin {
   app: App
@@ -30,9 +31,12 @@ export async function createLinkedNote(
     const fileName = await validateAndSanitizeFileName(noteName)
     const fullPath = `${folder}/${fileName}`
     const newNote = await createNoteFile(plugin, fullPath, noteName)
-    await insertNoteLinkInEditor(editor, fullPath)
 
-    new Notice(`Created new note: ${fullPath}`)
+    // Create a relative link path from the root folder
+    const linkPath = fullPath.replace(`${ROOT_FOLDER}/`, '')
+    await insertNoteLinkInEditor(editor, linkPath)
+
+    new Notice(`Created new note: ${linkPath}`)
   } catch (error) {
     handlePluginError(error, 'Failed to create linked note')
   }

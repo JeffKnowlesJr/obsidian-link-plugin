@@ -1,12 +1,14 @@
 import { Vault, App } from 'obsidian'
 
+export const ROOT_FOLDER = '_Link'
+
 export const BASE_FOLDERS = {
-  JOURNAL: '_Journal',
-  DOCUMENTS: 'Documents',
-  TEMPLATES: 'Templates',
-  WORKSPACE: '_Workspace',
-  REFERENCES: '_References',
-  ARCHIVE: 'Archive'
+  JOURNAL: `${ROOT_FOLDER}/_Journal`,
+  DOCUMENTS: `${ROOT_FOLDER}/Documents`,
+  TEMPLATES: `${ROOT_FOLDER}/Templates`,
+  WORKSPACE: `${ROOT_FOLDER}/_Workspace`,
+  REFERENCES: `${ROOT_FOLDER}/_References`,
+  ARCHIVE: `${ROOT_FOLDER}/Archive`
 } as const
 
 export const SUB_FOLDERS = {
@@ -118,6 +120,9 @@ export async function updateDailyNotesLocation(app: App): Promise<string> {
 
 export async function ensureFolderStructure(app: App): Promise<void> {
   try {
+    // Create root folder first
+    await createFolderIfNotExists(app.vault, ROOT_FOLDER)
+
     // Create base folders
     for (const folder of Object.values(BASE_FOLDERS)) {
       await createFolderIfNotExists(app.vault, folder)
