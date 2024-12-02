@@ -11,5 +11,8 @@ module.exports = {
       tsconfig: 'tsconfig.json'
     }
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: {
+    '^obsidian$': '<rootDir>/src/__mocks__/obsidian.ts'
+  }
 }

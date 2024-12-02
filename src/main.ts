@@ -367,7 +367,7 @@ export default class LinkPlugin extends Plugin {
     return file.path.startsWith(dailyNotesPath) && file.extension === 'md'
   }
 
-  private async enhanceDailyNote(file: TFile) {
+  protected async enhanceDailyNote(file: TFile): Promise<void> {
     try {
       // Extract date from filename
       const match = file.basename.match(/^(\d{4}-\d{2}-\d{2})/)
