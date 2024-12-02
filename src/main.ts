@@ -80,21 +80,40 @@ export default class LinkPlugin extends Plugin {
       this.addSettingTab(new LinkSettingTab(this.app, this))
       console.debug('Settings tab added successfully')
 
-      // Add ribbon icon
-      console.debug('Adding ribbon icon...')
+      // Add ribbon icons
+      console.debug('Adding ribbon icons...')
       try {
-        const ribbonIconEl = this.addRibbonIcon(
-          'help',
+        // Help ribbon icon
+        const helpRibbonIconEl = this.addRibbonIcon(
+          'help-circle',
           'Link Plugin Help',
           (evt: MouseEvent) => {
             console.debug('Help ribbon icon clicked', evt)
             new HelpModal(this.app).open()
           }
         )
-        ribbonIconEl.addClass('link-plugin-ribbon-icon')
-        console.debug('Ribbon icon added successfully')
+        helpRibbonIconEl.addClass('link-plugin-help-ribbon-icon')
+
+        // Create linked note ribbon icon
+        const createNoteRibbonIconEl = this.addRibbonIcon(
+          'link',
+          'Create Linked Note',
+          async (evt: MouseEvent) => {
+            console.debug('Create note ribbon icon clicked', evt)
+            const activeView =
+              this.app.workspace.getActiveViewOfType(MarkdownView)
+            if (activeView) {
+              await createLinkedNote(this, activeView.editor)
+            } else {
+              new Notice('Please open a markdown file first')
+            }
+          }
+        )
+        createNoteRibbonIconEl.addClass('link-plugin-create-note-ribbon-icon')
+
+        console.debug('Ribbon icons added successfully')
       } catch (error) {
-        console.error('Error adding ribbon icon:', error)
+        console.error('Error adding ribbon icons:', error)
         throw error
       }
 

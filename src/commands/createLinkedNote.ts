@@ -3,7 +3,7 @@
  * @description Creates a new note and links to it from the current selection.
  */
 
-import { Editor, Notice, TFile, App } from 'obsidian'
+import { Editor, Notice, TFile, App, moment } from 'obsidian'
 import { sanitizeFileName } from '../utils/fileUtils'
 import { NewNoteModal } from '../modals/newNoteModal'
 import {
@@ -11,7 +11,18 @@ import {
   LinkPluginError,
   ErrorCode
 } from '../utils/errorHandler'
-import { ROOT_FOLDER } from '../utils/folderUtils'
+import {
+  ROOT_FOLDER,
+  ensureFutureDailyNoteFolder,
+  BASE_FOLDERS
+} from '../utils/folderUtils'
+
+interface NoteCreationResult {
+  name: string
+  folder: string
+  isFutureDaily?: boolean
+  date?: moment.Moment
+}
 
 export interface LinkPlugin {
   app: App
@@ -27,10 +38,16 @@ export async function createLinkedNote(
       return
     }
 
-    const { name: noteName, folder } = result
+    let { name: noteName, folder } = result
+
+    // Handle future daily note
+    if (result.isFutureDaily && result.date) {
+      folder = await ensureFutureDailyNoteFolder(plugin.app, result.date)
+    }
+
     const fileName = await validateAndSanitizeFileName(noteName)
     const fullPath = `${folder}/${fileName}`
-    const newNote = await createNoteFile(plugin, fullPath, noteName)
+    const newNote = await createNoteFile(plugin, fullPath, noteName, result)
 
     // Create a relative link path from the root folder
     const linkPath = fullPath.replace(`${ROOT_FOLDER}/`, '')
@@ -45,7 +62,7 @@ export async function createLinkedNote(
 async function getNoteName(
   editor: Editor,
   plugin: LinkPlugin
-): Promise<{ name: string; folder: string } | null> {
+): Promise<NoteCreationResult | null> {
   const selection = editor.getSelection()
 
   return new Promise((resolve) => {
@@ -78,7 +95,8 @@ async function validateAndSanitizeFileName(name: string): Promise<string> {
 async function createNoteFile(
   plugin: LinkPlugin,
   fullPath: string,
-  noteName: string
+  noteName: string,
+  options: NoteCreationResult
 ): Promise<TFile> {
   try {
     const exists = await plugin.app.vault.adapter.exists(`${fullPath}.md`)
@@ -89,7 +107,13 @@ async function createNoteFile(
       )
     }
 
-    const content = `# ${noteName}\n\n`
+    let content: string
+    if (options.isFutureDaily) {
+      content = await createDailyNoteContent(plugin.app, noteName, options.date)
+    } else {
+      content = `# ${noteName}\n\n`
+    }
+
     return await plugin.app.vault.create(`${fullPath}.md`, content)
   } catch (error) {
     if (error instanceof LinkPluginError) {
@@ -103,12 +127,46 @@ async function createNoteFile(
   }
 }
 
+async function createDailyNoteContent(
+  app: App,
+  noteName: string,
+  date?: moment.Moment
+): Promise<string> {
+  try {
+    // Try to get the template content
+    const templatePath = `${BASE_FOLDERS.TEMPLATES}/Daily Note Template.md`
+    let templateContent = await app.vault.adapter.read(templatePath)
+
+    // Replace date variables in the template
+    if (date) {
+      templateContent = templateContent
+        .replace(/{{date:YYYY-MM-DD}}/g, date.format('YYYY-MM-DD'))
+        .replace(/{{time:HH:mm}}/g, moment().format('HH:mm'))
+        .replace(
+          /{{date:dddd, MMMM D, YYYY}}/g,
+          date.format('dddd, MMMM D, YYYY')
+        )
+    }
+
+    return templateContent
+  } catch (error) {
+    console.error('Error reading template:', error)
+    // Fallback to basic content if template can't be read
+    return `# ${noteName}\n\nCreated: ${moment().format(
+      'YYYY-MM-DD HH:mm'
+    )}\n\n`
+  }
+}
+
 async function insertNoteLinkInEditor(
   editor: Editor,
   fullPath: string
 ): Promise<void> {
   try {
-    editor.replaceSelection(`[[${fullPath}]]`)
+    // Extract the filename without extension for the display text
+    const displayName =
+      fullPath.split('/').pop()?.replace('.md', '') || fullPath
+    editor.replaceSelection(`[[${fullPath}|${displayName}]]`)
   } catch (error) {
     throw new LinkPluginError(
       'Failed to insert note link',

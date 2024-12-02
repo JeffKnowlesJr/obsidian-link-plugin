@@ -1,4 +1,4 @@
-import { Vault, App } from 'obsidian'
+import { Vault, App, moment } from 'obsidian'
 
 export const ROOT_FOLDER = '_Link'
 
@@ -157,5 +157,31 @@ async function createFolderIfNotExists(
   } catch (error) {
     console.error(`Error creating folder ${path}:`, error)
     throw error
+  }
+}
+
+export async function ensureFutureDailyNoteFolder(
+  app: App,
+  date: moment.Moment
+): Promise<string> {
+  try {
+    const year = date.year()
+    const month = date.month() + 1 // moment months are 0-based
+    const monthName = date.format('MMM')
+
+    const yearFolder = `${BASE_FOLDERS.JOURNAL}/y_${year}`
+    const monthFolder = `${yearFolder}/m_${String(month).padStart(
+      2,
+      '0'
+    )}_${monthName}`
+
+    // Create folders if they don't exist
+    await createFolderIfNotExists(app.vault, yearFolder)
+    await createFolderIfNotExists(app.vault, monthFolder)
+
+    return monthFolder
+  } catch (error) {
+    console.error('Error creating future daily note folder:', error)
+    throw new Error('Failed to create future daily note folder')
   }
 }
