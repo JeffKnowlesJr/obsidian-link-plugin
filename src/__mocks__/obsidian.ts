@@ -1,11 +1,14 @@
 import moment from 'moment'
 
-// Mock the Obsidian API
-export const Moment = {
-  moment: moment
-}
+// Mock Obsidian's moment implementation
+// Export moment as a callable function that matches Obsidian's API
+export const moment = ((date?: any) => moment(date)) as typeof moment
 
-// Add other Obsidian API mocks as needed
+// Other Obsidian mocks
 export class Plugin {}
 export class PluginSettingTab {}
-// ... other Obsidian exports you need
+export class Notice {}
+export class TFile {}
+export class App {
+  vault: any
+}
