@@ -21,16 +21,18 @@ export async function createLinkedNote(
   editor: Editor
 ): Promise<void> {
   try {
-    const noteName = await getNoteName(editor, plugin)
-    if (!noteName) {
+    const result = await getNoteName(editor, plugin)
+    if (!result) {
       return
     }
 
+    const { name: noteName, folder } = result
     const fileName = await validateAndSanitizeFileName(noteName)
-    const newNote = await createNoteFile(plugin, fileName, noteName)
-    await insertNoteLinkInEditor(editor, fileName)
+    const fullPath = `${folder}/${fileName}`
+    const newNote = await createNoteFile(plugin, fullPath, noteName)
+    await insertNoteLinkInEditor(editor, fullPath)
 
-    new Notice(`Created new note: ${fileName}`)
+    new Notice(`Created new note: ${fullPath}`)
   } catch (error) {
     handlePluginError(error, 'Failed to create linked note')
   }
@@ -39,17 +41,26 @@ export async function createLinkedNote(
 async function getNoteName(
   editor: Editor,
   plugin: LinkPlugin
-): Promise<string | null> {
+): Promise<{ name: string; folder: string } | null> {
   const selection = editor.getSelection()
-  if (selection) {
-    return selection
-  }
 
   return new Promise((resolve) => {
     const modal = new NewNoteModal(plugin.app, (result) => {
-      resolve(result)
+      if (result) {
+        resolve(result)
+      } else {
+        resolve(null)
+      }
     })
     modal.open()
+
+    // If there's a selection, pre-fill the note name
+    if (selection) {
+      // @ts-ignore - We know the modal has this property
+      modal.inputEl.value = selection
+      // @ts-ignore - We know the modal has this property
+      modal.result.name = selection
+    }
   })
 }
 
@@ -62,22 +73,20 @@ async function validateAndSanitizeFileName(name: string): Promise<string> {
 
 async function createNoteFile(
   plugin: LinkPlugin,
-  fileName: string,
+  fullPath: string,
   noteName: string
 ): Promise<TFile> {
-  const fullPath = `${fileName}.md`
-
   try {
-    const exists = await plugin.app.vault.adapter.exists(fullPath)
+    const exists = await plugin.app.vault.adapter.exists(`${fullPath}.md`)
     if (exists) {
       throw new LinkPluginError(
-        `Note "${fileName}" already exists`,
+        `Note "${fullPath}" already exists`,
         ErrorCode.FILE_ALREADY_EXISTS
       )
     }
 
     const content = `# ${noteName}\n\n`
-    return await plugin.app.vault.create(fullPath, content)
+    return await plugin.app.vault.create(`${fullPath}.md`, content)
   } catch (error) {
     if (error instanceof LinkPluginError) {
       throw error
@@ -92,10 +101,10 @@ async function createNoteFile(
 
 async function insertNoteLinkInEditor(
   editor: Editor,
-  fileName: string
+  fullPath: string
 ): Promise<void> {
   try {
-    editor.replaceSelection(`[[${fileName}]]`)
+    editor.replaceSelection(`[[${fullPath}]]`)
   } catch (error) {
     throw new LinkPluginError(
       'Failed to insert note link',

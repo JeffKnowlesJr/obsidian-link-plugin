@@ -11,6 +11,10 @@ import {
 import { createLinkedNote } from './commands/createLinkedNote'
 import { LinkPluginSettings, DEFAULT_SETTINGS } from './settings/settings'
 import { HelpModal } from './modals/helpModal'
+import {
+  ensureFolderStructure,
+  updateDailyNotesLocation
+} from './utils/folderUtils'
 
 export default class LinkPlugin extends Plugin {
   settings: LinkPluginSettings
@@ -25,6 +29,39 @@ export default class LinkPlugin extends Plugin {
       console.debug('Loading plugin settings...')
       await this.loadSettings()
       console.debug('Settings loaded successfully:', this.settings)
+
+      // Ensure folder structure and update daily notes location
+      console.debug('Ensuring folder structure...')
+      try {
+        await ensureFolderStructure(this.app)
+        const newLocation = await updateDailyNotesLocation(this.app)
+        this.settings.dailyNotesLocation = newLocation
+        await this.saveSettings()
+        console.debug('Folder structure verified/created successfully')
+      } catch (error) {
+        console.error('Error ensuring folder structure:', error)
+        new Notice(
+          'Error creating folder structure. Check console for details.'
+        )
+      }
+
+      // Register interval to check and update daily notes location
+      this.registerInterval(
+        window.setInterval(async () => {
+          try {
+            const currentLocation = this.settings.dailyNotesLocation
+            const newLocation = await updateDailyNotesLocation(this.app)
+
+            if (currentLocation !== newLocation) {
+              this.settings.dailyNotesLocation = newLocation
+              await this.saveSettings()
+              console.debug('Daily notes location updated:', newLocation)
+            }
+          } catch (error) {
+            console.error('Error updating daily notes location:', error)
+          }
+        }, 1000 * 60 * 60) // Check every hour
+      )
 
       // Register commands
       console.group('Registering Commands')
@@ -64,10 +101,9 @@ export default class LinkPlugin extends Plugin {
       console.timeEnd('Plugin Load Time')
       console.debug('Plugin loaded successfully')
     } catch (error) {
-      console.error('Fatal error during plugin initialization:', error)
-      new Notice('Error loading Link Plugin. Check console for details.')
-    } finally {
+      console.error('Error during plugin initialization:', error)
       console.groupEnd()
+      throw error
     }
   }
 
