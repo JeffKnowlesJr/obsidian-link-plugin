@@ -1,5 +1,6 @@
 {
   "defaultLinkStyle": "markdown",
   "autoFormatLinks": true,
-  "dailyNotesLocation": "_Link/_Journal/y_2024/m_12_Dec"
+  "dailyNotesLocation": "_Link/_Journal/y_2024/m_12_Dec",
+  "autoRevealFile": true
 }

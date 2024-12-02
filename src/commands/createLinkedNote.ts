@@ -137,15 +137,35 @@ async function createDailyNoteContent(
     const templatePath = `${BASE_FOLDERS.TEMPLATES}/Daily Note Template.md`
     let templateContent = await app.vault.adapter.read(templatePath)
 
-    // Replace date variables in the template
     if (date) {
+      // Create previous and next dates
+      const prevDate = moment(date).subtract(1, 'day')
+      const nextDate = moment(date).add(1, 'day')
+
+      // Format the dates for links
+      const prevLink = `${prevDate.format('YYYY-MM-DD')} ${prevDate.format(
+        'dddd'
+      )}`
+      const nextLink = `${nextDate.format('YYYY-MM-DD')} ${nextDate.format(
+        'dddd'
+      )}`
+
+      // Replace template variables
       templateContent = templateContent
+        .replace(/previous: ''/g, `previous: '[[${prevLink}]]'`)
+        .replace(/next: ''/g, `next: '[[${nextLink}]]'`)
         .replace(/{{date:YYYY-MM-DD}}/g, date.format('YYYY-MM-DD'))
         .replace(/{{time:HH:mm}}/g, moment().format('HH:mm'))
         .replace(
           /{{date:dddd, MMMM D, YYYY}}/g,
           date.format('dddd, MMMM D, YYYY')
         )
+
+      // Update the month log and list references
+      const monthName = date.format('MMMM')
+      templateContent = templateContent
+        .replace(/\[\[December Log\]\]/g, `[[${monthName} Log]]`)
+        .replace(/\[\[December List\]\]/g, `[[${monthName} List]]`)
     }
 
     return templateContent

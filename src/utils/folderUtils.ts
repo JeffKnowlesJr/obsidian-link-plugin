@@ -29,21 +29,70 @@ export const SUB_FOLDERS = {
 } as const
 
 const DEFAULT_TEMPLATE_CONTENT = `---
-created: {{date:YYYY-MM-DD}} {{time:HH:mm}}
+previous: ''
+next: ''
+tags: []
+resources: []
+stakeholders: []
 ---
 
-# {{date:dddd, MMMM D, YYYY}}
+## Routine Checklist
 
-## Tasks
-- [ ] 
+- [ ] **Daily Checks**
 
-## Notes
+  - [ ] Bed and Clothes 🛏️🧺
+  - [ ] Self Care🛀🧴
+  - [ ] Clean Kitchen 🍽✨
+  - [ ] Pet Care 🐕🚶🏻‍♂️
+  - [ ] Get Focused 🖥️💊
 
+- [ ] **Technology Check**
+  - [ ] Wear Watch ⌚️
+  - [ ] Manage [Calendar](https://calendar.google.com) 📆
+  - [ ] Check [Mail](https://mail.google.com) ✉️
+  - [ ] Review [[December Log]] 🗓️
+  - [ ] Review [[December List]] ✅
 
-## Journal
+---
 
+## Log
 
-## Links
+### To Do
+
+- [ ]
+
+### Stream
+
+>
+
+### Events
+
+-
+
+### Work
+
+- ***
+
+## Daily Planning Tips
+
+1. **Set Clear Goals**: Identify three major tasks (🟩🟨🟥), prioritizing one high-impact task (🟥).
+2. **Break Down Tasks**: Divide projects into manageable, specific steps.
+3. **Use Focus Sessions**: 40 mins work + 10 mins review/break.
+4. **Prioritize Early**: Start with critical tasks for peak productivity.
+5. **End with Review**: Reflect on accomplishments; outline tomorrow's goals.
+6. **Limit Distractions**: Turn off notifications; avoid multitasking.
+7. **Organize Visually**: Use Obsidian as a "second brain" reference.
+8. **Plan Extra Time**: Buffer for complex tasks to avoid rushing.
+9. **Weekly Review**: Adjust goals based on progress and priorities.
+
+### Tip
+
+Incorporate one of these each day to build a strong, consistent planning habit.
+
+---
+
+## Challenges
+
 `
 
 async function ensureTemplateExists(vault: Vault): Promise<string> {
@@ -183,5 +232,56 @@ export async function ensureFutureDailyNoteFolder(
   } catch (error) {
     console.error('Error creating future daily note folder:', error)
     throw new Error('Failed to create future daily note folder')
+  }
+}
+
+export async function createDailyNoteContent(
+  app: App,
+  noteName: string,
+  date?: moment.Moment
+): Promise<string> {
+  try {
+    // Try to get the template content
+    const templatePath = `${BASE_FOLDERS.TEMPLATES}/Daily Note Template.md`
+    let templateContent = await app.vault.adapter.read(templatePath)
+
+    if (date) {
+      // Create previous and next dates
+      const prevDate = moment(date).subtract(1, 'day')
+      const nextDate = moment(date).add(1, 'day')
+
+      // Format the dates for links
+      const prevLink = `${prevDate.format('YYYY-MM-DD')} ${prevDate.format(
+        'dddd'
+      )}`
+      const nextLink = `${nextDate.format('YYYY-MM-DD')} ${nextDate.format(
+        'dddd'
+      )}`
+
+      // Replace template variables
+      templateContent = templateContent
+        .replace(/previous: ''/g, `previous: '[[${prevLink}]]'`)
+        .replace(/next: ''/g, `next: '[[${nextLink}]]'`)
+        .replace(/{{date:YYYY-MM-DD}}/g, date.format('YYYY-MM-DD'))
+        .replace(/{{time:HH:mm}}/g, moment().format('HH:mm'))
+        .replace(
+          /{{date:dddd, MMMM D, YYYY}}/g,
+          date.format('dddd, MMMM D, YYYY')
+        )
+
+      // Update the month log and list references
+      const monthName = date.format('MMMM')
+      templateContent = templateContent
+        .replace(/\[\[December Log\]\]/g, `[[${monthName} Log]]`)
+        .replace(/\[\[December List\]\]/g, `[[${monthName} List]]`)
+    }
+
+    return templateContent
+  } catch (error) {
+    console.error('Error reading template:', error)
+    // Fallback to basic content if template can't be read
+    return `# ${noteName}\n\nCreated: ${moment().format(
+      'YYYY-MM-DD HH:mm'
+    )}\n\n`
   }
 }

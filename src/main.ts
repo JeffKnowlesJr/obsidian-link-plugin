@@ -6,18 +6,70 @@ import {
   Notice,
   Plugin,
   PluginSettingTab,
-  Setting
+  Setting,
+  TFile,
+  WorkspaceLeaf,
+  moment
 } from 'obsidian'
 import { createLinkedNote } from './commands/createLinkedNote'
 import { LinkPluginSettings, DEFAULT_SETTINGS } from './settings/settings'
 import { HelpModal } from './modals/helpModal'
 import {
   ensureFolderStructure,
-  updateDailyNotesLocation
+  updateDailyNotesLocation,
+  ROOT_FOLDER,
+  createDailyNoteContent
 } from './utils/folderUtils'
+
+class ConfirmationModal extends Modal {
+  private onConfirm: () => void
+
+  constructor(app: App, onConfirm: () => void) {
+    super(app)
+    this.onConfirm = onConfirm
+  }
+
+  onOpen() {
+    const { contentEl } = this
+    contentEl.empty()
+
+    contentEl.createEl('h2', { text: 'Regenerate Folder Structure?' })
+    contentEl.createEl('p', {
+      text: `The ${ROOT_FOLDER} folder has been deleted. Would you like to regenerate the folder structure?`
+    })
+
+    const buttonContainer = contentEl.createDiv('button-container')
+    buttonContainer.style.display = 'flex'
+    buttonContainer.style.justifyContent = 'flex-end'
+    buttonContainer.style.gap = '10px'
+    buttonContainer.style.marginTop = '20px'
+
+    const confirmButton = buttonContainer.createEl('button', {
+      text: 'Yes, regenerate',
+      cls: 'mod-cta'
+    })
+    confirmButton.addEventListener('click', async () => {
+      this.close()
+      this.onConfirm()
+    })
+
+    const cancelButton = buttonContainer.createEl('button', {
+      text: 'No, keep it deleted'
+    })
+    cancelButton.addEventListener('click', () => {
+      this.close()
+    })
+  }
+
+  onClose() {
+    const { contentEl } = this
+    contentEl.empty()
+  }
+}
 
 export default class LinkPlugin extends Plugin {
   settings: LinkPluginSettings
+  private folderCheckInterval: number
 
   async onload() {
     try {
@@ -44,6 +96,42 @@ export default class LinkPlugin extends Plugin {
           'Error creating folder structure. Check console for details.'
         )
       }
+
+      // Wait for daily notes plugin to be ready
+      this.app.workspace.onLayoutReady(() => {
+        this.patchDailyNotes()
+      })
+
+      // Register file creation events
+      this.registerEvent(
+        // @ts-ignore - The type definitions are incomplete
+        this.app.vault.on('create', async (file: TFile) => {
+          if (this.isDailyNote(file)) {
+            await this.enhanceDailyNote(file)
+          }
+        })
+      )
+
+      // Register daily note creation interceptor
+      this.registerEvent(
+        this.app.workspace.on('file-create', async (file: TFile) => {
+          if (this.isDailyNote(file)) {
+            await this.enhanceDailyNote(file)
+          }
+        })
+      )
+
+      // Register file open handler for auto-reveal
+      this.registerEvent(
+        this.app.workspace.on('file-open', (file: TFile) => {
+          if (this.settings.autoRevealFile && file) {
+            this.revealFileInExplorer(file)
+          }
+        })
+      )
+
+      // Register interval to check root folder existence
+      this.registerRootFolderCheck()
 
       // Register interval to check and update daily notes location
       this.registerInterval(
@@ -126,6 +214,79 @@ export default class LinkPlugin extends Plugin {
     }
   }
 
+  private patchDailyNotes() {
+    try {
+      // Get the daily notes plugin
+      const dailyNotesPlugin = (this.app as any).internalPlugins?.plugins[
+        'daily-notes'
+      ]
+      if (!dailyNotesPlugin?.enabled) {
+        console.debug('Daily notes plugin not enabled')
+        return
+      }
+
+      const instance = dailyNotesPlugin.instance
+      if (!instance?.createDailyNote) {
+        console.debug('Daily notes createDailyNote function not found')
+        return
+      }
+
+      // Store the original create daily note function
+      const originalCreateDailyNote = instance.createDailyNote.bind(instance)
+
+      // Replace with our enhanced version
+      instance.createDailyNote = async (date?: Date) => {
+        try {
+          const file = await originalCreateDailyNote(date)
+          if (file) {
+            await this.enhanceDailyNote(file)
+          }
+          return file
+        } catch (error) {
+          console.error('Error in enhanced createDailyNote:', error)
+          // Fall back to original function if our enhancement fails
+          return originalCreateDailyNote(date)
+        }
+      }
+
+      console.debug('Daily notes functionality patched successfully')
+    } catch (error) {
+      console.error('Error patching daily notes:', error)
+    }
+  }
+
+  private registerRootFolderCheck() {
+    // Check every 5 seconds for root folder existence
+    this.registerInterval(
+      window.setInterval(async () => {
+        try {
+          const rootExists = await this.app.vault.adapter.exists(ROOT_FOLDER)
+          if (!rootExists) {
+            console.debug(
+              `${ROOT_FOLDER} folder not found, prompting for regeneration`
+            )
+            new ConfirmationModal(this.app, async () => {
+              try {
+                await ensureFolderStructure(this.app)
+                const newLocation = await updateDailyNotesLocation(this.app)
+                this.settings.dailyNotesLocation = newLocation
+                await this.saveSettings()
+                new Notice(
+                  `${ROOT_FOLDER} folder structure has been regenerated`
+                )
+              } catch (error) {
+                console.error('Error regenerating folder structure:', error)
+                new Notice('Failed to regenerate folder structure')
+              }
+            }).open()
+          }
+        } catch (error) {
+          console.error('Error checking root folder existence:', error)
+        }
+      }, 5000)
+    )
+  }
+
   private registerCommands() {
     console.debug('Registering format link command...')
     this.addCommand({
@@ -176,6 +337,68 @@ export default class LinkPlugin extends Plugin {
     await this.saveData(this.settings)
     console.debug('Settings saved')
   }
+
+  private async revealFileInExplorer(file: TFile) {
+    try {
+      // Get the file explorer leaf
+      const fileExplorer =
+        this.app.workspace.getLeavesOfType('file-explorer')[0]
+      if (!fileExplorer) {
+        return
+      }
+
+      // @ts-ignore - Access the file explorer view instance
+      const fileExplorerView = fileExplorer.view
+      if (!fileExplorerView) {
+        return
+      }
+
+      // Reveal and highlight the file
+      // @ts-ignore - Accessing internal API
+      fileExplorerView.revealInFolder(file)
+    } catch (error) {
+      console.error('Error revealing file in explorer:', error)
+    }
+  }
+
+  private isDailyNote(file: TFile): boolean {
+    // Check if the file is in a daily notes folder
+    const dailyNotesPath = this.settings.dailyNotesLocation
+    return file.path.startsWith(dailyNotesPath) && file.extension === 'md'
+  }
+
+  private async enhanceDailyNote(file: TFile) {
+    try {
+      // Extract date from filename
+      const match = file.basename.match(/^(\d{4}-\d{2}-\d{2})/)
+      if (!match) return
+
+      const date = moment(match[1])
+      if (!date.isValid()) return
+
+      // Get the current content
+      const currentContent = await this.app.vault.read(file)
+
+      // Only enhance if it doesn't already have previous/next links
+      if (
+        !currentContent.includes('previous:') &&
+        !currentContent.includes('next:')
+      ) {
+        // Create enhanced content
+        const enhancedContent = await createDailyNoteContent(
+          this.app,
+          file.basename,
+          date
+        )
+
+        // Update the file
+        await this.app.vault.modify(file, enhancedContent)
+        console.debug(`Enhanced daily note: ${file.path}`)
+      }
+    } catch (error) {
+      console.error('Error enhancing daily note:', error)
+    }
+  }
 }
 
 class LinkSettingTab extends PluginSettingTab {
@@ -214,6 +437,20 @@ class LinkSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.autoFormatLinks)
           .onChange(async (value) => {
             this.plugin.settings.autoFormatLinks = value
+            await this.plugin.saveSettings()
+          })
+      )
+
+    new Setting(containerEl)
+      .setName('Auto-reveal files')
+      .setDesc(
+        'Automatically reveal and highlight files in the file explorer when opened'
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoRevealFile)
+          .onChange(async (value) => {
+            this.plugin.settings.autoRevealFile = value
             await this.plugin.saveSettings()
           })
       )
