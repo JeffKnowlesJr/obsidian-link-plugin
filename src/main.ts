@@ -6,6 +6,7 @@ import {
   ProviderManager
 } from './settings/settings'
 import { AIProvider } from './providers/baseProvider'
+import { HelpModal } from './modals/helpModal'
 
 export default class AIAssistantPlugin extends Plugin {
   settings: AIAssistantSettings
@@ -18,11 +19,18 @@ export default class AIAssistantPlugin extends Plugin {
     // Add settings tab
     this.addSettingTab(new AIAssistantSettingTab(this.app, this))
 
+    // Add ribbon icon
+    this.addRibbonIcon('bot', 'AI Assistant', (evt: MouseEvent) => {
+      new HelpModal(this.app).open()
+    })
+
     // Register Claude command
     this.addCommand({
       id: 'query-claude',
-      name: 'Query Claude AI',
-      editorCallback: (editor: Editor) => this.handleAIQuery(editor, 'claude')
+      name: 'Query Claude (Code Assistant)',
+      callback: () => {
+        this.handleAIQuery(this.app.workspace.activeEditor?.editor, 'claude')
+      }
     })
 
     // Register ChatGPT command

@@ -1,6 +1,6 @@
 /* Help Modal Styles */
 .help-section {
-  margin-bottom: 24px;
+  margin-bottom: 1.5em;
 }
 
 .help-section h3 {
@@ -16,9 +16,10 @@
 }
 
 .help-item {
-  background-color: var(--background-secondary);
+  background: var(--background-secondary);
   border-radius: 8px;
   padding: 12px;
+  margin-bottom: 12px;
 }
 
 .help-item h4 {
@@ -126,4 +127,14 @@
 
 .ai-notice.error {
   background-color: var(--background-modifier-error);
+}
+
+/* Add to existing styles */
+.ribbon-bot {
+  color: var(--text-muted);
+  transition: color 0.2s ease-in-out;
+}
+
+.ribbon-bot:hover {
+  color: var(--text-accent);
 }

@@ -7,23 +7,52 @@ export class HelpModal extends BasePluginModal {
   }
 
   renderContent() {
-    this.contentEl.createEl('h2', { text: 'Link Plugin Help' })
+    this.contentEl.createEl('h2', { text: 'AI Assistant Help' })
 
     // Core features section
-    this.createSection('Core Features', [
+    this.createSection('Available AI Providers', [
       {
-        title: '📝 Creating Linked Notes',
+        title: '🤖 Claude (Code Assistant)',
         description:
-          'Enter a name for your new note in the popup dialog to create a linked note.'
+          'Specialized for code-related queries, documentation, and technical explanations. Use for programming tasks.'
+      },
+      {
+        title: '💭 ChatGPT (General Assistant)',
+        description:
+          'Best for general knowledge, creative writing, and non-technical tasks.'
+      },
+      {
+        title: '🔒 Privacy-Focused Provider',
+        description:
+          'For handling personal or sensitive data with enhanced privacy controls.'
       }
     ])
 
-    // Settings section
-    this.createSection('Settings', [
+    // Usage section
+    this.createSection('Quick Usage', [
       {
-        title: '⚙️ Plugin Settings',
+        title: '⌨️ Hotkeys',
         description:
-          'Access settings via Settings > Link Plugin to customize:\n- Default link style (Wiki or Markdown)\n- Auto-format links toggle'
+          'Claude: Ctrl/Cmd + Shift + C\nChatGPT: Ctrl/Cmd + Shift + G'
+      },
+      {
+        title: '📝 Context Awareness',
+        description:
+          'Select text or code before querying to include it as context.'
+      }
+    ])
+
+    // Privacy section
+    this.createSection('Privacy & Security', [
+      {
+        title: '🔐 API Keys',
+        description:
+          'Your API keys are stored securely and never shared between providers.'
+      },
+      {
+        title: '📊 Data Handling',
+        description:
+          'All conversations are stored locally. Enable anonymization in settings for enhanced privacy.'
       }
     ])
 
@@ -33,8 +62,16 @@ export class HelpModal extends BasePluginModal {
         text: 'Open Settings',
         onClick: () => {
           this.close()
-          // @ts-ignore
-          this.app.setting.openTabById('obsidian-link-plugin')
+          this.app.setting.open()
+          this.app.setting.openTabById('obsidian-ai-assistant')
+        }
+      },
+      {
+        text: 'View Documentation',
+        onClick: () => {
+          window.open(
+            'https://github.com/yourusername/obsidian-ai-assistant/wiki'
+          )
         }
       },
       {
