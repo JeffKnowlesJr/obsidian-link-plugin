@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-link-plugin",
+  "name": "obsidian-ai-assistant",
   "version": "1.0.0",
-  "description": "A plugin for managing links in Obsidian",
+  "description": "A powerful plugin for Obsidian that provides direct access to various AI assistants",
   "main": "main.js",
   "scripts": {
     "test": "jest",
@@ -17,17 +17,24 @@
   "keywords": [
     "obsidian",
     "obsidian-plugin",
-    "links"
+    "ai",
+    "claude",
+    "chatgpt",
+    "assistant"
   ],
-  "author": "Jeff Knowles Jr",
+  "author": "Your Name",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.10.2",
+    "crypto-js": "^4.2.0",
+    "openai": "^4.79.1",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-typescript": "^7.26.0",
+    "@types/crypto-js": "^4.2.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^16.11.6",
     "builtin-modules": "3.3.0",

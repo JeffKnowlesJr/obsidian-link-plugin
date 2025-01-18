@@ -1,12 +1,10 @@
 {
-  "id": "obsidian-link-plugin",
-  "name": "Link Plugin",
+  "id": "obsidian-ai-assistant",
+  "name": "AI Assistant",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "A plugin for managing links in Obsidian",
-  "author": "Jeff Knowles Jr",
-  "authorUrl": "https://github.com/jeffknowlesjr",
-  "isDesktopOnly": false,
-  "fundingUrl": "",
-  "repo": "jeffknowlesjr/obsidian-link-plugin"
+  "description": "A powerful plugin providing direct access to various AI assistants, including Claude and ChatGPT",
+  "author": "Your Name",
+  "authorUrl": "https://github.com/yourusername",
+  "isDesktopOnly": false
 }

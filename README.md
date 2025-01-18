@@ -1,146 +1,76 @@
-# Obsidian Link Plugin
+# Obsidian AI Assistant Plugin
 
-A powerful plugin for Obsidian that helps you create and manage notes with an organized folder structure.
+A powerful plugin for Obsidian that provides direct access to various AI assistants, each specialized for different types of queries and data handling.
 
 ## Features
 
-### Quick Note Creation and Linking
+### Multiple AI Providers
 
-- Create new notes directly from selected text or via a modern modal interface
-- Automatically creates wiki-style links (`[[note-name]]`) to newly created notes
-- Choose destination folder from a dropdown menu
-- Pre-fills note name if text is selected
-- Smart file name sanitization for system compatibility
-- Keyboard navigation support (Enter to create)
+- **Claude**: Primary assistant for coding-related queries
+- **ChatGPT**: General-purpose queries and creative tasks
+- **Alternative Provider**: Personal data handling with enhanced privacy focus
 
-### Automatic Folder Structure
+### Smart Context Management
 
-The plugin automatically maintains a structured folder hierarchy:
+- Automatically includes relevant code snippets in programming queries
+- Maintains conversation history for coherent multi-turn interactions
+- Preserves markdown formatting in responses
 
-```
-/_Link
-  /_Journal
-    /y_2024
-      /m_12_Dec
-        /2024-12-02 Monday.md
-        /2024-12-03 Tuesday.md
-        ...
-    /y_2025
-  /Documents
-    /Images
-    /Videos
-    /Audio
-    /Other
-  /Templates
-    /Daily Note Template.md
-    /Weekly Review Template.md
-    /Project Plan Template.md
-    ...
-  /_Workspace
-    /Client-X
-      /Project-Alpha
-        /SRS.md
-        /Requirements.md
-        ...
-    /Client-Y
-      /Project-Beta
-        ...
-    /Client-Self
-      /Project-Zen
-        ...
-  /_References
-    /Books
-      /Technology
-      /Business
-    /Articles
-      /Blog-Posts
-      /Research
-    /Courses
-      /Online
-      /Certifications
-  /Archive
-    /Completed-Projects
-    /Old-References
-    /Old-Templates
-```
+### Privacy-First Design
 
-### Daily Notes Management
+- Local storage of conversation history
+- No data sharing between different AI providers
+- Configurable data retention policies
+- Optional anonymization of sensitive information
 
-- Automatically creates and maintains year/month folders in the Journal section
-- Creates and manages a default daily note template if none exists
-- Automatically updates daily notes location based on current month
-- Updates Obsidian's core daily notes settings to match the current structure
-- Default template includes sections for tasks, notes, journal entries, and links
+### Seamless Integration
 
-### Auto-Updates and Error Handling
-
-- Hourly checks for month changes to update daily notes location
-- Creates new year/month folders as needed
-- Maintains consistent folder structure across vault
-- Graceful handling of duplicate files
-- Clear error messages for invalid note names
-- Fallback behaviors for missing templates
-- Comprehensive error logging for troubleshooting
-
-## Known Bugs
-
-### TypeScript Errors with moment.js Mock
-
-There is a known issue with TypeScript type definitions when mocking the moment.js functionality provided by Obsidian. While the application works correctly in production, one test is failing due to TypeScript type conflicts between Obsidian's moment implementation and the test mock.
-
-**Impact:**
-
-- One test is failing due to TypeScript errors
-- The application functions correctly in production
-- This is a development/testing issue only, not a runtime problem
-
-**Technical Details:**
-
-- The error occurs when trying to mock Obsidian's moment.js implementation in tests
-- TypeScript reports "Type 'typeof moment' has no call signatures"
-- Multiple approaches to fixing the type definitions have been attempted without success
-- The core functionality remains unaffected
-
-**Workaround:**
-Currently using a TypeScript type assertion to maintain functionality while acknowledging the type mismatch. This is not ideal but allows the application to function while we investigate a proper fix.
-
-## Usage
-
-### Creating New Notes
-
-1. **Create a Note from Selection**:
-
-   - Select some text in your current note
-   - Use the command "Create new linked note" (or use the hotkey if configured)
-   - The selected text becomes the title of your new note
-   - A link to the new note replaces your selection
-
-2. **Create a Note from Prompt**:
-   - Without any text selected, use the command "Create new linked note"
-   - Enter the desired note name in the popup dialog
-   - Choose the destination folder from the dropdown
-   - A new note will be created and linked at your cursor position
-
-### Daily Notes
-
-- Daily notes are automatically created in the correct year/month folder
-- Template is automatically applied
-- Folder structure is maintained automatically
+- Command palette integration
+- Customizable hotkeys for each AI provider
+- Direct insertion of responses into notes
+- Code block syntax highlighting
+- Markdown-native formatting
 
 ## Installation
 
 1. Open Obsidian Settings
 2. Go to Community Plugins and disable Safe Mode
-3. Click Browse and search for "Link Plugin"
+3. Click Browse and search for "AI Assistant Plugin"
 4. Install the plugin and enable it
-5. The plugin will automatically create the necessary folder structure
-6. Daily notes settings will be configured automatically
+5. Configure your API keys in the settings
 
 ## Configuration
 
-- The plugin maintains its own settings and coordinates with Obsidian's core daily notes settings
-- Folder structure is created and maintained automatically
-- Templates are created if they don't exist
+### Required API Keys
+
+- Claude API Key (Anthropic)
+- OpenAI API Key (ChatGPT)
+- Alternative Provider API Key
+
+### Settings Options
+
+- Default AI provider for different query types
+- Response formatting preferences
+- Context inclusion settings
+- Privacy and data retention settings
+- Hotkey configurations
+
+## Usage
+
+### Quick Commands
+
+- `Ctrl/Cmd + Shift + C`: Query Claude for code help
+- `Ctrl/Cmd + Shift + G`: Query ChatGPT for general questions
+- `Ctrl/Cmd + Shift + P`: Query privacy-focused provider
+
+### Context Menu
+
+Right-click on code blocks to:
+
+- Ask for explanations
+- Request optimizations
+- Debug issues
+- Generate documentation
 
 ## Technical Architecture
 
@@ -148,96 +78,38 @@ Currently using a TypeScript type assertion to maintain functionality while ackn
 
 1. **Main Plugin Class (`main.ts`)**
 
-   - Entry point for the plugin
-   - Handles plugin lifecycle (load/unload)
-   - Registers commands
-   - Manages plugin initialization
+   - Plugin lifecycle management
+   - Command registration
+   - Context handling
 
-2. **Commands (`src/commands/`)**
+2. **AI Providers (`src/providers/`)**
 
-   - `createLinkedNote.ts`: Core functionality for creating and linking notes
-   - Modular functions for each operation
-   - Strong type safety with TypeScript
-   - Comprehensive error handling
-   - Clear separation of concerns:
-     - Note name acquisition
-     - File name validation
-     - File creation
-     - Link insertion
+   - `claude.ts`: Coding assistance
+   - `chatgpt.ts`: General queries
+   - `privacy.ts`: Sensitive data handling
 
-3. **Modals (`src/modals/`)**
+3. **Context Management (`src/context/`)**
 
-   - `helpModal.ts`: Displays plugin documentation and settings access
-   - `newNoteModal.ts`: Handles note name input with validation
+   - Code block extraction
+   - Conversation history
+   - Context relevance scoring
 
-4. **Utilities (`src/utils/`)**
-   - `fileUtils.ts`: File system operations and path handling
-   - `errorHandler.ts`: Centralized error handling with custom error types
+4. **Privacy Layer (`src/privacy/`)**
+   - Data anonymization
+   - API key management
+   - Request sanitization
 
-### Data Flow
+## Privacy & Security
 
-1. **Note Creation Flow**
-
-   ```
-   User Action (Selection/Command)
-   ↓
-   Get Note Name (Selection/Modal)
-   ↓
-   Validate & Sanitize Filename
-   ↓
-   Create Note File
-   ↓
-   Insert Link
-   ↓
-   Show Success Notice
-   ```
-
-2. **Error Handling Flow**
-   ```
-   Error Occurs
-   ↓
-   Error Wrapped as LinkPluginError
-   ↓
-   Context Added
-   ↓
-   Error Logged
-   ↓
-   User Notified
-   ↓
-   Error Propagated
-   ```
-
-### Dependencies
-
-- **Obsidian API**: Core functionality for file operations and UI
-- **TypeScript**: Type safety and modern JavaScript features
-- **tslib**: TypeScript helper functions
-
-### Best Practices
-
-1. **Code Organization**
-
-   - Single responsibility functions
-   - Clear error boundaries
-   - Type-safe interfaces
-   - Async operation handling
-
-2. **Error Handling**
-
-   - Always use `LinkPluginError`
-   - Preserve error context
-   - Provide user-friendly messages
-   - Log for debugging
-
-3. **File Operations**
-   - Validate before operations
-   - Handle existence checks
-   - Proper error propagation
-   - Clean error messages
+- All API keys are stored encrypted
+- Conversations are stored locally
+- Optional anonymization of code snippets
+- Configurable data retention
+- No telemetry collection
 
 ## Support
 
-If you encounter any issues or have suggestions, please visit our [GitHub repository](https://github.com/jeffknowlesjr/obsidian-link-plugin) to file an issue.
+For issues or suggestions, please visit our [GitHub repository](https://github.com/yourusername/obsidian-ai-assistant).
 
 ## License
 

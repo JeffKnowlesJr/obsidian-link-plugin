@@ -46,3 +46,84 @@
 .link-plugin-ribbon-icon:hover {
   color: var(--text-normal);
 }
+
+/* Settings styles */
+.ai-assistant-settings {
+  padding: 0 10px;
+}
+
+.ai-assistant-settings h2 {
+  margin-bottom: 1em;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 0.5em;
+}
+
+.ai-assistant-settings h3 {
+  margin: 1.5em 0 1em;
+  color: var(--text-normal);
+}
+
+/* API Key input styling */
+.ai-assistant-settings input[type='password'] {
+  width: 100%;
+  font-family: monospace;
+}
+
+/* Response styling */
+.ai-response {
+  margin: 1em 0;
+  padding: 1em;
+  border-radius: 4px;
+  background-color: var(--background-primary-alt);
+  border-left: 4px solid var(--interactive-accent);
+}
+
+.ai-response.error {
+  border-left-color: var(--text-error);
+  background-color: var(--background-modifier-error);
+}
+
+/* Loading indicator */
+.ai-loading {
+  display: inline-block;
+  margin-left: 8px;
+  animation: ai-spin 1s linear infinite;
+}
+
+@keyframes ai-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Provider selection dropdown */
+.ai-provider-select {
+  width: 150px;
+}
+
+/* Context toggle */
+.ai-context-toggle {
+  margin-right: 8px;
+}
+
+/* Hotkey input styling */
+.ai-hotkey-input {
+  width: 200px;
+  font-family: monospace;
+}
+
+/* Notice styling */
+.ai-notice {
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 1em;
+  background-color: var(--background-modifier-success);
+  color: var(--text-on-accent);
+}
+
+.ai-notice.error {
+  background-color: var(--background-modifier-error);
+}
