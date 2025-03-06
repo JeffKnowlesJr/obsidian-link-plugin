@@ -21,11 +21,17 @@ The plugin automatically maintains a structured folder hierarchy:
 /_Link
   /_Journal
     /y_2024
-      /m_12_Dec
-        /2024-12-02 Monday.md
-        /2024-12-03 Tuesday.md
+      /January
+        /2024-01-01 Monday.md
+        /2024-01-02 Tuesday.md
         ...
+      /February
+      /March
+      ...
     /y_2025
+      /January
+      /February
+      ...
   /Documents
     /Images
     /Videos
@@ -66,11 +72,13 @@ The plugin automatically maintains a structured folder hierarchy:
 
 ### Daily Notes Management
 
-- Automatically creates and maintains year/month folders in the Journal section
+- Automatically creates and maintains year/month folders in the Journal section using full month names
 - Creates and manages a default daily note template if none exists
 - Automatically updates daily notes location based on current month
+- Hourly checks to ensure daily notes folder is correct for the current month
 - Updates Obsidian's core daily notes settings to match the current structure
 - Default template includes sections for tasks, notes, journal entries, and links
+- Migrates existing notes from old folder format to new format automatically
 
 ### Auto-Updates and Error Handling
 
@@ -141,6 +149,39 @@ Currently using a TypeScript type assertion to maintain functionality while ackn
 - The plugin maintains its own settings and coordinates with Obsidian's core daily notes settings
 - Folder structure is created and maintained automatically
 - Templates are created if they don't exist
+
+### Monthly Folder Updates
+
+The plugin includes settings to control how daily notes folders are updated:
+
+- **Auto-update monthly folders**: Toggle automatic monthly folder updates on/off
+- **Check interval**: Set how frequently the plugin checks for month changes (15-240 minutes)
+
+These settings help ensure your daily notes are always created in the correct monthly folder without manual intervention.
+
+### Folder Structure Templates
+
+The plugin now uses a template system for managing folder structures:
+
+- **Predefined templates**: Choose from several built-in folder structure templates
+
+  - **Default Structure**: The complete folder hierarchy with all sections
+  - **Minimal Structure**: Just the essential Journal and Templates folders
+  - **Research Focus**: Optimized for research and reference materials
+
+- **Custom templates**: Create your own folder structure templates with a user-friendly editor
+
+  - Design custom hierarchies to match your workflow
+  - Use variables like `$YEAR$` and `$MONTH$` for dynamic folder names
+  - Enable/disable templates as needed
+
+- **Template management**:
+  - Preview templates before applying them
+  - Edit existing templates
+  - Create new templates from scratch
+  - Apply templates with a single click
+
+This template system gives you complete control over how your vault is organized, allowing you to create the exact structure that works best for your needs.
 
 ## Technical Architecture
 

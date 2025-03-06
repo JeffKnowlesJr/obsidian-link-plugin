@@ -12,13 +12,22 @@ import {
   moment
 } from 'obsidian'
 import { createLinkedNote } from './commands/createLinkedNote'
-import { LinkPluginSettings, DEFAULT_SETTINGS } from './settings/settings'
+import {
+  LinkPluginSettings,
+  DEFAULT_SETTINGS,
+  FolderTemplate
+} from './settings/settings'
 import { HelpModal } from './modals/helpModal'
+import {
+  StructurePreviewModal,
+  TemplateEditModal
+} from './modals/templateModals'
 import {
   ensureFolderStructure,
   updateDailyNotesLocation,
   ROOT_FOLDER,
-  createDailyNoteContent
+  createDailyNoteContent,
+  migrateExistingDailyNotes
 } from './utils/folderUtils'
 
 class ConfirmationModal extends Modal {
@@ -69,7 +78,7 @@ class ConfirmationModal extends Modal {
 
 export default class LinkPlugin extends Plugin {
   settings: LinkPluginSettings
-  private folderCheckInterval: number
+  folderCheckInterval: number
 
   async onload() {
     try {
@@ -85,132 +94,89 @@ export default class LinkPlugin extends Plugin {
       // Ensure folder structure and update daily notes location
       console.debug('Ensuring folder structure...')
       try {
-        await ensureFolderStructure(this.app)
+        await ensureFolderStructure(this.app, this.settings)
+
+        // Migrate existing daily notes to new folder structure
+        console.debug('Migrating existing daily notes...')
+        await migrateExistingDailyNotes(this.app)
+
+        // Update daily notes location
         const newLocation = await updateDailyNotesLocation(this.app)
         this.settings.dailyNotesLocation = newLocation
         await this.saveSettings()
-        console.debug('Folder structure verified/created successfully')
       } catch (error) {
         console.error('Error ensuring folder structure:', error)
-        new Notice(
-          'Error creating folder structure. Check console for details.'
-        )
+        new Notice('Error initializing folder structure')
       }
-
-      // Wait for daily notes plugin to be ready
-      this.app.workspace.onLayoutReady(() => {
-        this.patchDailyNotes()
-      })
-
-      // Register file creation events
-      this.registerEvent(
-        // @ts-ignore - The type definitions are incomplete
-        this.app.vault.on('create', async (file: TFile) => {
-          if (this.isDailyNote(file)) {
-            await this.enhanceDailyNote(file)
-          }
-        })
-      )
-
-      // Register daily note creation interceptor
-      this.registerEvent(
-        this.app.workspace.on('file-create', async (file: TFile) => {
-          if (this.isDailyNote(file)) {
-            await this.enhanceDailyNote(file)
-          }
-        })
-      )
-
-      // Register file open handler for auto-reveal
-      this.registerEvent(
-        this.app.workspace.on('file-open', (file: TFile) => {
-          if (this.settings.autoRevealFile && file) {
-            this.revealFileInExplorer(file)
-          }
-        })
-      )
-
-      // Register interval to check root folder existence
-      this.registerRootFolderCheck()
-
-      // Register interval to check and update daily notes location
-      this.registerInterval(
-        window.setInterval(async () => {
-          try {
-            const currentLocation = this.settings.dailyNotesLocation
-            const newLocation = await updateDailyNotesLocation(this.app)
-
-            if (currentLocation !== newLocation) {
-              this.settings.dailyNotesLocation = newLocation
-              await this.saveSettings()
-              console.debug('Daily notes location updated:', newLocation)
-            }
-          } catch (error) {
-            console.error('Error updating daily notes location:', error)
-          }
-        }, 1000 * 60 * 60) // Check every hour
-      )
 
       // Register commands
-      console.group('Registering Commands')
-      try {
-        this.registerCommands()
-        console.debug('Commands registered successfully')
-      } catch (error) {
-        console.error('Error registering commands:', error)
-        throw error
-      } finally {
-        console.groupEnd()
-      }
+      console.debug('Registering commands...')
+      this.registerCommands()
 
-      // Add settings tab
-      console.debug('Adding settings tab...')
+      // Patch daily notes plugin
+      console.debug('Patching daily notes functionality...')
+      this.patchDailyNotes()
+
+      // Register root folder check
+      console.debug('Registering root folder check...')
+      this.registerRootFolderCheck()
+
+      // Register monthly daily notes location update check
+      console.debug('Registering monthly daily notes location update check...')
+      this.registerDailyNotesLocationCheck()
+
+      // Register settings tab
+      console.debug('Registering settings tab...')
       this.addSettingTab(new LinkSettingTab(this.app, this))
-      console.debug('Settings tab added successfully')
+
+      // Wait for daily notes plugin to be ready
+      setTimeout(() => {
+        this.patchDailyNotes()
+      }, 1000)
 
       // Add ribbon icons
-      console.debug('Adding ribbon icons...')
-      try {
-        // Help ribbon icon
-        const helpRibbonIconEl = this.addRibbonIcon(
-          'help-circle',
-          'Link Plugin Help',
-          (evt: MouseEvent) => {
-            console.debug('Help ribbon icon clicked', evt)
-            new HelpModal(this.app).open()
-          }
-        )
-        helpRibbonIconEl.addClass('link-plugin-help-ribbon-icon')
+      this.addRibbonIcon('link', 'Create Linked Note', () => {
+        // Get active leaf
+        const activeLeaf = this.app.workspace.activeLeaf
+        if (!activeLeaf) {
+          new Notice('No active editor')
+          return
+        }
 
-        // Create linked note ribbon icon
-        const createNoteRibbonIconEl = this.addRibbonIcon(
-          'link',
-          'Create Linked Note',
-          async (evt: MouseEvent) => {
-            console.debug('Create note ribbon icon clicked', evt)
-            const activeView =
-              this.app.workspace.getActiveViewOfType(MarkdownView)
-            if (activeView) {
-              await createLinkedNote(this, activeView.editor)
-            } else {
-              new Notice('Please open a markdown file first')
-            }
-          }
-        )
-        createNoteRibbonIconEl.addClass('link-plugin-create-note-ribbon-icon')
+        // Get editor from MarkdownView
+        const view = activeLeaf.view
+        if (!view) {
+          new Notice('No active view')
+          return
+        }
 
-        console.debug('Ribbon icons added successfully')
-      } catch (error) {
-        console.error('Error adding ribbon icons:', error)
-        throw error
-      }
+        // Check if it's a markdown view with an editor
+        const markdownView = view as any
+        if (!markdownView.editor) {
+          new Notice('No markdown editor active')
+          return
+        }
+
+        // Create linked note
+        createLinkedNote(this, markdownView.editor)
+      })
+
+      // Register file:create event to auto-enhance daily notes
+      this.registerEvent(
+        this.app.vault.on('create', (file) => {
+          if (file instanceof TFile && this.isDailyNote(file)) {
+            // Enhance the daily note if it's newly created
+            this.enhanceDailyNote(file)
+          }
+        })
+      )
 
       console.timeEnd('Plugin Load Time')
-      console.debug('Plugin loaded successfully')
-    } catch (error) {
-      console.error('Error during plugin initialization:', error)
+      console.debug('Plugin initialization complete')
       console.groupEnd()
-      throw error
+    } catch (error) {
+      console.error('Error loading Link Plugin:', error)
+      new Notice('Error loading Link Plugin')
     }
   }
 
@@ -267,7 +233,7 @@ export default class LinkPlugin extends Plugin {
             )
             new ConfirmationModal(this.app, async () => {
               try {
-                await ensureFolderStructure(this.app)
+                await ensureFolderStructure(this.app, this.settings)
                 const newLocation = await updateDailyNotesLocation(this.app)
                 this.settings.dailyNotesLocation = newLocation
                 await this.saveSettings()
@@ -399,6 +365,52 @@ export default class LinkPlugin extends Plugin {
       console.error('Error enhancing daily note:', error)
     }
   }
+
+  registerDailyNotesLocationCheck() {
+    // Clear any existing interval
+    if (this.folderCheckInterval) {
+      window.clearInterval(this.folderCheckInterval)
+    }
+
+    // Only set up the interval if auto-update is enabled
+    if (!this.settings.autoUpdateMonthlyFolders) {
+      console.debug('Automatic monthly folder updates disabled in settings')
+      return
+    }
+
+    // Store previous month to detect month changes
+    let currentMonth = new Date().getMonth()
+
+    // Convert minutes to milliseconds
+    const checkInterval = this.settings.checkIntervalMinutes * 60 * 1000
+
+    // Check at the specified interval if the month has changed
+    this.folderCheckInterval = window.setInterval(async () => {
+      try {
+        // Skip if auto-update got disabled
+        if (!this.settings.autoUpdateMonthlyFolders) return
+
+        const now = new Date()
+        const nowMonth = now.getMonth()
+
+        // Update daily notes location if the month has changed
+        if (nowMonth !== currentMonth) {
+          console.debug('Month changed, updating daily notes location')
+          currentMonth = nowMonth
+
+          const newLocation = await updateDailyNotesLocation(this.app)
+          this.settings.dailyNotesLocation = newLocation
+          await this.saveSettings()
+
+          new Notice(`Daily notes location updated to: ${newLocation}`)
+        }
+      } catch (error) {
+        console.error('Error checking for month change:', error)
+      }
+    }, checkInterval)
+
+    this.registerInterval(this.folderCheckInterval)
+  }
 }
 
 class LinkSettingTab extends PluginSettingTab {
@@ -413,6 +425,7 @@ class LinkSettingTab extends PluginSettingTab {
     const { containerEl } = this
 
     containerEl.empty()
+
     containerEl.createEl('h2', { text: 'Link Plugin Settings' })
 
     new Setting(containerEl)
@@ -455,16 +468,215 @@ class LinkSettingTab extends PluginSettingTab {
           })
       )
 
+    containerEl.createEl('h3', { text: 'Daily Notes Settings' })
+
+    new Setting(containerEl)
+      .setName('Auto-update monthly folders')
+      .setDesc('Automatically update daily notes location when month changes')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.autoUpdateMonthlyFolders)
+          .onChange(async (value) => {
+            this.plugin.settings.autoUpdateMonthlyFolders = value
+            await this.plugin.saveSettings()
+          })
+      )
+
+    new Setting(containerEl)
+      .setName('Check interval (minutes)')
+      .setDesc('How often to check for month changes (in minutes)')
+      .addSlider((slider) =>
+        slider
+          .setLimits(15, 240, 15)
+          .setValue(this.plugin.settings.checkIntervalMinutes)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.checkIntervalMinutes = value
+            await this.plugin.saveSettings()
+
+            // Restart the interval with the new timing
+            if (this.plugin.folderCheckInterval) {
+              window.clearInterval(this.plugin.folderCheckInterval)
+              this.plugin.registerDailyNotesLocationCheck()
+            }
+          })
+      )
+
+    containerEl.createEl('h3', { text: 'Folder Structure Templates' })
+    containerEl.createEl('p', {
+      text: 'Select and configure folder structure templates. Changes take effect the next time the folder structure is created or updated.'
+    })
+
+    // Template selection
+    new Setting(containerEl)
+      .setName('Active Template')
+      .setDesc('Choose which folder structure template to use')
+      .addDropdown((dropdown) => {
+        // Add all enabled templates to the dropdown
+        const enabledTemplates = this.plugin.settings.folderTemplates.filter(
+          (t) => t.isEnabled
+        )
+        enabledTemplates.forEach((template) => {
+          dropdown.addOption(template.id, template.name)
+        })
+
+        return dropdown
+          .setValue(this.plugin.settings.activeTemplateId)
+          .onChange(async (value) => {
+            this.plugin.settings.activeTemplateId = value
+            await this.plugin.saveSettings()
+          })
+      })
+
+    // Button to create folders using the selected template
+    new Setting(containerEl)
+      .setName('Apply Template')
+      .setDesc('Create the folder structure using the selected template')
+      .addButton((button) =>
+        button.setButtonText('Create Folders').onClick(async () => {
+          try {
+            new Notice('Creating folder structure...')
+            await ensureFolderStructure(this.app, this.plugin.settings)
+            new Notice('Folder structure created successfully!')
+          } catch (e) {
+            console.error('Error creating folder structure:', e)
+            new Notice(
+              'Error creating folder structure. Check console for details.'
+            )
+          }
+        })
+      )
+
+    // Container for template settings
+    const templateContainer = containerEl.createDiv(
+      'template-settings-container'
+    )
+
+    // Display each template with enable/disable toggle and edit button
+    this.plugin.settings.folderTemplates.forEach((template, index) => {
+      const templateDiv = templateContainer.createDiv('template-item')
+      templateDiv.style.border = '1px solid var(--background-modifier-border)'
+      templateDiv.style.borderRadius = '4px'
+      templateDiv.style.padding = '10px'
+      templateDiv.style.marginBottom = '10px'
+
+      // Template header
+      const header = templateDiv.createDiv('template-header')
+      header.style.display = 'flex'
+      header.style.justifyContent = 'space-between'
+      header.style.alignItems = 'center'
+      header.style.marginBottom = '8px'
+
+      const titleEl = header.createEl('h4', { text: template.name })
+      titleEl.style.margin = '0'
+
+      // Toggle to enable/disable template
+      const toggleContainer = header.createDiv()
+
+      new Setting(toggleContainer)
+        .setName('')
+        .setDesc('')
+        .addToggle((toggle) =>
+          toggle.setValue(template.isEnabled).onChange(async (value) => {
+            this.plugin.settings.folderTemplates[index].isEnabled = value
+            await this.plugin.saveSettings()
+
+            // Refresh the UI to update the dropdown
+            this.display()
+          })
+        )
+
+      // Template description
+      templateDiv.createEl('p', { text: template.description })
+
+      // Preview button
+      const previewBtn = templateDiv.createEl('button', {
+        text: 'Preview Structure'
+      })
+      previewBtn.style.marginRight = '8px'
+      previewBtn.addEventListener('click', () => {
+        try {
+          const structure = JSON.parse(template.structure)
+          new StructurePreviewModal(this.app, structure).open()
+        } catch (e) {
+          new Notice('Invalid structure format')
+        }
+      })
+
+      // Edit button (for non-default templates)
+      if (template.id !== 'default') {
+        const editBtn = templateDiv.createEl('button', {
+          text: 'Edit Template'
+        })
+        editBtn.addEventListener('click', () => {
+          new TemplateEditModal(
+            this.app,
+            template,
+            async (updatedTemplate: FolderTemplate) => {
+              // Save the updated template
+              const templateIndex =
+                this.plugin.settings.folderTemplates.findIndex(
+                  (t) => t.id === updatedTemplate.id
+                )
+
+              if (templateIndex >= 0) {
+                this.plugin.settings.folderTemplates[templateIndex] =
+                  updatedTemplate
+                await this.plugin.saveSettings()
+                this.display()
+              }
+            }
+          ).open()
+        })
+      }
+    })
+
+    // Button to add a new template
+    const addTemplateBtn = containerEl.createEl('button', {
+      text: '+ Add New Template',
+      cls: 'mod-cta'
+    })
+    addTemplateBtn.style.marginBottom = '20px'
+    addTemplateBtn.addEventListener('click', () => {
+      // Generate unique ID
+      const newId = 'template_' + Date.now()
+
+      // Create basic template
+      const newTemplate = {
+        id: newId,
+        name: 'New Template',
+        description: 'A custom folder structure',
+        isEnabled: true,
+        structure: JSON.stringify({
+          _Journal: {
+            y_$YEAR$: {
+              $MONTH$: {}
+            }
+          },
+          Templates: {}
+        })
+      }
+
+      // Open edit modal immediately
+      new TemplateEditModal(
+        this.app,
+        newTemplate,
+        async (template: FolderTemplate) => {
+          // Add the new template
+          this.plugin.settings.folderTemplates.push(template)
+          await this.plugin.saveSettings()
+          this.display()
+        }
+      ).open()
+    })
+
     new Setting(containerEl)
       .setName('Help')
       .setDesc('Open the help documentation')
       .addButton((btn) =>
-        btn
-          .setButtonText('Open Help')
-          .setCta()
-          .onClick(() => {
-            new HelpModal(this.app).open()
-          })
+        btn.setButtonText('Open Help').onClick(() => {
+          new HelpModal(this.app).open()
+        })
       )
   }
 }

@@ -1,4 +1,5 @@
 import { Vault, App, moment } from 'obsidian'
+import { LinkPluginSettings, DEFAULT_SETTINGS } from '../settings/settings'
 
 export const ROOT_FOLDER = '_Link'
 
@@ -114,16 +115,12 @@ export async function updateDailyNotesLocation(app: App): Promise<string> {
   try {
     const now = new Date()
     const year = now.getFullYear()
-    const month = now.getMonth() + 1
     const monthName = new Intl.DateTimeFormat('en-US', {
-      month: 'short'
+      month: 'long'
     }).format(now)
 
     const yearFolder = `${BASE_FOLDERS.JOURNAL}/y_${year}`
-    const monthFolder = `${yearFolder}/m_${String(month).padStart(
-      2,
-      '0'
-    )}_${monthName}`
+    const monthFolder = `${yearFolder}/${monthName}`
 
     // Ensure the folders exist
     await createFolderIfNotExists(app.vault, yearFolder)
@@ -167,29 +164,89 @@ export async function updateDailyNotesLocation(app: App): Promise<string> {
   }
 }
 
-export async function ensureFolderStructure(app: App): Promise<void> {
+export async function ensureFolderStructure(
+  app: App,
+  settings: LinkPluginSettings
+): Promise<void> {
   try {
     // Create root folder first
     await createFolderIfNotExists(app.vault, ROOT_FOLDER)
 
-    // Create base folders
-    for (const folder of Object.values(BASE_FOLDERS)) {
-      await createFolderIfNotExists(app.vault, folder)
+    // Find the active template
+    const activeTemplate = settings.folderTemplates.find(
+      (template) =>
+        template.id === settings.activeTemplateId && template.isEnabled
+    )
+
+    // If no active template is found, use the first enabled one
+    const templateToUse =
+      activeTemplate ||
+      settings.folderTemplates.find((template) => template.isEnabled) ||
+      settings.folderTemplates[0]
+
+    if (!templateToUse) {
+      console.error('No valid folder template found')
+      throw new Error('No valid folder template found')
     }
 
-    // Create sub-folders
-    for (const [baseFolder, subFolders] of Object.entries(SUB_FOLDERS)) {
-      for (const subFolder of subFolders) {
-        const fullPath = `${baseFolder}/${subFolder}`
-        await createFolderIfNotExists(app.vault, fullPath)
-      }
+    // Parse the structure
+    let structure: any
+    try {
+      structure = JSON.parse(templateToUse.structure)
+    } catch (e) {
+      console.error('Invalid template structure JSON:', e)
+      throw new Error('Invalid template structure')
     }
+
+    // Process template variables
+    const now = new Date()
+    const currentYear = now.getFullYear().toString()
+    const currentMonth = new Intl.DateTimeFormat('en-US', {
+      month: 'long'
+    }).format(now)
+
+    // Create the folder structure recursively
+    await createFolderStructure(app.vault, ROOT_FOLDER, structure, {
+      $YEAR$: currentYear,
+      $MONTH$: currentMonth
+    })
 
     // Update daily notes location
     await updateDailyNotesLocation(app)
   } catch (error) {
     console.error('Error ensuring folder structure:', error)
     throw new Error('Failed to create folder structure')
+  }
+}
+
+/**
+ * Recursively creates a folder structure based on a template
+ */
+async function createFolderStructure(
+  vault: Vault,
+  basePath: string,
+  structure: any,
+  variables: Record<string, string> = {}
+): Promise<void> {
+  for (const [folderName, subFolders] of Object.entries(structure)) {
+    // Replace any variables in the folder name
+    let processedFolderName = folderName
+    for (const [variable, value] of Object.entries(variables)) {
+      processedFolderName = processedFolderName.replace(variable, value)
+    }
+
+    // Create this folder
+    const fullPath = `${basePath}/${processedFolderName}`
+    await createFolderIfNotExists(vault, fullPath)
+
+    // Recursively create subfolders if any
+    if (
+      subFolders &&
+      typeof subFolders === 'object' &&
+      Object.keys(subFolders).length > 0
+    ) {
+      await createFolderStructure(vault, fullPath, subFolders, variables)
+    }
   }
 }
 
@@ -215,14 +272,10 @@ export async function ensureFutureDailyNoteFolder(
 ): Promise<string> {
   try {
     const year = date.year()
-    const month = date.month() + 1 // moment months are 0-based
-    const monthName = date.format('MMM')
+    const monthName = date.format('MMMM') // Use full month name
 
     const yearFolder = `${BASE_FOLDERS.JOURNAL}/y_${year}`
-    const monthFolder = `${yearFolder}/m_${String(month).padStart(
-      2,
-      '0'
-    )}_${monthName}`
+    const monthFolder = `${yearFolder}/${monthName}`
 
     // Create folders if they don't exist
     await createFolderIfNotExists(app.vault, yearFolder)
@@ -283,5 +336,103 @@ export async function createDailyNoteContent(
     return `# ${noteName}\n\nCreated: ${moment().format(
       'YYYY-MM-DD HH:mm'
     )}\n\n`
+  }
+}
+
+export async function migrateExistingDailyNotes(app: App): Promise<void> {
+  try {
+    console.debug(
+      'Starting migration of existing daily notes to new folder structure'
+    )
+
+    // Find all existing daily note folders with the old format
+    const journalFolder = BASE_FOLDERS.JOURNAL
+
+    // Get all year folders
+    const yearFolders = await app.vault.adapter.list(journalFolder)
+    if (!yearFolders || !yearFolders.folders) return
+
+    // Process each year folder
+    for (const yearFolder of yearFolders.folders) {
+      // Only process year folders that match the pattern y_YYYY
+      if (!yearFolder.match(/\/y_\d{4}$/)) continue
+
+      // Get all month folders in this year
+      const monthFolders = await app.vault.adapter.list(yearFolder)
+      if (!monthFolders || !monthFolders.folders) continue
+
+      // Process each month folder
+      for (const oldMonthFolder of monthFolders.folders) {
+        // Only process folders that match the old format m_MM_MMM
+        const oldFormatMatch = oldMonthFolder.match(/\/m_(\d{2})_(\w{3})$/)
+        if (!oldFormatMatch) continue
+
+        // Extract the month information
+        const monthNumber = parseInt(oldFormatMatch[1], 10)
+        const monthAbbrev = oldFormatMatch[2]
+
+        // Convert to full month name
+        const monthDate = new Date(2000, monthNumber - 1, 1) // Use any year, the month is what matters
+        const fullMonthName = new Intl.DateTimeFormat('en-US', {
+          month: 'long'
+        }).format(monthDate)
+
+        // Create the new month folder path
+        const pathParts = yearFolder.split('/')
+        const yearFolderName = pathParts[pathParts.length - 1]
+        const year = yearFolderName.replace('y_', '')
+        const newMonthFolder = `${yearFolder}/${fullMonthName}`
+
+        // Create the new folder if it doesn't exist
+        if (!(await app.vault.adapter.exists(newMonthFolder))) {
+          await app.vault.createFolder(newMonthFolder)
+          console.debug(`Created new month folder: ${newMonthFolder}`)
+        }
+
+        // Move all files from old folder to new folder
+        const oldFolderContents = await app.vault.adapter.list(oldMonthFolder)
+        if (oldFolderContents && oldFolderContents.files) {
+          for (const file of oldFolderContents.files) {
+            const fileName = file.split('/').pop()
+            const newFilePath = `${newMonthFolder}/${fileName}`
+
+            // Move the file if the destination doesn't exist
+            if (!(await app.vault.adapter.exists(newFilePath))) {
+              // Read file content
+              const content = await app.vault.adapter.read(file)
+
+              // Create file in new location
+              await app.vault.create(newFilePath, content)
+
+              // Delete original file
+              const originalFile = app.vault.getAbstractFileByPath(file)
+              if (originalFile) {
+                await app.vault.delete(originalFile)
+              }
+
+              console.debug(`Migrated file: ${file} → ${newFilePath}`)
+            }
+          }
+        }
+
+        // Remove the old folder if it's empty
+        const newCheckOldFolder = await app.vault.adapter.list(oldMonthFolder)
+        if (
+          !newCheckOldFolder.files.length &&
+          !newCheckOldFolder.folders.length
+        ) {
+          const oldFolder = app.vault.getAbstractFileByPath(oldMonthFolder)
+          if (oldFolder) {
+            await app.vault.delete(oldFolder)
+            console.debug(`Removed empty old folder: ${oldMonthFolder}`)
+          }
+        }
+      }
+    }
+
+    console.debug('Migration of existing daily notes completed')
+  } catch (error) {
+    console.error('Error migrating existing daily notes:', error)
+    throw new Error('Failed to migrate existing daily notes')
   }
 }
