@@ -27,7 +27,7 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
     description: 'The default folder structure with all components',
     isEnabled: true,
     structure: JSON.stringify({
-      _Journal: {
+      Journal: {
         y_$YEAR$: {
           $MONTH$: {}
         }
@@ -39,7 +39,7 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
         Other: {}
       },
       Templates: {},
-      _Workspace: {
+      Workspace: {
         'Client-X': {
           'Project-Alpha': {}
         },
@@ -50,7 +50,7 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
           'Project-Zen': {}
         }
       },
-      _References: {
+      References: {
         Books: {
           Technology: {},
           Business: {}
@@ -77,7 +77,7 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
     description: 'Just the essential components (Journal and Templates)',
     isEnabled: true,
     structure: JSON.stringify({
-      _Journal: {
+      Journal: {
         y_$YEAR$: {
           $MONTH$: {}
         }
@@ -91,13 +91,13 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
     description: 'Optimized for research and reference materials',
     isEnabled: false,
     structure: JSON.stringify({
-      _Journal: {
+      Journal: {
         y_$YEAR$: {
           $MONTH$: {}
         }
       },
       Templates: {},
-      _References: {
+      References: {
         Books: {
           Technology: {},
           Science: {},
