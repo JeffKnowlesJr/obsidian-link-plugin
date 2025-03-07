@@ -1,176 +1,118 @@
-import { App, Modal, Setting, moment } from 'obsidian'
+import {
+  App,
+  Modal,
+  Setting,
+  TextComponent,
+  DropdownComponent,
+  BaseComponent
+} from 'obsidian'
+import { getCurrentMoment, addDay } from '../utils/momentHelper'
 import { BASE_FOLDERS } from '../utils/folderUtils'
 
-interface NoteCreationResult {
+interface NewNoteResult {
   name: string
   folder: string
-  isFutureDaily?: boolean
   date?: moment.Moment
 }
 
 export class NewNoteModal extends Modal {
-  private onSubmit: (result: NoteCreationResult | null) => void
-  private inputEl: HTMLInputElement
-  private folderDropdown: Setting
-  private result: NoteCreationResult = { name: '', folder: '' }
-  private isFutureDaily: boolean = false
-  private containers: {
-    datePickerContainer?: HTMLDivElement
+  result: NewNoteResult
+  containers: {
     nameContainer?: HTMLDivElement
     folderContainer?: HTMLDivElement
-  } = {}
+    datePickerContainer?: HTMLDivElement
+  }
+  folderDropdown?: Setting
+  onSubmit: (result: NewNoteResult) => void
 
-  constructor(app: App, onSubmit: (result: NoteCreationResult | null) => void) {
+  constructor(app: App, onSubmit: (result: NewNoteResult) => void) {
     super(app)
     this.onSubmit = onSubmit
+    this.result = {
+      name: '',
+      folder: BASE_FOLDERS.JOURNAL
+    }
+    this.containers = {}
   }
 
   onOpen() {
     const { contentEl } = this
+    contentEl.empty()
 
-    // Title
-    contentEl.createEl('h2', { text: 'Create New Note' })
-
-    // Note Type Selection
-    new Setting(contentEl)
-      .setName('Note Type')
-      .setDesc('Choose the type of note to create')
-      .addDropdown((dropdown) => {
-        dropdown
-          .addOption('regular', 'Regular Note')
-          .addOption('future', 'Future Daily Note')
-          .onChange((value) => {
-            this.isFutureDaily = value === 'future'
-            if (this.isFutureDaily) {
-              this.result.folder = BASE_FOLDERS.JOURNAL
-              this.folderDropdown?.components[0]?.setValue(BASE_FOLDERS.JOURNAL)
-            }
-            this.result.isFutureDaily = this.isFutureDaily
-            this.updateFormVisibility()
-          })
-      })
-
-    // Date Picker (initially hidden)
-    this.containers.datePickerContainer = contentEl.createDiv()
-    this.containers.datePickerContainer.style.display = 'none'
-
-    new Setting(this.containers.datePickerContainer)
-      .setName('Date')
-      .setDesc('Choose the date for the future daily note')
-      .addText((text) => {
-        const datePickerEl = text.inputEl
-        datePickerEl.type = 'date'
-        const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD')
-        datePickerEl.value = tomorrow
-        datePickerEl.min = tomorrow
-        datePickerEl.addEventListener('change', () => {
-          this.result.date = moment(datePickerEl.value)
-          if (this.isFutureDaily) {
-            this.result.name = this.result.date.format('YYYY-MM-DD dddd')
-          }
-          if (this.inputEl) {
-            this.inputEl.value = this.result.name
-          }
-        })
-        // Set initial date
-        this.result.date = moment(tomorrow)
-        this.result.name = this.result.date.format('YYYY-MM-DD dddd')
-      })
-
-    // Note Name Input
+    // Create containers
     this.containers.nameContainer = contentEl.createDiv()
-    new Setting(this.containers.nameContainer)
-      .setName('Note Name')
-      .setDesc('Enter the name for your new note')
-      .addText((text) => {
-        this.inputEl = text.inputEl
-        text.inputEl.placeholder = 'Note name'
-        text.inputEl.addEventListener('input', () => {
-          if (!this.isFutureDaily) {
-            this.result.name = text.inputEl.value
-          }
-        })
-        text.inputEl.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && this.isValid()) {
-            this.close()
-            this.onSubmit(this.result)
-          }
-        })
-      })
-
-    // Folder Selection
     this.containers.folderContainer = contentEl.createDiv()
+    this.containers.datePickerContainer = contentEl.createDiv()
+
+    // Add folder dropdown
     this.folderDropdown = new Setting(this.containers.folderContainer)
-      .setName('Location')
+      .setName('Folder')
       .setDesc('Choose where to create the note')
       .addDropdown((dropdown) => {
-        // Add base folders
-        Object.entries(BASE_FOLDERS).forEach(([key, value]) => {
-          dropdown.addOption(value, value)
+        Object.values(BASE_FOLDERS).forEach((folder) => {
+          dropdown.addOption(folder, folder)
         })
-
-        dropdown.onChange((value) => {
-          if (!this.isFutureDaily) {
-            this.result.folder = value
-          }
-        })
-
-        // Set default value
         dropdown.setValue(BASE_FOLDERS.JOURNAL)
-        this.result.folder = BASE_FOLDERS.JOURNAL
+        dropdown.onChange((value) => {
+          this.result.folder = value
+          this.updateDisplay()
+        })
       })
 
-    // Buttons
-    const buttonDiv = contentEl.createDiv('button-container')
-    buttonDiv.style.display = 'flex'
-    buttonDiv.style.justifyContent = 'flex-end'
-    buttonDiv.style.gap = '10px'
-    buttonDiv.style.marginTop = '20px'
+    // Add date picker for journal notes
+    new Setting(this.containers.datePickerContainer)
+      .setName('Date')
+      .setDesc('Choose the date for the note')
+      .addText((text) => {
+        const tomorrow = addDay(getCurrentMoment()).format('YYYY-MM-DD')
+        const datePickerEl = text.inputEl
+        datePickerEl.type = 'date'
+        datePickerEl.value = tomorrow
+        datePickerEl.addEventListener('change', () => {
+          if (datePickerEl.value) {
+            this.result.date = getCurrentMoment()
+            if (this.result.date) {
+              this.result.name = this.result.date.format('YYYY-MM-DD dddd')
+            }
+          }
+        })
+        this.result.date = getCurrentMoment()
+      })
 
-    // Create Button
-    const createButton = buttonDiv.createEl('button', {
-      text: 'Create',
-      cls: 'mod-cta'
-    })
-    createButton.addEventListener('click', () => {
-      if (this.isValid()) {
-        this.close()
-        this.onSubmit(this.result)
-      }
-    })
+    // Add name input
+    new Setting(this.containers.nameContainer)
+      .setName('Name')
+      .setDesc('Enter the name for your note')
+      .addText((text) => {
+        text.onChange((value) => {
+          this.result.name = value
+        })
+      })
 
-    // Cancel Button
-    const cancelButton = buttonDiv.createEl('button', { text: 'Cancel' })
-    cancelButton.addEventListener('click', () => {
-      this.close()
-      this.onSubmit(null)
-    })
+    // Add submit button
+    new Setting(contentEl).addButton((btn) =>
+      btn
+        .setButtonText('Create')
+        .setCta()
+        .onClick(() => {
+          this.close()
+          this.onSubmit(this.result)
+        })
+    )
 
-    // Initial visibility
-    this.updateFormVisibility()
-
-    // Focus input
-    this.inputEl.focus()
+    this.updateDisplay()
   }
 
-  private updateFormVisibility() {
-    if (this.isFutureDaily) {
-      this.containers.datePickerContainer.style.display = 'block'
-      this.containers.nameContainer.style.display = 'none'
-      this.containers.folderContainer.style.display = 'none'
+  private updateDisplay() {
+    if (this.result.folder === BASE_FOLDERS.JOURNAL) {
+      this.containers.datePickerContainer!.style.display = 'block'
+      this.containers.nameContainer!.style.display = 'none'
+      this.containers.folderContainer!.style.display = 'none'
     } else {
-      this.containers.datePickerContainer.style.display = 'none'
-      this.containers.nameContainer.style.display = 'block'
-      this.containers.folderContainer.style.display = 'block'
-      this.result.date = undefined
+      this.containers.datePickerContainer!.style.display = 'none'
+      this.containers.nameContainer!.style.display = 'block'
+      this.containers.folderContainer!.style.display = 'block'
     }
-  }
-
-  private isValid(): boolean {
-    if (this.isFutureDaily) {
-      return Boolean(this.result.date)
-    }
-    return Boolean(this.result.name && this.result.folder)
   }
 
   onClose() {
