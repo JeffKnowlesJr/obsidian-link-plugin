@@ -42,47 +42,52 @@ interface ILinkPlugin extends Plugin {
 
 export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
   try {
-    // Get selected text
-    const selectedText = editor.getSelection()
-    if (!selectedText) {
-      console.debug('No text selected')
+    // Get note name and options from modal
+    const noteOptions = await getNoteName(editor, plugin)
+    if (!noteOptions) {
+      console.debug('Note creation cancelled')
       return
     }
 
-    // Get current date
-    const date = getCurrentMoment()
-    const prevDate = subtractDay(date)
-    const nextDate = addDay(date)
+    // Sanitize file name
+    const sanitizedName = await validateAndSanitizeFileName(noteOptions.name)
 
-    // Create note content
-    const content = `---
-title: ${selectedText}
-created: ${formatTime()}
-prev: '[[${prevDate.format('YYYY-MM-DD')}]]'
-next: '[[${nextDate.format('YYYY-MM-DD')}]]'
----
+    let fullPath: string
+    if (noteOptions.folder === BASE_FOLDERS.JOURNAL && noteOptions.date) {
+      // Handle journal note with date
+      const dateStr = noteOptions.date.format('YYYY-MM-DD')
+      const folderPath = `${ROOT_FOLDER}/${
+        BASE_FOLDERS.JOURNAL
+      }/${noteOptions.date.format('YYYY/MM')}`
 
-# ${selectedText}
+      // Ensure folder exists
+      await ensureFutureDailyNoteFolder(plugin.app, noteOptions.date)
 
-## Notes
+      fullPath = `${folderPath}/${dateStr} ${sanitizedName}`
+      noteOptions.isFutureDaily = true
+    } else {
+      // Handle normal note
+      fullPath = `${ROOT_FOLDER}/${noteOptions.folder}/${sanitizedName}`
+    }
 
-## References
+    // Create the file
+    const file = await createNoteFile(
+      plugin,
+      fullPath,
+      sanitizedName,
+      noteOptions
+    )
 
-## Tasks
-- [ ] First task
-
-## Related
-- [[${prevDate.format('YYYY-MM-DD')}]]
-- [[${nextDate.format('YYYY-MM-DD')}]]
-`
-
-    // Create the note
-    const file = await plugin.app.vault.create(`${selectedText}.md`, content)
+    // Insert link to the file at cursor position
+    await insertNoteLinkInEditor(editor, fullPath)
 
     // Open the new note
     await plugin.app.workspace.getLeaf(false).openFile(file)
+
+    new Notice(`Created note: ${sanitizedName}`)
   } catch (error) {
     console.error('Error creating linked note:', error)
+    handlePluginError(error as Error, 'Creating linked note')
   }
 }
 
@@ -104,10 +109,8 @@ async function getNoteName(
 
     // If there's a selection, pre-fill the note name
     if (selection) {
-      // @ts-ignore - We know the modal has this property
-      modal.inputEl.value = selection
-      // @ts-ignore - We know the modal has this property
-      modal.result.name = selection
+      // Use the proper method to set the input value
+      modal.setNameInputValue(selection)
     }
   })
 }

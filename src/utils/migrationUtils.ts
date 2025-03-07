@@ -4,7 +4,8 @@ import { LinkPluginSettings } from '../settings/settings'
 // Define folder structure types
 export enum FolderStructureType {
   LEGACY = 'legacy', // Structure with underscores (_Link, _Journal, etc.)
-  HUGO_COMPATIBLE = 'hugo_compatible' // Structure without underscores for Hugo compatibility
+  HUGO_COMPATIBLE = 'hugo_compatible', // Structure without underscores for Hugo compatibility
+  VAULT_ROOT = 'vault_root' // Structure directly in vault root
 }
 
 // Legacy root folder (with underscore)
@@ -13,7 +14,10 @@ export const LEGACY_ROOT = '_Link'
 // Hugo-compatible root folder (no underscore)
 export const HUGO_ROOT = 'Link'
 
-// Base folder mappings between the two structures
+// Vault root (no prefix folder)
+export const VAULT_ROOT = ''
+
+// Base folder mappings between the structures
 export const FOLDER_MAPPINGS = {
   // Legacy → Hugo-compatible
   [`${LEGACY_ROOT}/_Journal`]: `${HUGO_ROOT}/Journal`,
@@ -23,13 +27,23 @@ export const FOLDER_MAPPINGS = {
   [`${LEGACY_ROOT}/Templates`]: `${HUGO_ROOT}/Templates`,
   [`${LEGACY_ROOT}/Archive`]: `${HUGO_ROOT}/Archive`,
 
-  // Additional mappings for reverse direction (needed for proper bidirectional mapping)
-  [`${HUGO_ROOT}/Journal`]: `${LEGACY_ROOT}/_Journal`,
-  [`${HUGO_ROOT}/References`]: `${LEGACY_ROOT}/_References`,
-  [`${HUGO_ROOT}/Workspace`]: `${LEGACY_ROOT}/_Workspace`,
-  [`${HUGO_ROOT}/Documents`]: `${LEGACY_ROOT}/Documents`,
-  [`${HUGO_ROOT}/Templates`]: `${LEGACY_ROOT}/Templates`
-  // Archive mapping for Hugo→Legacy is already included above
+  // Hugo-compatible → Vault root
+  [`${HUGO_ROOT}/Journal`]: `Journal`,
+  [`${HUGO_ROOT}/References`]: `References`,
+  [`${HUGO_ROOT}/Workspace`]: `Workspace`,
+  [`${HUGO_ROOT}/Documents`]: `Documents`,
+  [`${HUGO_ROOT}/Templates`]: `Templates`,
+  [`${HUGO_ROOT}/Archive`]: `Archive`
+}
+
+// Reverse mappings for migrations back to Hugo structure if needed
+export const REVERSE_FOLDER_MAPPINGS = {
+  [`Journal`]: `${HUGO_ROOT}/Journal`,
+  [`References`]: `${HUGO_ROOT}/References`,
+  [`Workspace`]: `${HUGO_ROOT}/Workspace`,
+  [`Documents`]: `${HUGO_ROOT}/Documents`,
+  [`Templates`]: `${HUGO_ROOT}/Templates`,
+  [`Archive`]: `${HUGO_ROOT}/Archive`
 }
 
 /**
@@ -38,13 +52,20 @@ export const FOLDER_MAPPINGS = {
 export async function detectFolderStructureType(
   vault: any
 ): Promise<FolderStructureType> {
-  // Check if legacy root exists
+  // Check for each root type
   const legacyRootExists = await vault.adapter.exists(LEGACY_ROOT)
-
-  // Check if hugo-compatible root exists
   const hugoRootExists = await vault.adapter.exists(HUGO_ROOT)
 
-  // If both exist, determine which has more content
+  // Check for folders in vault root
+  const journalExists = await vault.adapter.exists('Journal')
+  const templatesExists = await vault.adapter.exists('Templates')
+
+  // If vault root folders exist, use vault root type
+  if (journalExists || templatesExists) {
+    return FolderStructureType.VAULT_ROOT
+  }
+
+  // If both legacy and hugo exist, determine which has more content
   if (legacyRootExists && hugoRootExists) {
     const legacyContents = await vault.adapter.list(LEGACY_ROOT)
     const hugoContents = await vault.adapter.list(HUGO_ROOT)
@@ -58,9 +79,11 @@ export async function detectFolderStructureType(
   }
 
   // Otherwise return based on which exists
-  return legacyRootExists
-    ? FolderStructureType.LEGACY
-    : FolderStructureType.HUGO_COMPATIBLE
+  if (legacyRootExists) return FolderStructureType.LEGACY
+  if (hugoRootExists) return FolderStructureType.HUGO_COMPATIBLE
+
+  // Default to vault root if nothing exists yet
+  return FolderStructureType.VAULT_ROOT
 }
 
 /**

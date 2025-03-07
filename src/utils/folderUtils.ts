@@ -7,15 +7,16 @@ import {
   getCurrentMoment
 } from './momentHelper'
 
-export const ROOT_FOLDER = '_Link'
+// Use empty string for ROOT_FOLDER to indicate vault root
+export const ROOT_FOLDER = ''
 
 export const BASE_FOLDERS = {
-  JOURNAL: `${ROOT_FOLDER}/_Journal`,
-  DOCUMENTS: `${ROOT_FOLDER}/Documents`,
-  TEMPLATES: `${ROOT_FOLDER}/Templates`,
-  WORKSPACE: `${ROOT_FOLDER}/_Workspace`,
-  REFERENCES: `${ROOT_FOLDER}/_References`,
-  ARCHIVE: `${ROOT_FOLDER}/Archive`
+  JOURNAL: `Journal`,
+  DOCUMENTS: `Documents`,
+  TEMPLATES: `Templates`,
+  WORKSPACE: `Workspace`,
+  REFERENCES: `References`,
+  ARCHIVE: `Archive`
 } as const
 
 export const SUB_FOLDERS = {

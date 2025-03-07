@@ -26,6 +26,7 @@ import {
   ensureFolderStructure,
   updateDailyNotesLocation,
   ROOT_FOLDER,
+  BASE_FOLDERS,
   createDailyNoteContent,
   migrateExistingDailyNotes
 } from './utils/folderUtils'
@@ -54,7 +55,7 @@ class ConfirmationModal extends Modal {
 
     contentEl.createEl('h2', { text: 'Regenerate Folder Structure?' })
     contentEl.createEl('p', {
-      text: `The ${ROOT_FOLDER} folder has been deleted. Would you like to regenerate the folder structure?`
+      text: `Essential plugin folders are missing. Would you like to regenerate the folder structure?`
     })
 
     const buttonContainer = contentEl.createDiv('button-container')
@@ -109,14 +110,15 @@ export default class LinkPlugin extends Plugin {
         await this.saveSettings()
       }
 
-      // Ensure folder structure matches the configured type
-      console.log(
-        `Ensuring folder structure matches ${this.settings.folderStructureType}...`
-      )
+      // Ensure folder structure is using VAULT_ROOT type
+      console.log(`Ensuring folders use vault root structure...`)
+
+      this.settings.folderStructureType = FolderStructureType.VAULT_ROOT
+      await this.saveSettings()
 
       const migrationLog = await migrateFolderStructure(
         this.app,
-        this.settings.folderStructureType,
+        FolderStructureType.VAULT_ROOT,
         true, // preserve files
         this.settings.alwaysEnsureArchive
       )
@@ -255,14 +257,22 @@ export default class LinkPlugin extends Plugin {
   }
 
   private registerRootFolderCheck() {
-    // Check every 5 seconds for root folder existence
+    // Check every 5 seconds for essential folders
     this.registerInterval(
       window.setInterval(async () => {
         try {
-          const rootExists = await this.app.vault.adapter.exists(ROOT_FOLDER)
-          if (!rootExists) {
+          // Check for critical folders in the vault root
+          const templatesExists = await this.app.vault.adapter.exists(
+            BASE_FOLDERS.TEMPLATES
+          )
+          const journalExists = await this.app.vault.adapter.exists(
+            BASE_FOLDERS.JOURNAL
+          )
+
+          // If both essential folders are missing, prompt for regeneration
+          if (!templatesExists && !journalExists) {
             console.debug(
-              `${ROOT_FOLDER} folder not found, prompting for regeneration`
+              `Essential plugin folders not found, prompting for regeneration`
             )
             new ConfirmationModal(this.app, async () => {
               try {
@@ -270,9 +280,7 @@ export default class LinkPlugin extends Plugin {
                 const newLocation = await updateDailyNotesLocation(this.app)
                 this.settings.dailyNotesLocation = newLocation
                 await this.saveSettings()
-                new Notice(
-                  `${ROOT_FOLDER} folder structure has been regenerated`
-                )
+                new Notice(`Essential folder structure has been regenerated`)
               } catch (error) {
                 console.error('Error regenerating folder structure:', error)
                 new Notice('Failed to regenerate folder structure')
@@ -280,7 +288,7 @@ export default class LinkPlugin extends Plugin {
             }).open()
           }
         } catch (error) {
-          console.error('Error checking root folder existence:', error)
+          console.error('Error checking essential folders:', error)
         }
       }, 5000)
     )
@@ -479,6 +487,28 @@ export default class LinkPlugin extends Plugin {
 
     // Show success notice
     new Notice(`Migration to ${targetType} folder structure complete`)
+  }
+
+  /**
+   * Applies the selected template structure immediately
+   */
+  async applySelectedTemplate(): Promise<void> {
+    console.log(
+      `Applying template structure for template: ${this.settings.activeTemplateId}`
+    )
+
+    try {
+      // Ensure folder structure is updated with the selected template
+      await ensureFolderStructure(this.app, this.settings)
+
+      // Show success notice
+      new Notice(
+        `Template "${this.settings.activeTemplateId}" applied successfully`
+      )
+    } catch (error) {
+      console.error('Error applying template:', error)
+      new Notice(`Error applying template: ${error.message}`)
+    }
   }
 }
 

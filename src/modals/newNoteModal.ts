@@ -23,6 +23,8 @@ export class NewNoteModal extends Modal {
     datePickerContainer?: HTMLDivElement
   }
   folderDropdown?: Setting
+  nameInput?: HTMLInputElement
+  dateInput?: HTMLInputElement
   onSubmit: (result: NewNoteResult) => void
 
   constructor(app: App, onSubmit: (result: NewNoteResult) => void) {
@@ -60,34 +62,43 @@ export class NewNoteModal extends Modal {
       })
 
     // Add date picker for journal notes
-    new Setting(this.containers.datePickerContainer)
+    const datePickerSetting = new Setting(this.containers.datePickerContainer)
       .setName('Date')
       .setDesc('Choose the date for the note')
-      .addText((text) => {
-        const tomorrow = addDay(getCurrentMoment()).format('YYYY-MM-DD')
-        const datePickerEl = text.inputEl
-        datePickerEl.type = 'date'
-        datePickerEl.value = tomorrow
-        datePickerEl.addEventListener('change', () => {
-          if (datePickerEl.value) {
-            this.result.date = getCurrentMoment()
-            if (this.result.date) {
-              this.result.name = this.result.date.format('YYYY-MM-DD dddd')
-            }
-          }
-        })
-        this.result.date = getCurrentMoment()
+
+    datePickerSetting.addText((text) => {
+      const tomorrow = addDay(getCurrentMoment()).format('YYYY-MM-DD')
+      const datePickerEl = text.inputEl
+      this.dateInput = datePickerEl
+      datePickerEl.type = 'date'
+      datePickerEl.value = tomorrow
+
+      // Set initial date
+      const initialDate = getCurrentMoment()
+      this.result.date = initialDate
+      this.result.name = initialDate.format('YYYY-MM-DD dddd')
+
+      datePickerEl.addEventListener('change', () => {
+        if (datePickerEl.value) {
+          // Parse the date from the input value
+          const momentDate = window.moment(datePickerEl.value, 'YYYY-MM-DD')
+          this.result.date = momentDate
+          this.result.name = momentDate.format('YYYY-MM-DD dddd')
+        }
       })
+    })
 
     // Add name input
-    new Setting(this.containers.nameContainer)
+    const nameInputSetting = new Setting(this.containers.nameContainer)
       .setName('Name')
       .setDesc('Enter the name for your note')
-      .addText((text) => {
-        text.onChange((value) => {
-          this.result.name = value
-        })
+
+    nameInputSetting.addText((text) => {
+      this.nameInput = text.inputEl
+      text.onChange((value) => {
+        this.result.name = value
       })
+    })
 
     // Add submit button
     new Setting(contentEl).addButton((btn) =>
@@ -103,11 +114,22 @@ export class NewNoteModal extends Modal {
     this.updateDisplay()
   }
 
+  /**
+   * Set the name input value
+   * @param value The value to set
+   */
+  setNameInputValue(value: string) {
+    if (this.nameInput) {
+      this.nameInput.value = value
+      this.result.name = value
+    }
+  }
+
   private updateDisplay() {
     if (this.result.folder === BASE_FOLDERS.JOURNAL) {
       this.containers.datePickerContainer!.style.display = 'block'
       this.containers.nameContainer!.style.display = 'none'
-      this.containers.folderContainer!.style.display = 'none'
+      this.containers.folderContainer!.style.display = 'block'
     } else {
       this.containers.datePickerContainer!.style.display = 'none'
       this.containers.nameContainer!.style.display = 'block'

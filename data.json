@@ -27,6 +27,8 @@
     }
   ],
   "activeTemplateId": "default",
+  "folderStructureType": "legacy",
+  "alwaysEnsureArchive": true,
   "hugoCompatibleLinks": true,
   "defaultLinkStyle": "markdown",
   "autoFormatLinks": true,
