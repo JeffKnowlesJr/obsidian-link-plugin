@@ -89,6 +89,14 @@ The plugin automatically maintains a structured folder hierarchy:
 - Fallback behaviors for missing templates
 - Comprehensive error logging for troubleshooting
 
+## Changelog
+
+### Version 1.1.0
+
+- **Breaking Change**: Removed root `_Link` folder and leading underscores from folder names for better Hugo compatibility
+- Folder structure remains the same but without problematic underscore prefixes
+- Existing notes will be automatically migrated to the new structure
+
 ## Known Bugs
 
 ### TypeScript Errors with moment.js Mock
