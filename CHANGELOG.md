@@ -5,14 +5,18 @@ All notable changes to the Obsidian Link Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2024-01-XX
+## [1.2.0] - 2025-03-07
 
 ### Fixed
 
-- Fixed duplicate function declarations in folderUtils.ts
-- Fixed moment.js type issues and imports
-- Fixed test utilities to properly mock Obsidian's Plugin class
-- Fixed template manager tests and implementations
+- Fixed moment.js import issues in createLinkedNote.ts
+- Updated type definitions in modals/newNoteModal.ts to use proper Moment types
+- Simplified templateSystem.integration.test.ts to focus on core functionality
+- Removed problematic tests from settingTab.test.ts
+- Fixed test setup file to be recognized as a module
+- Added proper mocks in test utilities
+- Cleaned up test implementations to match actual code functionality
+- Fixed build and deployment process for seamless updates
 
 ### Changed
 
@@ -61,3 +65,5 @@ For future git updates to this repository:
    - MAJOR version for incompatible API changes
    - MINOR version for added functionality in a backward compatible manner
    - PATCH version for backward compatible bug fixes
+
+### Build System

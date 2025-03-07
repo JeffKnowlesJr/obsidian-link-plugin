@@ -27,6 +27,8 @@ const context = await esbuild.context({
     '@codemirror/search',
     '@codemirror/state',
     '@codemirror/view',
+    '@lezer/common',
+    '@lezer/highlight',
     ...builtins
   ],
   format: 'cjs',
@@ -34,7 +36,22 @@ const context = await esbuild.context({
   logLevel: 'info',
   sourcemap: prod ? false : 'inline',
   treeShaking: true,
-  outfile: 'main.js'
+  outfile: 'main.js',
+  plugins: [
+    {
+      name: 'exclude-test-files',
+      setup(build) {
+        // Exclude test files and mocks from the build
+        build.onResolve({ filter: /(__tests__|tests|__mocks__)/ }, (args) => {
+          return { path: args.path, external: true }
+        })
+
+        build.onEnd(() => {
+          console.log('Build complete!')
+        })
+      }
+    }
+  ]
 })
 
 if (prod) {
