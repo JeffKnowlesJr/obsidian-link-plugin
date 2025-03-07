@@ -30,6 +30,12 @@ import {
   migrateExistingDailyNotes
 } from './utils/folderUtils'
 import { parseDate } from './utils/momentHelper'
+import {
+  migrateFolderStructure,
+  FolderStructureType,
+  detectFolderStructureType,
+  ensureArchiveFolder
+} from './utils/migrationUtils'
 
 // Fix moment import
 const momentInstance = (window as any).moment || moment
@@ -94,6 +100,29 @@ export default class LinkPlugin extends Plugin {
       console.debug('Loading plugin settings...')
       await this.loadSettings()
       console.debug('Settings loaded successfully:', this.settings)
+
+      // Detect current folder structure type if not explicitly set
+      if (!this.settings.folderStructureType) {
+        this.settings.folderStructureType = await detectFolderStructureType(
+          this.app.vault
+        )
+        await this.saveSettings()
+      }
+
+      // Ensure folder structure matches the configured type
+      console.log(
+        `Ensuring folder structure matches ${this.settings.folderStructureType}...`
+      )
+
+      const migrationLog = await migrateFolderStructure(
+        this.app,
+        this.settings.folderStructureType,
+        true, // preserve files
+        this.settings.alwaysEnsureArchive
+      )
+
+      // Log migration results
+      migrationLog.forEach((entry) => console.log(entry))
 
       // Ensure folder structure and update daily notes location
       console.debug('Ensuring folder structure...')
@@ -425,6 +454,31 @@ export default class LinkPlugin extends Plugin {
 
     // Start the first check
     scheduleNextCheck()
+  }
+
+  /**
+   * Migrates to the specified folder structure type
+   */
+  async migrateToFolderStructure(
+    targetType: FolderStructureType
+  ): Promise<void> {
+    // Update the setting
+    this.settings.folderStructureType = targetType
+    await this.saveSettings()
+
+    // Perform the migration
+    const migrationLog = await migrateFolderStructure(
+      this.app,
+      targetType,
+      true, // preserve files
+      this.settings.alwaysEnsureArchive
+    )
+
+    // Log migration results
+    migrationLog.forEach((entry) => console.log(entry))
+
+    // Show success notice
+    new Notice(`Migration to ${targetType} folder structure complete`)
   }
 }
 

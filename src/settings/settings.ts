@@ -1,3 +1,5 @@
+import { FolderStructureType } from '../utils/migrationUtils'
+
 export interface FolderTemplate {
   id: string
   name: string
@@ -16,6 +18,10 @@ export interface LinkPluginSettings {
   // Folder Template Management
   folderTemplates: FolderTemplate[]
   activeTemplateId: string
+
+  // Folder Structure Options
+  folderStructureType: FolderStructureType // Legacy or Hugo-compatible
+  alwaysEnsureArchive: boolean // Whether to ensure Archive folder always exists
 
   // Link Processing
   hugoCompatibleLinks: boolean // Ensure links are Hugo-compatible
@@ -131,6 +137,10 @@ export const DEFAULT_SETTINGS: LinkPluginSettings = {
   // Folder Template Management
   folderTemplates: DEFAULT_TEMPLATES,
   activeTemplateId: 'default',
+
+  // Folder Structure Options
+  folderStructureType: FolderStructureType.LEGACY,
+  alwaysEnsureArchive: true,
 
   // Link Processing
   hugoCompatibleLinks: true
