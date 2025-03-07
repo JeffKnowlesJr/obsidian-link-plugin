@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2024-01-XX
 
+### Fixed
+
+- Fixed duplicate function declarations in folderUtils.ts
+- Fixed moment.js type issues and imports
+- Fixed test utilities to properly mock Obsidian's Plugin class
+- Fixed template manager tests and implementations
+
 ### Changed
 
 - **Breaking**: Removed root `_Link` folder and leading underscores from folder names for Hugo compatibility
@@ -32,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored settings interface to be more focused and maintainable
 - Improved folder check scheduling with randomized intervals
 - Removed dependencies on file explorer API
+- Added proper TypeScript types for Moment.js integration
+- Improved test utilities with proper mocking of Obsidian APIs
 
 ### Development Notes
 
