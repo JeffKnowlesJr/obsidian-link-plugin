@@ -4,7 +4,7 @@
  */
 
 import { Editor, Notice, TFile, App } from 'obsidian'
-import type { Moment } from 'moment'
+import { Moment } from 'moment'
 import { sanitizeFileName } from '../utils/fileUtils'
 import { NewNoteModal } from '../modals/newNoteModal'
 import {
@@ -19,11 +19,13 @@ import {
 } from '../utils/folderUtils'
 import LinkPlugin from '../main'
 import {
-  subtractDay,
-  addDay,
+  formatDate,
   formatTime,
-  getCurrentMoment
+  getCurrentMoment,
+  addDay,
+  subtractDay
 } from '../utils/momentHelper'
+import type { Plugin } from 'obsidian'
 
 interface NoteCreationResult {
   name: string
@@ -32,11 +34,13 @@ interface NoteCreationResult {
   date?: Moment
 }
 
-export interface LinkPlugin {
-  app: App
+interface ILinkPlugin extends Plugin {
+  settings: {
+    hugoCompatibleLinks: boolean
+  }
 }
 
-export async function createLinkedNote(plugin: LinkPlugin, editor: Editor) {
+export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
   try {
     // Get selected text
     const selectedText = editor.getSelection()
@@ -84,7 +88,7 @@ next: '[[${nextDate.format('YYYY-MM-DD')}]]'
 
 async function getNoteName(
   editor: Editor,
-  plugin: LinkPlugin
+  plugin: ILinkPlugin
 ): Promise<NoteCreationResult | null> {
   const selection = editor.getSelection()
 
@@ -116,7 +120,7 @@ async function validateAndSanitizeFileName(name: string): Promise<string> {
 }
 
 async function createNoteFile(
-  plugin: LinkPlugin,
+  plugin: ILinkPlugin,
   fullPath: string,
   noteName: string,
   options: NoteCreationResult
@@ -162,8 +166,8 @@ async function createDailyNoteContent(
 
     if (date) {
       // Create previous and next dates
-      const prevDate = moment(date).subtract(1, 'day')
-      const nextDate = moment(date).add(1, 'day')
+      const prevDate = subtractDay(date)
+      const nextDate = addDay(date)
 
       // Format the dates for links
       const prevLink = `${prevDate.format('YYYY-MM-DD')} ${prevDate.format(
@@ -178,7 +182,7 @@ async function createDailyNoteContent(
         .replace(/previous: ''/g, `previous: '[[${prevLink}]]'`)
         .replace(/next: ''/g, `next: '[[${nextLink}]]'`)
         .replace(/{{date:YYYY-MM-DD}}/g, date.format('YYYY-MM-DD'))
-        .replace(/{{time:HH:mm}}/g, moment().format('HH:mm'))
+        .replace(/{{time:HH:mm}}/g, formatTime())
         .replace(
           /{{date:dddd, MMMM D, YYYY}}/g,
           date.format('dddd, MMMM D, YYYY')
@@ -195,9 +199,9 @@ async function createDailyNoteContent(
   } catch (error) {
     console.error('Error reading template:', error)
     // Fallback to basic content if template can't be read
-    return `# ${noteName}\n\nCreated: ${moment
-      .moment()
-      .format('YYYY-MM-DD HH:mm')}\n\n`
+    return `# ${noteName}\n\nCreated: ${formatDate(
+      getCurrentMoment()
+    )} ${formatTime()}`
   }
 }
 
