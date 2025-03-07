@@ -1,6 +1,8 @@
-import { moment, TFile } from 'obsidian'
+import { TFile } from 'obsidian'
 import LinkPlugin from '../main'
 import { createDailyNoteContent } from '../utils/folderUtils'
+import { createMockApp, createMockPlugin } from './testUtils'
+import { getCurrentMoment } from '../utils/momentHelper'
 
 jest.mock('../utils/folderUtils', () => ({
   ...jest.requireActual('../utils/folderUtils'),
@@ -52,7 +54,7 @@ describe('LinkPlugin', () => {
       internalPlugins: mockInternalPlugins
     }
 
-    plugin = new LinkPlugin(mockApp, '')
+    plugin = createMockPlugin(mockApp)
     ;(createDailyNoteContent as jest.Mock).mockReset()
   })
 
@@ -91,7 +93,7 @@ describe('LinkPlugin', () => {
       expect(createDailyNoteContent).toHaveBeenCalledWith(
         mockApp,
         '2024-12-19 Thursday',
-        expect.any(moment)
+        getCurrentMoment()
       )
       expect(mockVault.modify).toHaveBeenCalledWith(
         mockFile,

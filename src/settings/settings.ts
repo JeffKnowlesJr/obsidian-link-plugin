@@ -7,16 +7,18 @@ export interface FolderTemplate {
 }
 
 export interface LinkPluginSettings {
-  defaultLinkStyle: string
-  autoFormatLinks: boolean
-  dailyNotesLocation: string
-  autoRevealFile: boolean
+  // Daily Notes Management
   autoUpdateMonthlyFolders: boolean
   checkIntervalMinutes: number
+  checkIntervalVariance: number // Add randomization to prevent system load spikes
+  dailyNotesLocation: string // Current location of daily notes
 
-  // Folder templates
+  // Folder Template Management
   folderTemplates: FolderTemplate[]
   activeTemplateId: string
+
+  // Link Processing
+  hugoCompatibleLinks: boolean // Ensure links are Hugo-compatible
 }
 
 // Default folder templates
@@ -120,14 +122,16 @@ const DEFAULT_TEMPLATES: FolderTemplate[] = [
 ]
 
 export const DEFAULT_SETTINGS: LinkPluginSettings = {
-  defaultLinkStyle: 'markdown',
-  autoFormatLinks: true,
-  dailyNotesLocation: '',
-  autoRevealFile: true,
+  // Daily Notes Management
   autoUpdateMonthlyFolders: true,
-  checkIntervalMinutes: 60, // Check once per hour by default
+  checkIntervalMinutes: 60,
+  checkIntervalVariance: 5, // +/- 5 minutes random variance
+  dailyNotesLocation: '', // Will be set during initialization
 
-  // Folder templates
+  // Folder Template Management
   folderTemplates: DEFAULT_TEMPLATES,
-  activeTemplateId: 'default'
+  activeTemplateId: 'default',
+
+  // Link Processing
+  hugoCompatibleLinks: true
 }

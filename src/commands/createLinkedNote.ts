@@ -3,7 +3,7 @@
  * @description Creates a new note and links to it from the current selection.
  */
 
-import { Editor, Notice, TFile, App, moment } from 'obsidian'
+import { Editor, Notice, TFile, App } from 'obsidian'
 import type { Moment } from 'moment'
 import { sanitizeFileName } from '../utils/fileUtils'
 import { NewNoteModal } from '../modals/newNoteModal'
@@ -17,6 +17,13 @@ import {
   ensureFutureDailyNoteFolder,
   BASE_FOLDERS
 } from '../utils/folderUtils'
+import LinkPlugin from '../main'
+import {
+  subtractDay,
+  addDay,
+  formatTime,
+  getCurrentMoment
+} from '../utils/momentHelper'
 
 interface NoteCreationResult {
   name: string
@@ -29,34 +36,49 @@ export interface LinkPlugin {
   app: App
 }
 
-export async function createLinkedNote(
-  plugin: LinkPlugin,
-  editor: Editor
-): Promise<void> {
+export async function createLinkedNote(plugin: LinkPlugin, editor: Editor) {
   try {
-    const result = await getNoteName(editor, plugin)
-    if (!result) {
+    // Get selected text
+    const selectedText = editor.getSelection()
+    if (!selectedText) {
+      console.debug('No text selected')
       return
     }
 
-    let { name: noteName, folder } = result
+    // Get current date
+    const date = getCurrentMoment()
+    const prevDate = subtractDay(date)
+    const nextDate = addDay(date)
 
-    // Handle future daily note
-    if (result.isFutureDaily && result.date) {
-      folder = await ensureFutureDailyNoteFolder(plugin.app, result.date)
-    }
+    // Create note content
+    const content = `---
+title: ${selectedText}
+created: ${formatTime()}
+prev: '[[${prevDate.format('YYYY-MM-DD')}]]'
+next: '[[${nextDate.format('YYYY-MM-DD')}]]'
+---
 
-    const fileName = await validateAndSanitizeFileName(noteName)
-    const fullPath = `${folder}/${fileName}`
-    const newNote = await createNoteFile(plugin, fullPath, noteName, result)
+# ${selectedText}
 
-    // Create a relative link path from the root folder
-    const linkPath = fullPath.replace(`${ROOT_FOLDER}/`, '')
-    await insertNoteLinkInEditor(editor, linkPath)
+## Notes
 
-    new Notice(`Created new note: ${linkPath}`)
+## References
+
+## Tasks
+- [ ] First task
+
+## Related
+- [[${prevDate.format('YYYY-MM-DD')}]]
+- [[${nextDate.format('YYYY-MM-DD')}]]
+`
+
+    // Create the note
+    const file = await plugin.app.vault.create(`${selectedText}.md`, content)
+
+    // Open the new note
+    await plugin.app.workspace.getLeaf(false).openFile(file)
   } catch (error) {
-    handlePluginError(error, 'Failed to create linked note')
+    console.error('Error creating linked note:', error)
   }
 }
 

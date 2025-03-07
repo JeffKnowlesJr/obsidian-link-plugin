@@ -1,5 +1,11 @@
-import { Vault, App, moment } from 'obsidian'
+import { Vault, App, moment, TFolder } from 'obsidian'
 import { LinkPluginSettings, DEFAULT_SETTINGS } from '../settings/settings'
+import {
+  subtractDay,
+  addDay,
+  formatTime,
+  getCurrentMoment
+} from './momentHelper'
 
 export const ROOT_FOLDER = '_Link'
 
@@ -166,7 +172,7 @@ export async function updateDailyNotesLocation(app: App): Promise<string> {
 
 export async function ensureFolderStructure(
   app: App,
-  settings: LinkPluginSettings
+  settings: LinkPluginSettings = DEFAULT_SETTINGS
 ): Promise<void> {
   try {
     // Create root folder first
@@ -291,51 +297,39 @@ export async function ensureFutureDailyNoteFolder(
 export async function createDailyNoteContent(
   app: App,
   noteName: string,
-  date?: moment.Moment
+  date?: string | Date
 ): Promise<string> {
   try {
-    // Try to get the template content
     const templatePath = `${BASE_FOLDERS.TEMPLATES}/Daily Note Template.md`
-    let templateContent = await app.vault.adapter.read(templatePath)
+    const template = await app.vault.adapter.read(templatePath)
 
     if (date) {
-      // Create previous and next dates
-      const prevDate = moment(date).subtract(1, 'day')
-      const nextDate = moment(date).add(1, 'day')
+      const prevDateStr = subtractDay(date).format('YYYY-MM-DD')
+      const nextDateStr = addDay(date).format('YYYY-MM-DD')
 
       // Format the dates for links
-      const prevLink = `${prevDate.format('YYYY-MM-DD')} ${prevDate.format(
-        'dddd'
-      )}`
-      const nextLink = `${nextDate.format('YYYY-MM-DD')} ${nextDate.format(
-        'dddd'
-      )}`
+      const prevLink = `${prevDateStr}`
+      const nextLink = `${nextDateStr}`
 
       // Replace template variables
-      templateContent = templateContent
-        .replace(/previous: ''/g, `previous: '[[${prevLink}]]'`)
+      return template
+        .replace(/prev: ''/g, `prev: '[[${prevLink}]]'`)
         .replace(/next: ''/g, `next: '[[${nextLink}]]'`)
-        .replace(/{{date:YYYY-MM-DD}}/g, date.format('YYYY-MM-DD'))
-        .replace(/{{time:HH:mm}}/g, moment().format('HH:mm'))
+        .replace(
+          /{{date:YYYY-MM-DD}}/g,
+          getCurrentMoment().format('YYYY-MM-DD')
+        )
+        .replace(/{{time:HH:mm}}/g, formatTime())
         .replace(
           /{{date:dddd, MMMM D, YYYY}}/g,
-          date.format('dddd, MMMM D, YYYY')
+          getCurrentMoment().format('dddd, MMMM D, YYYY')
         )
-
-      // Update the month log and list references
-      const monthName = date.format('MMMM')
-      templateContent = templateContent
-        .replace(/\[\[December Log\]\]/g, `[[${monthName} Log]]`)
-        .replace(/\[\[December List\]\]/g, `[[${monthName} List]]`)
     }
 
-    return templateContent
+    return template
   } catch (error) {
-    console.error('Error reading template:', error)
-    // Fallback to basic content if template can't be read
-    return `# ${noteName}\n\nCreated: ${moment().format(
-      'YYYY-MM-DD HH:mm'
-    )}\n\n`
+    console.error('Error creating daily note content:', error)
+    throw error
   }
 }
 
