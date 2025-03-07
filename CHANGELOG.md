@@ -5,7 +5,24 @@ All notable changes to the Obsidian Link Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2025-03-07
+## [2.0.0] - Unreleased
+
+Version 2 is a major rewrite of the plugin with significant architectural improvements and new features.
+
+### Added
+
+- Coming soon...
+
+### Changed
+
+- **Breaking**: Complete architectural restructuring
+- **Breaking**: New configuration format
+
+### Removed
+
+- Legacy compatibility with pre-1.0 settings
+
+## [1.2.0] - 2025-03-07 (Final Version 1.x Release)
 
 ### Fixed
 
