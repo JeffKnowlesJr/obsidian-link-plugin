@@ -18,6 +18,14 @@ Version 2 is a major rewrite of the plugin with significant architectural improv
 - **Breaking**: Complete architectural restructuring
 - **Breaking**: New configuration format
 
+### Fixed
+
+- Fixed ribbon icon functionality to properly open the note creation modal
+- Fixed modal implementation to correctly handle user input
+- Fixed selected text pre-filling in the note creation modal
+- Improved date handling in the journal note creation workflow
+- Added proper error handling for the note creation process
+
 ### Removed
 
 - Legacy compatibility with pre-1.0 settings
