@@ -18,56 +18,55 @@ A powerful plugin for Obsidian that helps you create and manage notes with an or
 The plugin automatically maintains a structured folder hierarchy:
 
 ```
-/_Link
-  /_Journal
-    /y_2024
-      /January
-        /2024-01-01 Monday.md
-        /2024-01-02 Tuesday.md
-        ...
-      /February
-      /March
+/Journal
+  /y_2024
+    /January
+      /2024-01-01 Monday.md
+      /2024-01-02 Tuesday.md
       ...
-    /y_2025
-      /January
-      /February
-      ...
-  /Documents
-    /Images
-    /Videos
-    /Audio
-    /Other
-  /Templates
-    /Daily Note Template.md
-    /Weekly Review Template.md
-    /Project Plan Template.md
+    /February
+    /March
     ...
-  /_Workspace
-    /Client-X
-      /Project-Alpha
-        /SRS.md
-        /Requirements.md
-        ...
-    /Client-Y
-      /Project-Beta
-        ...
-    /Client-Self
-      /Project-Zen
-        ...
-  /_References
-    /Books
-      /Technology
-      /Business
-    /Articles
-      /Blog-Posts
-      /Research
-    /Courses
-      /Online
-      /Certifications
-  /Archive
-    /Completed-Projects
-    /Old-References
-    /Old-Templates
+  /y_2025
+    /January
+    /February
+    ...
+/Documents
+  /Images
+  /Videos
+  /Audio
+  /Other
+/Templates
+  /Daily Note Template.md
+  /Weekly Review Template.md
+  /Project Plan Template.md
+  ...
+/Workspace
+  /Client-X
+    /Project-Alpha
+      /SRS.md
+      /Requirements.md
+      ...
+  /Client-Y
+    /Project-Beta
+      ...
+  /Client-Self
+    /Project-Zen
+      ...
+/References
+  /Books
+    /Technology
+    /Business
+  /Articles
+    /Blog-Posts
+    /Research
+  /Courses
+    /Online
+    /Certifications
+/Archive
+  /Completed-Projects
+  /Old-References
+  /Old-Templates
 ```
 
 ### Daily Notes Management
