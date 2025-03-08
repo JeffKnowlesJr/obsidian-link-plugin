@@ -279,7 +279,7 @@ export async function ensureFutureDailyNoteFolder(
 ): Promise<string> {
   try {
     const year = date.year()
-    const monthName = date.format('MMMM') // Use full month name
+    const monthName = date.format('MMMM') // Use full month name (January, February, etc.)
 
     const yearFolder = `${BASE_FOLDERS.JOURNAL}/y_${year}`
     const monthFolder = `${yearFolder}/${monthName}`
@@ -368,15 +368,15 @@ export async function migrateExistingDailyNotes(app: App): Promise<void> {
 
         // Convert to full month name
         const monthDate = new Date(2000, monthNumber - 1, 1) // Use any year, the month is what matters
-        const fullMonthName = new Intl.DateTimeFormat('en-US', {
-          month: 'long'
+        const monthName = new Intl.DateTimeFormat('en-US', {
+          month: 'long' // Use full month name
         }).format(monthDate)
 
         // Create the new month folder path
         const pathParts = yearFolder.split('/')
         const yearFolderName = pathParts[pathParts.length - 1]
         const year = yearFolderName.replace('y_', '')
-        const newMonthFolder = `${yearFolder}/${fullMonthName}`
+        const newMonthFolder = `${yearFolder}/${monthName}`
 
         // Create the new folder if it doesn't exist
         if (!(await app.vault.adapter.exists(newMonthFolder))) {

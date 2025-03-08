@@ -3969,10 +3969,10 @@ __export(main_exports, {
   default: () => LinkPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian7 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/commands/createLinkedNote.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 
 // src/utils/fileUtils.ts
 function sanitizeFileName(name) {
@@ -3980,7 +3980,7 @@ function sanitizeFileName(name) {
 }
 
 // src/modals/newNoteModal.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian = require("obsidian");
 
 // src/utils/momentHelper.ts
 var import_moment = __toESM(require_moment());
@@ -3997,111 +3997,17 @@ var parseDate = (dateString) => {
 };
 
 // src/utils/migrationUtils.ts
-var import_obsidian = require("obsidian");
-var LEGACY_ROOT = "_Link";
-var HUGO_ROOT = "Link";
-var FOLDER_MAPPINGS = {
-  // Legacy → Hugo-compatible
-  [`${LEGACY_ROOT}/_Journal`]: `${HUGO_ROOT}/Journal`,
-  [`${LEGACY_ROOT}/_References`]: `${HUGO_ROOT}/References`,
-  [`${LEGACY_ROOT}/_Workspace`]: `${HUGO_ROOT}/Workspace`,
-  [`${LEGACY_ROOT}/Documents`]: `${HUGO_ROOT}/Documents`,
-  [`${LEGACY_ROOT}/Templates`]: `${HUGO_ROOT}/Templates`,
-  [`${LEGACY_ROOT}/Archive`]: `${HUGO_ROOT}/Archive`,
-  // Hugo-compatible → Vault root
-  [`${HUGO_ROOT}/Journal`]: `Journal`,
-  [`${HUGO_ROOT}/References`]: `References`,
-  [`${HUGO_ROOT}/Workspace`]: `Workspace`,
-  [`${HUGO_ROOT}/Documents`]: `Documents`,
-  [`${HUGO_ROOT}/Templates`]: `Templates`,
-  [`${HUGO_ROOT}/Archive`]: `Archive`
-};
-var REVERSE_FOLDER_MAPPINGS = {
-  [`Journal`]: `${HUGO_ROOT}/Journal`,
-  [`References`]: `${HUGO_ROOT}/References`,
-  [`Workspace`]: `${HUGO_ROOT}/Workspace`,
-  [`Documents`]: `${HUGO_ROOT}/Documents`,
-  [`Templates`]: `${HUGO_ROOT}/Templates`,
-  [`Archive`]: `${HUGO_ROOT}/Archive`
-};
 async function detectFolderStructureType(vault) {
-  const legacyRootExists = await vault.adapter.exists(LEGACY_ROOT);
-  const hugoRootExists = await vault.adapter.exists(HUGO_ROOT);
-  const journalExists = await vault.adapter.exists("Journal");
-  const templatesExists = await vault.adapter.exists("Templates");
-  if (journalExists || templatesExists) {
-    return "vault_root" /* VAULT_ROOT */;
-  }
-  if (legacyRootExists && hugoRootExists) {
-    const legacyContents = await vault.adapter.list(LEGACY_ROOT);
-    const hugoContents = await vault.adapter.list(HUGO_ROOT);
-    const legacyFileCount = countFilesRecursively(legacyContents);
-    const hugoFileCount = countFilesRecursively(hugoContents);
-    return legacyFileCount > hugoFileCount ? "legacy" /* LEGACY */ : "hugo_compatible" /* HUGO_COMPATIBLE */;
-  }
-  if (legacyRootExists)
-    return "legacy" /* LEGACY */;
-  if (hugoRootExists)
-    return "hugo_compatible" /* HUGO_COMPATIBLE */;
   return "vault_root" /* VAULT_ROOT */;
 }
-function countFilesRecursively(listing) {
-  if (!listing || !listing.files)
-    return 0;
-  let count = listing.files.length;
-  if (listing.folders) {
-    for (const folder of listing.folders) {
-      try {
-        const folderListing = listing.folders[folder];
-        count += countFilesRecursively(folderListing);
-      } catch (error) {
-        console.error(`Error counting files in ${folder}:`, error);
-      }
-    }
-  }
-  return count;
-}
-async function migrateFolderStructure(app, targetType, preserveFiles = true, ensureArchive = true) {
+async function migrateFolderStructure(app, preserveFiles = true, ensureArchive = true) {
   const migrationLog = [];
   const vault = app.vault;
   try {
-    const currentType = await detectFolderStructureType(vault);
-    if (currentType === targetType) {
-      migrationLog.push(`Already using ${targetType} folder structure`);
-      if (ensureArchive) {
-        await ensureArchiveFolder(app, targetType);
-        migrationLog.push(
-          `Verified Archive folder exists in ${targetType} structure`
-        );
-      }
-      return migrationLog;
-    }
-    migrationLog.push(
-      `Migrating from ${currentType} to ${targetType} folder structure`
-    );
-    const sourceMappings = buildMappings(currentType, targetType);
-    const targetRoot = getTargetRoot(targetType);
-    if (targetRoot && !await vault.adapter.exists(targetRoot)) {
-      await vault.createFolder(targetRoot);
-      migrationLog.push(`Created root folder: ${targetRoot}`);
-    }
-    for (const [sourcePath, targetPath] of sourceMappings) {
-      if (!await vault.adapter.exists(sourcePath)) {
-        migrationLog.push(`Source folder does not exist: ${sourcePath}`);
-        continue;
-      }
-      if (!await vault.adapter.exists(targetPath)) {
-        await vault.createFolder(targetPath);
-        migrationLog.push(`Created target folder: ${targetPath}`);
-      }
-      if (preserveFiles) {
-        await migrateFiles(app, sourcePath, targetPath, migrationLog);
-      }
-    }
     if (ensureArchive) {
-      await ensureArchiveFolder(app, targetType);
+      await ensureArchiveFolder(app);
       migrationLog.push(
-        `Ensured Archive folder exists in ${targetType} structure`
+        `Verified Archive folder exists in vault root structure`
       );
     }
     migrationLog.push(`Migration completed successfully`);
@@ -4112,210 +4018,12 @@ async function migrateFolderStructure(app, targetType, preserveFiles = true, ens
     throw error;
   }
 }
-function buildMappings(currentType, targetType) {
-  const sourceRoot = getSourceRoot(currentType);
-  const targetRoot = getTargetRoot(targetType);
-  if (currentType === "vault_root" /* VAULT_ROOT */ && targetType === "hugo_compatible" /* HUGO_COMPATIBLE */) {
-    return [
-      ["Journal", `${HUGO_ROOT}/Journal`],
-      ["Documents", `${HUGO_ROOT}/Documents`],
-      ["Templates", `${HUGO_ROOT}/Templates`],
-      ["Workspace", `${HUGO_ROOT}/Workspace`],
-      ["References", `${HUGO_ROOT}/References`],
-      ["Archive", `${HUGO_ROOT}/Archive`]
-    ];
-  } else if (currentType === "vault_root" /* VAULT_ROOT */ && targetType === "legacy" /* LEGACY */) {
-    return [
-      ["Journal", `${LEGACY_ROOT}/_Journal`],
-      ["Documents", `${LEGACY_ROOT}/Documents`],
-      ["Templates", `${LEGACY_ROOT}/Templates`],
-      ["Workspace", `${LEGACY_ROOT}/_Workspace`],
-      ["References", `${LEGACY_ROOT}/_References`],
-      ["Archive", `${LEGACY_ROOT}/Archive`]
-    ];
-  } else if (currentType === "hugo_compatible" /* HUGO_COMPATIBLE */ && targetType === "vault_root" /* VAULT_ROOT */) {
-    return [
-      [`${HUGO_ROOT}/Journal`, "Journal"],
-      [`${HUGO_ROOT}/Documents`, "Documents"],
-      [`${HUGO_ROOT}/Templates`, "Templates"],
-      [`${HUGO_ROOT}/Workspace`, "Workspace"],
-      [`${HUGO_ROOT}/References`, "References"],
-      [`${HUGO_ROOT}/Archive`, "Archive"]
-    ];
-  } else if (currentType === "legacy" /* LEGACY */ && targetType === "vault_root" /* VAULT_ROOT */) {
-    return [
-      [`${LEGACY_ROOT}/_Journal`, "Journal"],
-      [`${LEGACY_ROOT}/Documents`, "Documents"],
-      [`${LEGACY_ROOT}/Templates`, "Templates"],
-      [`${LEGACY_ROOT}/_Workspace`, "Workspace"],
-      [`${LEGACY_ROOT}/_References`, "References"],
-      [`${LEGACY_ROOT}/Archive`, "Archive"]
-    ];
-  } else if (currentType === "legacy" /* LEGACY */ && targetType === "hugo_compatible" /* HUGO_COMPATIBLE */) {
-    return Object.entries(FOLDER_MAPPINGS).filter(
-      ([source]) => source.startsWith(LEGACY_ROOT)
-    );
-  } else if (currentType === "hugo_compatible" /* HUGO_COMPATIBLE */ && targetType === "legacy" /* LEGACY */) {
-    return Object.entries(REVERSE_FOLDER_MAPPINGS).filter(([source]) => source.startsWith(HUGO_ROOT)).map(([source, target]) => [source, target]);
-  }
-  return [];
-}
-function getTargetRoot(type) {
-  switch (type) {
-    case "legacy" /* LEGACY */:
-      return LEGACY_ROOT;
-    case "hugo_compatible" /* HUGO_COMPATIBLE */:
-      return HUGO_ROOT;
-    case "vault_root" /* VAULT_ROOT */:
-      return "";
-  }
-}
-function getSourceRoot(type) {
-  switch (type) {
-    case "legacy" /* LEGACY */:
-      return LEGACY_ROOT;
-    case "hugo_compatible" /* HUGO_COMPATIBLE */:
-      return HUGO_ROOT;
-    case "vault_root" /* VAULT_ROOT */:
-      return "";
-  }
-}
-async function migrateFiles(app, sourcePath, targetPath, migrationLog) {
+async function ensureArchiveFolder(app) {
+  const archiveFolderName = "Archive";
   const vault = app.vault;
-  try {
-    if (!await vault.adapter.exists(sourcePath)) {
-      migrationLog.push(`Source path does not exist: ${sourcePath}`);
-      return;
-    }
-    const sourceListing = await vault.adapter.list(sourcePath);
-    migrationLog.push(`Processing folder: ${sourcePath} \u2192 ${targetPath}`);
-    if (sourceListing.files && sourceListing.files.length > 0) {
-      migrationLog.push(`Found ${sourceListing.files.length} files to migrate`);
-      for (const file of sourceListing.files) {
-        try {
-          const fileName = file.split("/").pop() || "";
-          const targetFilePath = `${targetPath}/${fileName}`;
-          if (await vault.adapter.exists(targetFilePath)) {
-            migrationLog.push(
-              `File already exists, skipping: ${targetFilePath}`
-            );
-            continue;
-          }
-          const content = await vault.adapter.read(file);
-          await vault.create(targetFilePath, content);
-          const originalFile = app.vault.getAbstractFileByPath(file);
-          if (originalFile instanceof import_obsidian.TFile) {
-            await vault.delete(originalFile);
-            migrationLog.push(`Moved file: ${file} \u2192 ${targetFilePath}`);
-          } else {
-            migrationLog.push(
-              `Created copy (couldn't delete original): ${file} \u2192 ${targetFilePath}`
-            );
-          }
-        } catch (fileError) {
-          migrationLog.push(
-            `Error processing file ${file}: ${fileError.message}`
-          );
-          console.error(`Error processing file ${file}:`, fileError);
-        }
-      }
-    } else {
-      migrationLog.push(`No files found in ${sourcePath}`);
-    }
-    if (sourceListing.folders && sourceListing.folders.length > 0) {
-      migrationLog.push(
-        `Found ${sourceListing.folders.length} subfolders to process`
-      );
-      for (const subfolder of sourceListing.folders) {
-        try {
-          const subfolderName = subfolder.split("/").pop() || "";
-          const targetSubfolderPath = `${targetPath}/${subfolderName}`;
-          if (!await vault.adapter.exists(targetSubfolderPath)) {
-            await vault.createFolder(targetSubfolderPath);
-            migrationLog.push(`Created subfolder: ${targetSubfolderPath}`);
-          }
-          await migrateFiles(app, subfolder, targetSubfolderPath, migrationLog);
-          try {
-            const checkFolder = await vault.adapter.list(subfolder);
-            if (checkFolder.files.length === 0 && checkFolder.folders.length === 0) {
-              const folderObj = app.vault.getAbstractFileByPath(subfolder);
-              if (folderObj instanceof import_obsidian.TFolder) {
-                await vault.delete(folderObj);
-                migrationLog.push(`Removed empty source folder: ${subfolder}`);
-              }
-            } else {
-              migrationLog.push(
-                `Source folder not empty, keeping: ${subfolder}`
-              );
-            }
-          } catch (deleteError) {
-            migrationLog.push(
-              `Error checking/deleting folder ${subfolder}: ${deleteError.message}`
-            );
-          }
-        } catch (subfolderError) {
-          migrationLog.push(
-            `Error processing subfolder ${subfolder}: ${subfolderError.message}`
-          );
-          console.error(
-            `Error processing subfolder ${subfolder}:`,
-            subfolderError
-          );
-        }
-      }
-    }
-    if (sourcePath.includes(LEGACY_ROOT) || sourcePath.includes(HUGO_ROOT)) {
-      try {
-        const checkSourceFolder = await vault.adapter.list(sourcePath);
-        if (checkSourceFolder.files.length === 0 && checkSourceFolder.folders.length === 0) {
-          const sourceRootFolder = app.vault.getAbstractFileByPath(sourcePath);
-          if (sourceRootFolder instanceof import_obsidian.TFolder) {
-            await vault.delete(sourceRootFolder);
-            migrationLog.push(`Removed empty source root folder: ${sourcePath}`);
-          }
-        }
-      } catch (rootDeleteError) {
-        migrationLog.push(
-          `Could not delete root folder ${sourcePath}: ${rootDeleteError.message}`
-        );
-      }
-    }
-  } catch (error) {
-    migrationLog.push(
-      `Error migrating files from ${sourcePath} to ${targetPath}: ${error.message}`
-    );
-    console.error(
-      `Error migrating files from ${sourcePath} to ${targetPath}:`,
-      error
-    );
-    throw error;
-  }
-}
-async function ensureArchiveFolder(app, structureType) {
-  const vault = app.vault;
-  const rootFolder = structureType === "legacy" /* LEGACY */ ? LEGACY_ROOT : HUGO_ROOT;
-  const archivePath = `${rootFolder}/Archive`;
-  try {
-    if (!await vault.adapter.exists(rootFolder)) {
-      await vault.createFolder(rootFolder);
-    }
-    if (!await vault.adapter.exists(archivePath)) {
-      await vault.createFolder(archivePath);
-    }
-    const archiveSubfolders = [
-      "Completed-Projects",
-      "Old-References",
-      "Old-Templates"
-    ];
-    for (const subfolder of archiveSubfolders) {
-      const subfolderPath = `${archivePath}/${subfolder}`;
-      if (!await vault.adapter.exists(subfolderPath)) {
-        await vault.createFolder(subfolderPath);
-      }
-    }
-  } catch (error) {
-    console.error(`Error ensuring Archive folder exists:`, error);
-    throw error;
+  if (!await vault.adapter.exists(archiveFolderName)) {
+    await vault.createFolder(archiveFolderName);
+    console.log("Created Archive folder");
   }
 }
 
@@ -4324,7 +4032,7 @@ var DEFAULT_TEMPLATES = [
   {
     id: "default",
     name: "Default Structure",
-    description: "The default folder structure with all components",
+    description: "Basic structure with Journal, References, Workspace, and Documents",
     isEnabled: true,
     structure: JSON.stringify({
       Journal: {
@@ -4334,47 +4042,25 @@ var DEFAULT_TEMPLATES = [
       },
       Documents: {
         Images: {},
-        Videos: {},
-        Audio: {},
-        Other: {}
+        Files: {}
       },
       Templates: {},
       Workspace: {
-        "Client-X": {
-          "Project-Alpha": {}
-        },
-        "Client-Y": {
-          "Project-Beta": {}
-        },
-        "Client-Self": {
-          "Project-Zen": {}
-        }
+        Projects: {},
+        Notes: {}
       },
       References: {
-        Books: {
-          Technology: {},
-          Business: {}
-        },
-        Articles: {
-          "Blog-Posts": {},
-          Research: {}
-        },
-        Courses: {
-          Online: {},
-          Certifications: {}
-        }
+        Books: {},
+        Articles: {},
+        Resources: {}
       },
-      Archive: {
-        "Completed-Projects": {},
-        "Old-References": {},
-        "Old-Templates": {}
-      }
+      Archive: {}
     })
   },
   {
     id: "minimal",
     name: "Minimal Structure",
-    description: "Just the essential components (Journal and Templates)",
+    description: "Just the essentials (Journal and References only)",
     isEnabled: true,
     structure: JSON.stringify({
       Journal: {
@@ -4382,13 +4068,18 @@ var DEFAULT_TEMPLATES = [
           $MONTH$: {}
         }
       },
-      Templates: {}
+      References: {
+        Books: {},
+        Articles: {}
+      },
+      Templates: {},
+      Archive: {}
     })
   },
   {
-    id: "research",
-    name: "Research Focus",
-    description: "Optimized for research and reference materials",
+    id: "custom",
+    name: "Custom Structure",
+    description: "Select exactly which folders you need in your workflow",
     isEnabled: false,
     structure: JSON.stringify({
       Journal: {
@@ -4396,24 +4087,23 @@ var DEFAULT_TEMPLATES = [
           $MONTH$: {}
         }
       },
-      Templates: {},
-      References: {
-        Books: {
-          Technology: {},
-          Science: {},
-          Humanities: {}
-        },
-        Papers: {
-          Published: {},
-          Drafts: {},
-          References: {}
-        },
-        "Research-Notes": {
-          Experiments: {},
-          Observations: {},
-          Ideas: {}
-        }
+      // Optionally enable these folders based on your needs
+      /* 
+      Documents: {
+        Images: {},
+        Files: {}
       },
+      Workspace: {
+        'Projects': {},
+        'Notes': {}
+      },
+      References: {
+        Books: {},
+        Articles: {},
+        Resources: {}
+      },
+      */
+      Templates: {},
       Archive: {}
     })
   }
@@ -4430,7 +4120,7 @@ var DEFAULT_SETTINGS = {
   folderTemplates: DEFAULT_TEMPLATES,
   activeTemplateId: "default",
   // Folder Structure Options
-  folderStructureType: "legacy" /* LEGACY */,
+  folderStructureType: "vault_root" /* VAULT_ROOT */,
   alwaysEnsureArchive: true,
   // Link Processing
   hugoCompatibleLinks: true
@@ -4695,13 +4385,14 @@ async function migrateExistingDailyNotes(app) {
         const monthNumber = parseInt(oldFormatMatch[1], 10);
         const monthAbbrev = oldFormatMatch[2];
         const monthDate = new Date(2e3, monthNumber - 1, 1);
-        const fullMonthName = new Intl.DateTimeFormat("en-US", {
+        const monthName = new Intl.DateTimeFormat("en-US", {
           month: "long"
+          // Use full month name
         }).format(monthDate);
         const pathParts = yearFolder.split("/");
         const yearFolderName = pathParts[pathParts.length - 1];
         const year = yearFolderName.replace("y_", "");
-        const newMonthFolder = `${yearFolder}/${fullMonthName}`;
+        const newMonthFolder = `${yearFolder}/${monthName}`;
         if (!await app.vault.adapter.exists(newMonthFolder)) {
           await app.vault.createFolder(newMonthFolder);
           console.debug(`Created new month folder: ${newMonthFolder}`);
@@ -4740,7 +4431,7 @@ async function migrateExistingDailyNotes(app) {
 }
 
 // src/modals/newNoteModal.ts
-var NewNoteModal = class extends import_obsidian2.Modal {
+var NewNoteModal = class extends import_obsidian.Modal {
   constructor(app, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
@@ -4756,7 +4447,7 @@ var NewNoteModal = class extends import_obsidian2.Modal {
     this.containers.nameContainer = contentEl.createDiv();
     this.containers.folderContainer = contentEl.createDiv();
     this.containers.datePickerContainer = contentEl.createDiv();
-    this.folderDropdown = new import_obsidian2.Setting(this.containers.folderContainer).setName("Folder").setDesc("Choose where to create the note").addDropdown((dropdown) => {
+    this.folderDropdown = new import_obsidian.Setting(this.containers.folderContainer).setName("Folder").setDesc("Choose where to create the note").addDropdown((dropdown) => {
       Object.values(BASE_FOLDERS).forEach((folder) => {
         dropdown.addOption(folder, folder);
       });
@@ -4766,7 +4457,7 @@ var NewNoteModal = class extends import_obsidian2.Modal {
         this.updateDisplay();
       });
     });
-    const datePickerSetting = new import_obsidian2.Setting(this.containers.datePickerContainer).setName("Date").setDesc("Choose the date for the note");
+    const datePickerSetting = new import_obsidian.Setting(this.containers.datePickerContainer).setName("Date").setDesc("Choose the date for the note");
     datePickerSetting.addText((text) => {
       const tomorrowDate = addDay(getCurrentMoment());
       const tomorrow = tomorrowDate.format("YYYY-MM-DD");
@@ -4787,19 +4478,37 @@ var NewNoteModal = class extends import_obsidian2.Modal {
         }
       });
     });
-    const nameInputSetting = new import_obsidian2.Setting(this.containers.nameContainer).setName("Name").setDesc("Enter the name for your note");
+    const nameInputSetting = new import_obsidian.Setting(this.containers.nameContainer).setName("Name").setDesc("Enter the name for your note");
     nameInputSetting.addText((text) => {
       this.nameInput = text.inputEl;
       text.onChange((value) => {
         this.result.name = value;
       });
     });
-    new import_obsidian2.Setting(contentEl).addButton(
+    const buttonsContainer = contentEl.createDiv("modal-button-container");
+    buttonsContainer.style.display = "flex";
+    buttonsContainer.style.justifyContent = "space-between";
+    buttonsContainer.style.marginTop = "20px";
+    const leftButtons = buttonsContainer.createDiv();
+    new import_obsidian.Setting(leftButtons).addButton(
+      (btn) => btn.setButtonText("Open Settings").setTooltip("Configure folder templates and plugin options").onClick(() => {
+        this.close();
+        this.app.setting.open();
+        this.app.setting.openTabById("obsidian-link-plugin");
+      })
+    );
+    const rightButtons = buttonsContainer.createDiv();
+    new import_obsidian.Setting(rightButtons).addButton(
       (btn) => btn.setButtonText("Create").setCta().onClick(() => {
         this.close();
         this.onSubmit(this.result);
       })
     );
+    buttonsContainer.querySelectorAll(".setting-item").forEach((el) => {
+      ;
+      el.style.border = "none";
+      el.style.padding = "0";
+    });
     this.updateDisplay();
   }
   /**
@@ -4830,7 +4539,7 @@ var NewNoteModal = class extends import_obsidian2.Modal {
 };
 
 // src/utils/errorHandler.ts
-var import_obsidian3 = require("obsidian");
+var import_obsidian2 = require("obsidian");
 var LinkPluginError = class extends Error {
   constructor(message, code, originalError) {
     super(message);
@@ -4842,7 +4551,7 @@ var LinkPluginError = class extends Error {
 function handlePluginError(error, context) {
   const pluginError = ensurePluginError(error, context);
   console.error(`[Link Plugin] ${context}:`, pluginError);
-  new import_obsidian3.Notice(`Link Plugin: ${pluginError.message}`);
+  new import_obsidian2.Notice(`Link Plugin: ${pluginError.message}`);
   throw pluginError;
 }
 function ensurePluginError(error, context) {
@@ -4858,7 +4567,7 @@ function ensurePluginError(error, context) {
 }
 
 // src/commands/createLinkedNote.ts
-async function createLinkedNote(plugin, editor) {
+async function createLinkedNote(plugin, editor, view) {
   try {
     const hasActiveEditor = editor !== null;
     const noteOptions = await getNoteName(editor, plugin);
@@ -4870,7 +4579,7 @@ async function createLinkedNote(plugin, editor) {
     let fullPath;
     if (noteOptions.folder === BASE_FOLDERS.JOURNAL && noteOptions.date) {
       const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : "";
-      const folderPath = `${basePath}${BASE_FOLDERS.JOURNAL}/${noteOptions.date.format("YYYY/MM")}`;
+      const folderPath = `${basePath}${BASE_FOLDERS.JOURNAL}/${noteOptions.date.format("YYYY/MMM")}`;
       await ensureFutureDailyNoteFolder(plugin.app, noteOptions.date);
       fullPath = `${folderPath}/${sanitizedName}`;
       noteOptions.isFutureDaily = true;
@@ -4892,7 +4601,7 @@ async function createLinkedNote(plugin, editor) {
       await insertNoteLinkInEditor(editor, fullPath);
     }
     await plugin.app.workspace.getLeaf(false).openFile(file);
-    new import_obsidian4.Notice(`Created note: ${sanitizedName}`);
+    new import_obsidian3.Notice(`Created note: ${sanitizedName}`);
   } catch (error) {
     console.error("Error creating linked note:", error);
     handlePluginError(error, "Creating linked note");
@@ -5013,8 +4722,8 @@ function isValidNoteName(name) {
 }
 
 // src/modals/baseModal.ts
-var import_obsidian5 = require("obsidian");
-var BasePluginModal = class extends import_obsidian5.Modal {
+var import_obsidian4 = require("obsidian");
+var BasePluginModal = class extends import_obsidian4.Modal {
   constructor(app) {
     super(app);
   }
@@ -5038,7 +4747,7 @@ var BasePluginModal = class extends import_obsidian5.Modal {
     });
   }
   addActionButtons(actions) {
-    const buttonContainer = new import_obsidian5.Setting(this.contentEl);
+    const buttonContainer = new import_obsidian4.Setting(this.contentEl);
     actions.forEach(({ text, isCta, onClick }) => {
       buttonContainer.addButton((btn) => {
         btn.setButtonText(text);
@@ -5087,49 +4796,9 @@ var HelpModal = class extends BasePluginModal {
   }
 };
 
-// src/modals/templateModals.ts
-var import_obsidian6 = require("obsidian");
-var StructurePreviewModal = class extends import_obsidian6.Modal {
-  constructor(app, structure) {
-    super(app);
-    this.structure = structure;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Folder Structure Preview" });
-    const previewContainer = contentEl.createDiv("folder-structure-preview");
-    previewContainer.style.maxHeight = "400px";
-    previewContainer.style.overflow = "auto";
-    previewContainer.style.padding = "10px";
-    previewContainer.style.border = "1px solid var(--background-modifier-border)";
-    previewContainer.style.borderRadius = "4px";
-    const createStructurePreview = (container, structure, level = 0) => {
-      for (const [folderName, subFolders] of Object.entries(structure)) {
-        const folderContainer = container.createDiv("folder-item");
-        folderContainer.style.paddingLeft = `${level * 20}px`;
-        folderContainer.style.marginBottom = "5px";
-        const folderIcon = folderContainer.createSpan("folder-icon");
-        folderIcon.innerHTML = "\u{1F4C1} ";
-        folderContainer.createSpan({ text: folderName });
-        if (subFolders && typeof subFolders === "object" && Object.keys(subFolders).length > 0) {
-          createStructurePreview(container, subFolders, level + 1);
-        }
-      }
-    };
-    createStructurePreview(previewContainer, this.structure);
-    new import_obsidian6.Setting(contentEl).addButton(
-      (btn) => btn.setButtonText("Close").setCta().onClick(() => this.close())
-    );
-  }
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-};
-
 // src/main.ts
-var momentInstance = window.moment || import_obsidian7.moment;
-var ConfirmationModal = class extends import_obsidian7.Modal {
+var momentInstance = window.moment || import_obsidian5.moment;
+var ConfirmationModal = class extends import_obsidian5.Modal {
   constructor(app, onConfirm) {
     super(app);
     this.onConfirm = onConfirm;
@@ -5166,7 +4835,7 @@ var ConfirmationModal = class extends import_obsidian7.Modal {
     contentEl.empty();
   }
 };
-var LinkPlugin = class extends import_obsidian7.Plugin {
+var LinkPlugin = class extends import_obsidian5.Plugin {
   async onload() {
     try {
       console.group("Link Plugin Loading");
@@ -5186,7 +4855,6 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       await this.saveSettings();
       const migrationLog = await migrateFolderStructure(
         this.app,
-        "vault_root" /* VAULT_ROOT */,
         true,
         // preserve files
         this.settings.alwaysEnsureArchive
@@ -5202,7 +4870,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         await this.saveSettings();
       } catch (error) {
         console.error("Error ensuring folder structure:", error);
-        new import_obsidian7.Notice("Error initializing folder structure");
+        new import_obsidian5.Notice("Error initializing folder structure");
       }
       console.debug("Registering commands...");
       this.registerCommands();
@@ -5217,27 +4885,9 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       setTimeout(() => {
         this.patchDailyNotes();
       }, 1e3);
-      this.addRibbonIcon("link", "Create Linked Note", () => {
-        const activeLeaf = this.app.workspace.activeLeaf;
-        if (!activeLeaf) {
-          createLinkedNote(this, null);
-          return;
-        }
-        const view = activeLeaf.view;
-        if (!view) {
-          createLinkedNote(this, null);
-          return;
-        }
-        const markdownView = view;
-        if (!markdownView.editor) {
-          createLinkedNote(this, null);
-          return;
-        }
-        createLinkedNote(this, markdownView.editor);
-      });
       this.registerEvent(
         this.app.vault.on("create", (file) => {
-          if (file instanceof import_obsidian7.TFile && this.isDailyNote(file)) {
+          if (file instanceof import_obsidian5.TFile && this.isDailyNote(file)) {
             this.enhanceDailyNote(file);
           }
         })
@@ -5247,7 +4897,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       console.groupEnd();
     } catch (error) {
       console.error("Error loading Link Plugin:", error);
-      new import_obsidian7.Notice("Error loading Link Plugin");
+      new import_obsidian5.Notice("Error loading Link Plugin");
     }
   }
   patchDailyNotes() {
@@ -5301,10 +4951,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
                 const newLocation = await updateDailyNotesLocation(this.app);
                 this.settings.dailyNotesLocation = newLocation;
                 await this.saveSettings();
-                new import_obsidian7.Notice(`Essential folder structure has been regenerated`);
+                new import_obsidian5.Notice(`Essential folder structure has been regenerated`);
               } catch (error) {
                 console.error("Error regenerating folder structure:", error);
-                new import_obsidian7.Notice("Failed to regenerate folder structure");
+                new import_obsidian5.Notice("Failed to regenerate folder structure");
               }
             }).open();
           }
@@ -5315,79 +4965,13 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     );
   }
   registerCommands() {
-    console.debug("Registering format link command...");
-    this.addCommand({
-      id: "format-link",
-      name: "Format selected link",
-      editorCallback: (editor, view) => {
-        console.debug("Format link command triggered");
-        console.debug("Current selection:", editor.getSelection());
-        new import_obsidian7.Notice("Link formatting command triggered");
-      }
-    });
     console.debug("Registering create linked note command...");
     this.addCommand({
       id: "create-linked-note",
-      name: "Create new linked note",
-      callback: async () => {
+      name: "Create Linked Note From Selection",
+      editorCallback: (editor, view) => {
         console.debug("Create linked note command triggered");
-        const activeLeaf = this.app.workspace.activeLeaf;
-        if ((activeLeaf == null ? void 0 : activeLeaf.view) && activeLeaf.view.editor) {
-          const editor = activeLeaf.view.editor;
-          await createLinkedNote(this, editor);
-        } else {
-          await createLinkedNote(this, null);
-        }
-      }
-    });
-    console.debug("Registering migrate to vault root command...");
-    this.addCommand({
-      id: "migrate-to-vault-root",
-      name: "Migrate folders to vault root",
-      callback: async () => {
-        console.debug("Migrate to vault root command triggered");
-        try {
-          const migrationLog = await migrateFolderStructure(
-            this.app,
-            "vault_root" /* VAULT_ROOT */,
-            true,
-            // preserve files
-            true
-            // ensure archive
-          );
-          this.settings.folderStructureType = "vault_root" /* VAULT_ROOT */;
-          await this.saveSettings();
-          console.debug("Migration completed:", migrationLog);
-          new import_obsidian7.Notice("Folders migrated to vault root successfully");
-        } catch (error) {
-          console.error("Error during migration:", error);
-          new import_obsidian7.Notice("Error migrating folders: " + error.message);
-        }
-      }
-    });
-    console.debug("Registering migrate to Link folder command...");
-    this.addCommand({
-      id: "migrate-to-link-folder",
-      name: "Migrate folders to Link folder",
-      callback: async () => {
-        console.debug("Migrate to Link folder command triggered");
-        try {
-          const migrationLog = await migrateFolderStructure(
-            this.app,
-            "hugo_compatible" /* HUGO_COMPATIBLE */,
-            true,
-            // preserve files
-            true
-            // ensure archive
-          );
-          this.settings.folderStructureType = "hugo_compatible" /* HUGO_COMPATIBLE */;
-          await this.saveSettings();
-          console.debug("Migration completed:", migrationLog);
-          new import_obsidian7.Notice("Folders migrated to Link folder successfully");
-        } catch (error) {
-          console.error("Error during migration:", error);
-          new import_obsidian7.Notice("Error migrating folders: " + error.message);
-        }
+        createLinkedNote(this, editor, view);
       }
     });
   }
@@ -5480,7 +5064,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
           currentMonth = nowMonth;
           const newLocation = await updateDailyNotesLocation(this.app);
           await this.saveSettings();
-          new import_obsidian7.Notice(
+          new import_obsidian5.Notice(
             `Daily notes location updated for ${now.toLocaleString("default", {
               month: "long"
             })}`
@@ -5503,20 +5087,19 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     scheduleNextCheck();
   }
   /**
-   * Migrates to the specified folder structure type
+   * Apply the folder structure type setting
    */
-  async migrateToFolderStructure(targetType) {
-    this.settings.folderStructureType = targetType;
+  async migrateToFolderStructure() {
+    this.settings.folderStructureType = "vault_root" /* VAULT_ROOT */;
     await this.saveSettings();
     const migrationLog = await migrateFolderStructure(
       this.app,
-      targetType,
       true,
       // preserve files
       this.settings.alwaysEnsureArchive
     );
     migrationLog.forEach((entry) => console.log(entry));
-    new import_obsidian7.Notice(`Migration to ${targetType} folder structure complete`);
+    new import_obsidian5.Notice(`Folder structure updated successfully`);
   }
   /**
    * Applies the selected template structure immediately
@@ -5527,16 +5110,250 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     );
     try {
       await ensureFolderStructure(this.app, this.settings);
-      new import_obsidian7.Notice(
+      new import_obsidian5.Notice(
         `Template "${this.settings.activeTemplateId}" applied successfully`
       );
     } catch (error) {
       console.error("Error applying template:", error);
-      new import_obsidian7.Notice(`Error applying template: ${error.message}`);
+      new import_obsidian5.Notice(`Error applying template: ${error.message}`);
     }
   }
+  /**
+   * Applies the selected template with proper cleanup of unused folders
+   * Unused folders will either be deleted if empty or moved to Archive
+   */
+  async applySelectedTemplateWithCleanup() {
+    try {
+      console.log(`---------------------------------------`);
+      console.log(`APPLYING TEMPLATE WITH CLEANUP START`);
+      console.log(
+        `Applying template with cleanup: ${this.settings.activeTemplateId}`
+      );
+      console.log(
+        `Current folder structure type: ${this.settings.folderStructureType}`
+      );
+      const activeTemplate = this.settings.folderTemplates.find(
+        (template) => template.id === this.settings.activeTemplateId && template.isEnabled
+      );
+      console.log(
+        `Active template found:`,
+        activeTemplate ? activeTemplate.name : "NONE"
+      );
+      if (!activeTemplate) {
+        throw new Error("No active template found");
+      }
+      let structure = {};
+      try {
+        structure = JSON.parse(activeTemplate.structure);
+        console.log(
+          `Template structure parsed successfully with root folders:`,
+          Object.keys(structure)
+        );
+      } catch (e) {
+        console.error("Invalid template structure JSON:", e);
+        throw new Error("Invalid template structure");
+      }
+      const templateRootFolders = Object.keys(structure);
+      console.log("Template root folders:", templateRootFolders);
+      const vault = this.app.vault;
+      const rootFolders = vault.getRoot().children.filter((item) => item instanceof import_obsidian5.TFolder).map((folder) => folder.name);
+      console.log("Existing root folders:", rootFolders);
+      const archiveFolderName = "Archive";
+      let archiveFolder = vault.getRoot().children.find(
+        (item) => item instanceof import_obsidian5.TFolder && item.name === archiveFolderName
+      );
+      if (!archiveFolder) {
+        try {
+          await vault.createFolder(archiveFolderName);
+          archiveFolder = vault.getRoot().children.find(
+            (item) => item instanceof import_obsidian5.TFolder && item.name === archiveFolderName
+          );
+          console.log("Created Archive folder");
+        } catch (error) {
+          console.error("Error creating Archive folder:", error);
+        }
+      }
+      for (const folderName of rootFolders) {
+        if (folderName === archiveFolderName || folderName === ".obsidian" || templateRootFolders.includes(folderName)) {
+          console.log(`Skipping folder (special or in template): ${folderName}`);
+          continue;
+        }
+        console.log(`Processing folder: ${folderName}`);
+        const folder = vault.getRoot().children.find(
+          (item) => item instanceof import_obsidian5.TFolder && item.name === folderName
+        );
+        if (!folder) {
+          console.log(`Folder not found in vault: ${folderName}`);
+          continue;
+        }
+        const isEmpty = folder.children.length === 0;
+        console.log(
+          `Folder ${folderName} is ${isEmpty ? "empty" : "not empty"} (${folder.children.length} items)`
+        );
+        if (isEmpty) {
+          try {
+            await vault.delete(folder);
+            console.log(`Deleted empty folder: ${folderName}`);
+          } catch (error) {
+            console.error(`Error deleting folder ${folderName}:`, error);
+          }
+        } else if (archiveFolder) {
+          try {
+            const archivePath = `${archiveFolder.path}/${folderName}`;
+            if (await vault.adapter.exists(archivePath)) {
+              console.log(
+                `Archive subfolder ${archivePath} already exists, using it`
+              );
+            } else {
+              await vault.createFolder(archivePath);
+              console.log(`Created archive folder: ${archivePath}`);
+            }
+            for (const child of folder.children) {
+              const destinationPath = `${archivePath}/${child.name}`;
+              if (await vault.adapter.exists(destinationPath)) {
+                console.log(
+                  `File ${child.name} already exists in archive, skipping`
+                );
+                continue;
+              }
+              try {
+                await vault.rename(child, destinationPath);
+                console.log(`Moved item ${child.name} to ${archivePath}`);
+              } catch (error) {
+                console.error(
+                  `Error moving ${child.name} to archive: ${error.message}`
+                );
+              }
+            }
+            if (folder.children.length === 0) {
+              await vault.delete(folder);
+              console.log(
+                `Moved folder ${folderName} to Archive and deleted original`
+              );
+            } else {
+              console.log(
+                `Some items in ${folderName} could not be moved, folder not deleted`
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error moving folder ${folderName} to Archive:`,
+              error
+            );
+          }
+        }
+      }
+      await this.recursivelyCleanEmptyFolders(vault);
+      console.log("Applying template structure...");
+      await ensureFolderStructure(this.app, this.settings);
+      console.log("Template applied successfully");
+      await this.recursivelyCleanEmptyFolders(vault);
+      console.log("Updating daily notes location...");
+      await updateDailyNotesLocation(this.app);
+      console.log("Daily notes location updated");
+      new import_obsidian5.Notice(`Template applied with cleanup`);
+      console.log(`APPLYING TEMPLATE WITH CLEANUP COMPLETE`);
+      console.log(`---------------------------------------`);
+    } catch (error) {
+      console.error("Error applying template with cleanup:", error);
+      new import_obsidian5.Notice(`Error: ${error.message}`);
+      throw error;
+    }
+  }
+  /**
+   * Recursively checks for empty folders in the vault and deletes them,
+   * but preserves folders defined in the template structure even if empty
+   */
+  async recursivelyCleanEmptyFolders(vault) {
+    console.log("Starting recursive cleanup of empty folders...");
+    let emptyFoldersDeleted = false;
+    let templateFolders = [];
+    try {
+      const activeTemplate = this.settings.folderTemplates.find(
+        (template) => template.id === this.settings.activeTemplateId && template.isEnabled
+      );
+      if (activeTemplate) {
+        const structure = JSON.parse(activeTemplate.structure);
+        templateFolders = Object.keys(structure).map((folder) => folder);
+        console.log("Template folders to preserve:", templateFolders);
+      }
+    } catch (error) {
+      console.error("Error parsing template structure:", error);
+    }
+    const isFolderEmpty = async (folder) => {
+      if (folder.children.length === 0) {
+        return true;
+      }
+      const hasFiles = folder.children.some((child) => child instanceof import_obsidian5.TFile);
+      if (hasFiles) {
+        return false;
+      }
+      for (const child of folder.children) {
+        if (child instanceof import_obsidian5.TFolder) {
+          const isEmpty = await isFolderEmpty(child);
+          if (!isEmpty) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+    const shouldPreserveFolder = (folder) => {
+      if (folder.name === ".obsidian" || folder.name === "Archive") {
+        return true;
+      }
+      if (templateFolders.includes(folder.name)) {
+        console.log(`Preserving template folder: ${folder.name}`);
+        return true;
+      }
+      for (const templateFolder of templateFolders) {
+        if (folder.path.startsWith(templateFolder + "/")) {
+          console.log(`Preserving template subfolder: ${folder.path}`);
+          return true;
+        }
+      }
+      return false;
+    };
+    const deleteEmptyFolders = async (folder) => {
+      if (shouldPreserveFolder(folder)) {
+        return false;
+      }
+      let anyDeleted = false;
+      for (const child of [...folder.children]) {
+        if (child instanceof import_obsidian5.TFolder) {
+          const deleted = await deleteEmptyFolders(child);
+          if (deleted) {
+            anyDeleted = true;
+          }
+        }
+      }
+      if (await isFolderEmpty(folder)) {
+        try {
+          await vault.delete(folder);
+          console.log(`Deleted empty folder: ${folder.path}`);
+          return true;
+        } catch (error) {
+          console.error(`Error deleting empty folder ${folder.path}:`, error);
+        }
+      }
+      return anyDeleted;
+    };
+    const rootFolders = vault.getRoot().children.filter((item) => item instanceof import_obsidian5.TFolder);
+    for (const folder of rootFolders) {
+      if (folder instanceof import_obsidian5.TFolder) {
+        const deleted = await deleteEmptyFolders(folder);
+        if (deleted) {
+          emptyFoldersDeleted = true;
+        }
+      }
+    }
+    console.log(
+      `Recursive cleanup ${emptyFoldersDeleted ? "deleted some" : "found no"} empty folders`
+    );
+    return emptyFoldersDeleted;
+  }
 };
-var LinkSettingTab = class extends import_obsidian7.PluginSettingTab {
+var LinkSettingTab = class extends import_obsidian5.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -5546,7 +5363,7 @@ var LinkSettingTab = class extends import_obsidian7.PluginSettingTab {
     containerEl.empty();
     containerEl.createEl("h2", { text: "Link Plugin Settings" });
     containerEl.createEl("h3", { text: "Link Processing" });
-    new import_obsidian7.Setting(containerEl).setName("Hugo-compatible links").setDesc(
+    new import_obsidian5.Setting(containerEl).setName("Hugo-compatible links").setDesc(
       "Ensure links are processed in a way that works with Hugo and other static site generators"
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.hugoCompatibleLinks).onChange(async (value) => {
@@ -5555,13 +5372,13 @@ var LinkSettingTab = class extends import_obsidian7.PluginSettingTab {
       })
     );
     containerEl.createEl("h3", { text: "Daily Notes Management" });
-    new import_obsidian7.Setting(containerEl).setName("Auto-update monthly folders").setDesc("Automatically update daily notes location when month changes").addToggle(
+    new import_obsidian5.Setting(containerEl).setName("Auto-update monthly folders").setDesc("Automatically update daily notes location when month changes").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.autoUpdateMonthlyFolders).onChange(async (value) => {
         this.plugin.settings.autoUpdateMonthlyFolders = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Check interval (minutes)").setDesc(
+    new import_obsidian5.Setting(containerEl).setName("Check interval (minutes)").setDesc(
       "Base interval for checking month changes (a random variance will be added to prevent system load spikes)"
     ).addSlider(
       (slider) => slider.setLimits(15, 240, 15).setValue(this.plugin.settings.checkIntervalMinutes).setDynamicTooltip().onChange(async (value) => {
@@ -5570,7 +5387,7 @@ var LinkSettingTab = class extends import_obsidian7.PluginSettingTab {
         this.plugin.registerDailyNotesLocationCheck();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Check interval variance (minutes)").setDesc(
+    new import_obsidian5.Setting(containerEl).setName("Check interval variance (minutes)").setDesc(
       "Random variance added to check interval (\xB1minutes) to prevent system load spikes"
     ).addSlider(
       (slider) => slider.setLimits(1, 15, 1).setValue(this.plugin.settings.checkIntervalVariance).setDynamicTooltip().onChange(async (value) => {
@@ -5579,51 +5396,306 @@ var LinkSettingTab = class extends import_obsidian7.PluginSettingTab {
         this.plugin.registerDailyNotesLocationCheck();
       })
     );
-    containerEl.createEl("h3", { text: "Folder Structure Templates" });
-    containerEl.createEl("p", {
-      text: "Configure folder structure templates. These work independently of Templater and other template plugins."
+    const templatesHeading = containerEl.createEl("h3", {
+      text: "Folder Templates"
     });
-    new import_obsidian7.Setting(containerEl).setName("Active Template").setDesc("Choose which folder structure template to use").addDropdown((dropdown) => {
-      const enabledTemplates = this.plugin.settings.folderTemplates.filter(
-        (t) => t.isEnabled
-      );
-      enabledTemplates.forEach((template) => {
-        dropdown.addOption(template.id, template.name);
+    const templateHelp = containerEl.createEl("p", {
+      cls: "setting-item-description"
+    });
+    templateHelp.textContent = "Select a template to use for your folder structure. Changing templates will clean up unused folders.";
+    const templatesContainer = containerEl.createDiv({ cls: "template-grid" });
+    const style = document.createElement("style");
+    style.textContent = `
+      .template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .template-card {
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 5px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .template-card:hover {
+        background-color: var(--background-secondary-alt);
+      }
+      .template-card.active {
+        border-color: var(--interactive-accent);
+        background-color: var(--background-secondary-alt);
+      }
+      .template-card.disabled {
+        opacity: 0.6;
+      }
+      .template-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .template-card-title {
+        font-weight: bold;
+        margin: 0;
+      }
+      .template-card-description {
+        font-size: 0.8em;
+        color: var(--text-muted);
+        margin: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    this.plugin.settings.folderTemplates.forEach((template) => {
+      const templateCard = templatesContainer.createDiv({
+        cls: `template-card ${this.plugin.settings.activeTemplateId === template.id ? "active" : ""} ${!template.isEnabled ? "disabled" : ""}`
       });
-      return dropdown.setValue(this.plugin.settings.activeTemplateId).onChange(async (value) => {
-        this.plugin.settings.activeTemplateId = value;
+      const templateHeader = templateCard.createDiv({
+        cls: "template-card-header"
+      });
+      const templateTitle = templateHeader.createEl("h4", {
+        text: template.name,
+        cls: "template-card-title"
+      });
+      const templateToggle = templateHeader.createEl("div");
+      (0, import_obsidian5.setIcon)(templateToggle, template.isEnabled ? "check-circle" : "circle");
+      templateCard.createEl("p", {
+        text: template.description,
+        cls: "template-card-description"
+      });
+      templateCard.addEventListener("click", async () => {
+        this.plugin.settings.folderTemplates.forEach((t) => {
+          if (t.id !== template.id) {
+            t.isEnabled = false;
+            document.querySelectorAll(".template-card").forEach((el) => {
+              const titleEl = el.querySelector(".template-card-title");
+              if (titleEl && titleEl.textContent === t.name) {
+                el.classList.add("disabled");
+                const toggleIcon = el.querySelector(
+                  ".template-card-header > div"
+                );
+                if (toggleIcon) {
+                  (0, import_obsidian5.setIcon)(toggleIcon, "circle");
+                }
+              }
+            });
+          }
+        });
+        template.isEnabled = true;
+        (0, import_obsidian5.setIcon)(templateToggle, "check-circle");
+        templateCard.classList.remove("disabled");
+        this.plugin.settings.activeTemplateId = template.id;
+        document.querySelectorAll(".template-card").forEach((el) => {
+          el.classList.remove("active");
+        });
+        templateCard.classList.add("active");
+        if (template.id === "custom") {
+          const existingCustomOptions = containerEl.querySelector(
+            ".custom-template-options"
+          );
+          if (existingCustomOptions) {
+            existingCustomOptions.remove();
+          }
+          const customOptionsContainer = containerEl.createDiv({
+            cls: "custom-template-options"
+          });
+          customOptionsContainer.style.marginTop = "16px";
+          customOptionsContainer.style.padding = "16px";
+          customOptionsContainer.style.border = "1px solid var(--background-modifier-border)";
+          customOptionsContainer.style.borderRadius = "5px";
+          customOptionsContainer.createEl("h4", {
+            text: "Customize Template Folders"
+          });
+          customOptionsContainer.createEl("p", {
+            text: "Select which folders to include in your custom template:",
+            cls: "setting-item-description"
+          });
+          let customStructure = {};
+          try {
+            customStructure = JSON.parse(template.structure);
+          } catch (e) {
+            console.error("Error parsing custom template structure", e);
+            customStructure = {};
+          }
+          const folderOptions = [
+            { id: "Documents", label: "Documents (Files, Images)" },
+            { id: "Workspace", label: "Workspace (Projects, Notes)" },
+            {
+              id: "References",
+              label: "References (Books, Articles, Resources)"
+            }
+          ];
+          folderOptions.forEach((option) => {
+            const folderSetting = new import_obsidian5.Setting(customOptionsContainer).setName(option.label).setDesc(
+              `Include the ${option.id} folder in your custom template`
+            ).addToggle((toggle) => {
+              const isEnabled = !!customStructure[option.id];
+              toggle.setValue(isEnabled).onChange(async (value) => {
+                let structure = {};
+                try {
+                  structure = JSON.parse(template.structure);
+                } catch (e) {
+                  console.error("Error parsing template structure", e);
+                  structure = {};
+                }
+                if (value) {
+                  if (option.id === "Documents") {
+                    structure.Documents = {
+                      Images: {},
+                      Files: {}
+                    };
+                  } else if (option.id === "Workspace") {
+                    structure.Workspace = {
+                      Projects: {},
+                      Notes: {}
+                    };
+                  } else if (option.id === "References") {
+                    structure.References = {
+                      Books: {},
+                      Articles: {},
+                      Resources: {}
+                    };
+                  }
+                } else {
+                  delete structure[option.id];
+                }
+                template.structure = JSON.stringify(structure);
+                await this.plugin.saveSettings();
+              });
+            });
+          });
+          const templateActionDiv2 = containerEl.createDiv({
+            cls: "template-actions"
+          });
+          const saveTemplateButton2 = templateActionDiv2.createEl("button", {
+            text: "Apply Template Changes",
+            cls: "mod-cta"
+          });
+          const actionsStyle2 = document.createElement("style");
+          actionsStyle2.textContent = `
+            .template-actions {
+              display: flex;
+              justify-content: flex-end;
+              margin-top: 16px;
+              margin-bottom: 24px;
+            }
+            button.mod-cta {
+              font-weight: bold;
+            }
+          `;
+          document.head.appendChild(actionsStyle2);
+          saveTemplateButton2.addEventListener("click", async () => {
+            if (confirm(
+              "This will apply your selected template. Unused folders will either be deleted (if empty) or moved to Archive. Continue?"
+            )) {
+              try {
+                saveTemplateButton2.disabled = true;
+                saveTemplateButton2.textContent = "Applying changes...";
+                await this.plugin.applySelectedTemplateWithCleanup();
+                saveTemplateButton2.textContent = "Changes applied successfully!";
+                setTimeout(() => {
+                  saveTemplateButton2.disabled = false;
+                  saveTemplateButton2.textContent = "Apply Template Changes";
+                }, 2e3);
+              } catch (error) {
+                saveTemplateButton2.textContent = "Error applying changes";
+                console.error("Error applying template:", error);
+                setTimeout(() => {
+                  saveTemplateButton2.disabled = false;
+                  saveTemplateButton2.textContent = "Apply Template Changes";
+                }, 2e3);
+              }
+            }
+          });
+          const existingActionDiv = containerEl.querySelector(".template-actions");
+          if (existingActionDiv) {
+            containerEl.insertBefore(customOptionsContainer, existingActionDiv);
+          } else {
+            containerEl.appendChild(customOptionsContainer);
+          }
+        } else {
+          const existingCustomOptions = containerEl.querySelector(
+            ".custom-template-options"
+          );
+          if (existingCustomOptions) {
+            existingCustomOptions.remove();
+          }
+        }
+        new import_obsidian5.Notice(
+          `Selected template "${template.name}". Click "Apply Template Changes" to update folder structure.`,
+          5e3
+        );
+        await this.plugin.saveSettings();
+      });
+      templateToggle.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        template.isEnabled = !template.isEnabled;
+        (0, import_obsidian5.setIcon)(templateToggle, template.isEnabled ? "check-circle" : "circle");
+        if (template.isEnabled) {
+          templateCard.classList.remove("disabled");
+        } else {
+          templateCard.classList.add("disabled");
+        }
+        if (!template.isEnabled && this.plugin.settings.activeTemplateId === template.id) {
+          const nextTemplate = this.plugin.settings.folderTemplates.find(
+            (t) => t.isEnabled && t.id !== template.id
+          );
+          if (nextTemplate) {
+            this.plugin.settings.activeTemplateId = nextTemplate.id;
+            document.querySelectorAll(".template-card").forEach((el) => {
+              el.classList.remove("active");
+              const titleEl = el.querySelector(".template-card-title");
+              if (titleEl && titleEl.textContent === nextTemplate.name) {
+                el.classList.add("active");
+              }
+            });
+          }
+        }
         await this.plugin.saveSettings();
       });
     });
-    const templateContainer = containerEl.createDiv(
-      "template-settings-container"
-    );
-    this.plugin.settings.folderTemplates.forEach((template) => {
-      const templateDiv = templateContainer.createDiv("template-item");
-      templateDiv.style.border = "1px solid var(--background-modifier-border)";
-      templateDiv.style.borderRadius = "4px";
-      templateDiv.style.padding = "10px";
-      templateDiv.style.marginBottom = "10px";
-      const header = templateDiv.createDiv("template-header");
-      header.style.display = "flex";
-      header.style.justifyContent = "space-between";
-      header.style.alignItems = "center";
-      header.style.marginBottom = "8px";
-      header.createEl("h4", { text: template.name });
-      templateDiv.createEl("p", { text: template.description });
-      const previewBtn = templateDiv.createEl("button", {
-        text: "Preview Structure"
-      });
-      previewBtn.addEventListener("click", () => {
-        try {
-          const structure = JSON.parse(template.structure);
-          new StructurePreviewModal(this.app, structure).open();
-        } catch (e) {
-          new import_obsidian7.Notice("Invalid structure format");
-        }
-      });
+    const templateActionDiv = containerEl.createDiv({ cls: "template-actions" });
+    const saveTemplateButton = templateActionDiv.createEl("button", {
+      text: "Apply Template Changes",
+      cls: "mod-cta"
     });
-    new import_obsidian7.Setting(containerEl).setName("Help").setDesc("Open the help documentation").addButton(
+    const actionsStyle = document.createElement("style");
+    actionsStyle.textContent = `
+      .template-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+        margin-bottom: 24px;
+      }
+      button.mod-cta {
+        font-weight: bold;
+      }
+    `;
+    document.head.appendChild(actionsStyle);
+    saveTemplateButton.addEventListener("click", async () => {
+      if (confirm(
+        "This will apply your selected template. Unused folders will either be deleted (if empty) or moved to Archive. Continue?"
+      )) {
+        try {
+          saveTemplateButton.disabled = true;
+          saveTemplateButton.textContent = "Applying changes...";
+          await this.plugin.applySelectedTemplateWithCleanup();
+          saveTemplateButton.textContent = "Changes applied successfully!";
+          setTimeout(() => {
+            saveTemplateButton.disabled = false;
+            saveTemplateButton.textContent = "Apply Template Changes";
+          }, 2e3);
+        } catch (error) {
+          saveTemplateButton.textContent = "Error applying changes";
+          console.error("Error applying template:", error);
+          setTimeout(() => {
+            saveTemplateButton.disabled = false;
+            saveTemplateButton.textContent = "Apply Template Changes";
+          }, 2e3);
+        }
+      }
+    });
+    new import_obsidian5.Setting(containerEl).setName("Help").setDesc("Open the help documentation").addButton(
       (btn) => btn.setButtonText("Open Help").onClick(() => {
         new HelpModal(this.app).open();
       })

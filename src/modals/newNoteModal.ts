@@ -109,8 +109,32 @@ export class NewNoteModal extends Modal {
       })
     })
 
-    // Add submit button
-    new Setting(contentEl).addButton((btn) =>
+    // Add buttons container for better styling
+    const buttonsContainer = contentEl.createDiv('modal-button-container')
+    buttonsContainer.style.display = 'flex'
+    buttonsContainer.style.justifyContent = 'space-between'
+    buttonsContainer.style.marginTop = '20px'
+
+    // Left side - settings button
+    const leftButtons = buttonsContainer.createDiv()
+    new Setting(leftButtons).addButton((btn) =>
+      btn
+        .setButtonText('Open Settings')
+        .setTooltip('Configure folder templates and plugin options')
+        .onClick(() => {
+          this.close()
+          // Open settings tab
+          // @ts-ignore - The setting property exists but is not in the type definitions
+          this.app.setting.open()
+          // Navigate to the plugin's tab
+          // @ts-ignore - The setting property exists but is not in the type definitions
+          this.app.setting.openTabById('obsidian-link-plugin')
+        })
+    )
+
+    // Right side - create button
+    const rightButtons = buttonsContainer.createDiv()
+    new Setting(rightButtons).addButton((btn) =>
       btn
         .setButtonText('Create')
         .setCta()
@@ -119,6 +143,12 @@ export class NewNoteModal extends Modal {
           this.onSubmit(this.result)
         })
     )
+
+    // Fix button container styling
+    buttonsContainer.querySelectorAll('.setting-item').forEach((el) => {
+      ;(el as HTMLElement).style.border = 'none'
+      ;(el as HTMLElement).style.padding = '0'
+    })
 
     this.updateDisplay()
   }

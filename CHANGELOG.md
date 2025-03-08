@@ -5,7 +5,57 @@ All notable changes to the Obsidian Link Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - Unreleased
+## [2.3.0] - 2024-03-08
+
+### Added
+
+- Highly configurable Custom template for precise folder selection
+- Added toggles to select which main folders to include in custom templates
+
+### Changed
+
+- Simplified templates to focus on essential use cases
+- Improved Minimal template to only include Journal and References
+- Enhanced folder movement logic to ensure proper cleanup
+
+### Fixed
+
+- Fixed an issue where Documents folder wasn't properly moved when switching to Minimal template
+
+## [2.2.0] - 2024-03-08
+
+### Added
+
+- Added "Apply Template Changes" button to the settings tab
+- Added automatic cleanup of unused folders when switching templates
+- Added automatic archiving of non-empty folders to Archive directory
+
+### Changed
+
+- Redesigned folder templates UI with a more compact card-based layout
+- Improved template selection experience with visual feedback
+- Enhanced Archive folder handling to better organize unused content
+
+## [2.1.0] - 2024-03-08
+
+### Added
+
+- Support for creating linked notes without an active markdown editor
+
+### Changed
+
+- Changed folder structure to use full month names instead of abbreviated names
+
+### Fixed
+
+- Fixed ribbon icon functionality to properly open the note creation modal
+- Fixed modal implementation to correctly handle user input
+- Fixed selected text pre-filling in the note creation modal
+- Improved date handling in the journal note creation workflow
+- Added proper error handling for the note creation process
+- Fixed file path construction for different folder schemas
+
+## [2.0.0] - 2024-03-08
 
 Version 2 is a major rewrite of the plugin with significant architectural improvements and new features.
 
@@ -17,14 +67,6 @@ Version 2 is a major rewrite of the plugin with significant architectural improv
 
 - **Breaking**: Complete architectural restructuring
 - **Breaking**: New configuration format
-
-### Fixed
-
-- Fixed ribbon icon functionality to properly open the note creation modal
-- Fixed modal implementation to correctly handle user input
-- Fixed selected text pre-filling in the note creation modal
-- Improved date handling in the journal note creation workflow
-- Added proper error handling for the note creation process
 
 ### Removed
 

@@ -42,7 +42,8 @@ interface ILinkPlugin extends Plugin {
 
 export async function createLinkedNote(
   plugin: ILinkPlugin,
-  editor: Editor | null
+  editor: Editor | null,
+  view?: any
 ) {
   try {
     // Check if we have an active editor - if not, we'll just create a note without linking
@@ -65,7 +66,7 @@ export async function createLinkedNote(
       const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : ''
       const folderPath = `${basePath}${
         BASE_FOLDERS.JOURNAL
-      }/${noteOptions.date.format('YYYY/MM')}`
+      }/${noteOptions.date.format('YYYY/MMM')}`
 
       // Ensure folder exists
       await ensureFutureDailyNoteFolder(plugin.app, noteOptions.date)
