@@ -109,7 +109,7 @@ function countFilesRecursively(listing: any): number {
 }
 
 /**
- * Migrates folder structure between legacy and Hugo-compatible formats
+ * Migrates folder structure between legacy, Hugo-compatible, and vault root formats
  * @param app The Obsidian App instance
  * @param targetType The target folder structure type to migrate to
  * @param preserveFiles Whether to move files between structures (true) or create empty folders (false)
@@ -149,45 +149,33 @@ export async function migrateFolderStructure(
       `Migrating from ${currentType} to ${targetType} folder structure`
     )
 
-    // Create source and target mappings based on direction
-    const sourceMappings = Object.entries(FOLDER_MAPPINGS).filter(
-      ([source, target]) =>
-        (currentType === FolderStructureType.LEGACY &&
-          source.startsWith(LEGACY_ROOT)) ||
-        (currentType === FolderStructureType.HUGO_COMPATIBLE &&
-          source.startsWith(HUGO_ROOT))
-    )
+    // Create mappings based on the source and target types
+    const sourceMappings = buildMappings(currentType, targetType)
 
-    // Create root folder
-    const targetRoot =
-      targetType === FolderStructureType.LEGACY ? LEGACY_ROOT : HUGO_ROOT
-    if (!(await vault.adapter.exists(targetRoot))) {
+    // Create target root folder if needed
+    const targetRoot = getTargetRoot(targetType)
+    if (targetRoot && !(await vault.adapter.exists(targetRoot))) {
       await vault.createFolder(targetRoot)
       migrationLog.push(`Created root folder: ${targetRoot}`)
     }
 
     // Process each folder mapping
     for (const [sourcePath, targetPath] of sourceMappings) {
-      const mappedSource =
-        currentType === FolderStructureType.LEGACY ? sourcePath : targetPath
-      const mappedTarget =
-        currentType === FolderStructureType.LEGACY ? targetPath : sourcePath
-
       // Skip if source doesn't exist
-      if (!(await vault.adapter.exists(mappedSource))) {
-        migrationLog.push(`Source folder does not exist: ${mappedSource}`)
+      if (!(await vault.adapter.exists(sourcePath))) {
+        migrationLog.push(`Source folder does not exist: ${sourcePath}`)
         continue
       }
 
       // Create target folder if it doesn't exist
-      if (!(await vault.adapter.exists(mappedTarget))) {
-        await vault.createFolder(mappedTarget)
-        migrationLog.push(`Created target folder: ${mappedTarget}`)
+      if (!(await vault.adapter.exists(targetPath))) {
+        await vault.createFolder(targetPath)
+        migrationLog.push(`Created target folder: ${targetPath}`)
       }
 
       if (preserveFiles) {
         // Migrate files from source to target
-        await migrateFiles(app, mappedSource, mappedTarget, migrationLog)
+        await migrateFiles(app, sourcePath, targetPath, migrationLog)
       }
     }
 
@@ -209,6 +197,120 @@ export async function migrateFolderStructure(
 }
 
 /**
+ * Build the appropriate source and target path mappings based on the migration direction
+ */
+function buildMappings(
+  currentType: FolderStructureType,
+  targetType: FolderStructureType
+): [string, string][] {
+  // Determine source and target roots
+  const sourceRoot = getSourceRoot(currentType)
+  const targetRoot = getTargetRoot(targetType)
+
+  // Create mappings based on source and target types
+  if (
+    currentType === FolderStructureType.VAULT_ROOT &&
+    targetType === FolderStructureType.HUGO_COMPATIBLE
+  ) {
+    // Moving from vault root to Link folder
+    return [
+      ['Journal', `${HUGO_ROOT}/Journal`],
+      ['Documents', `${HUGO_ROOT}/Documents`],
+      ['Templates', `${HUGO_ROOT}/Templates`],
+      ['Workspace', `${HUGO_ROOT}/Workspace`],
+      ['References', `${HUGO_ROOT}/References`],
+      ['Archive', `${HUGO_ROOT}/Archive`]
+    ]
+  } else if (
+    currentType === FolderStructureType.VAULT_ROOT &&
+    targetType === FolderStructureType.LEGACY
+  ) {
+    // Moving from vault root to _Link folder
+    return [
+      ['Journal', `${LEGACY_ROOT}/_Journal`],
+      ['Documents', `${LEGACY_ROOT}/Documents`],
+      ['Templates', `${LEGACY_ROOT}/Templates`],
+      ['Workspace', `${LEGACY_ROOT}/_Workspace`],
+      ['References', `${LEGACY_ROOT}/_References`],
+      ['Archive', `${LEGACY_ROOT}/Archive`]
+    ]
+  } else if (
+    currentType === FolderStructureType.HUGO_COMPATIBLE &&
+    targetType === FolderStructureType.VAULT_ROOT
+  ) {
+    // Moving from Link folder to vault root
+    return [
+      [`${HUGO_ROOT}/Journal`, 'Journal'],
+      [`${HUGO_ROOT}/Documents`, 'Documents'],
+      [`${HUGO_ROOT}/Templates`, 'Templates'],
+      [`${HUGO_ROOT}/Workspace`, 'Workspace'],
+      [`${HUGO_ROOT}/References`, 'References'],
+      [`${HUGO_ROOT}/Archive`, 'Archive']
+    ]
+  } else if (
+    currentType === FolderStructureType.LEGACY &&
+    targetType === FolderStructureType.VAULT_ROOT
+  ) {
+    // Moving from _Link folder to vault root
+    return [
+      [`${LEGACY_ROOT}/_Journal`, 'Journal'],
+      [`${LEGACY_ROOT}/Documents`, 'Documents'],
+      [`${LEGACY_ROOT}/Templates`, 'Templates'],
+      [`${LEGACY_ROOT}/_Workspace`, 'Workspace'],
+      [`${LEGACY_ROOT}/_References`, 'References'],
+      [`${LEGACY_ROOT}/Archive`, 'Archive']
+    ]
+  } else if (
+    currentType === FolderStructureType.LEGACY &&
+    targetType === FolderStructureType.HUGO_COMPATIBLE
+  ) {
+    // Moving from _Link folder to Link folder
+    return Object.entries(FOLDER_MAPPINGS).filter(([source]) =>
+      source.startsWith(LEGACY_ROOT)
+    )
+  } else if (
+    currentType === FolderStructureType.HUGO_COMPATIBLE &&
+    targetType === FolderStructureType.LEGACY
+  ) {
+    // Moving from Link folder to _Link folder
+    return Object.entries(REVERSE_FOLDER_MAPPINGS)
+      .filter(([source]) => source.startsWith(HUGO_ROOT))
+      .map(([source, target]) => [source, target])
+  }
+
+  // Fallback to empty array if no mapping found
+  return []
+}
+
+/**
+ * Get the root folder based on folder structure type
+ */
+function getTargetRoot(type: FolderStructureType): string {
+  switch (type) {
+    case FolderStructureType.LEGACY:
+      return LEGACY_ROOT
+    case FolderStructureType.HUGO_COMPATIBLE:
+      return HUGO_ROOT
+    case FolderStructureType.VAULT_ROOT:
+      return ''
+  }
+}
+
+/**
+ * Get the source root folder based on folder structure type
+ */
+function getSourceRoot(type: FolderStructureType): string {
+  switch (type) {
+    case FolderStructureType.LEGACY:
+      return LEGACY_ROOT
+    case FolderStructureType.HUGO_COMPATIBLE:
+      return HUGO_ROOT
+    case FolderStructureType.VAULT_ROOT:
+      return ''
+  }
+}
+
+/**
  * Migrates files from source to target folder
  */
 async function migrateFiles(
@@ -220,47 +322,131 @@ async function migrateFiles(
   const vault = app.vault
 
   try {
+    // Check if source exists
+    if (!(await vault.adapter.exists(sourcePath))) {
+      migrationLog.push(`Source path does not exist: ${sourcePath}`)
+      return
+    }
+
     // Get source folder listing
     const sourceListing = await vault.adapter.list(sourcePath)
+    migrationLog.push(`Processing folder: ${sourcePath} → ${targetPath}`)
 
     // Process files
     if (sourceListing.files && sourceListing.files.length > 0) {
+      migrationLog.push(`Found ${sourceListing.files.length} files to migrate`)
+
       for (const file of sourceListing.files) {
-        const fileName = file.split('/').pop()
-        const targetFilePath = `${targetPath}/${fileName}`
+        try {
+          const fileName = file.split('/').pop() || ''
+          const targetFilePath = `${targetPath}/${fileName}`
 
-        // Check if target file already exists
-        if (await vault.adapter.exists(targetFilePath)) {
-          migrationLog.push(`File already exists, skipping: ${targetFilePath}`)
-          continue
+          // Check if target file already exists
+          if (await vault.adapter.exists(targetFilePath)) {
+            migrationLog.push(
+              `File already exists, skipping: ${targetFilePath}`
+            )
+            continue
+          }
+
+          // Copy file content from source to target
+          const content = await vault.adapter.read(file)
+          await vault.create(targetFilePath, content)
+
+          // Delete original file after successful creation
+          const originalFile = app.vault.getAbstractFileByPath(file)
+          if (originalFile instanceof TFile) {
+            await vault.delete(originalFile)
+            migrationLog.push(`Moved file: ${file} → ${targetFilePath}`)
+          } else {
+            migrationLog.push(
+              `Created copy (couldn't delete original): ${file} → ${targetFilePath}`
+            )
+          }
+        } catch (fileError) {
+          migrationLog.push(
+            `Error processing file ${file}: ${fileError.message}`
+          )
+          console.error(`Error processing file ${file}:`, fileError)
+          // Continue with other files
         }
-
-        // Copy file content from source to target
-        const content = await vault.adapter.read(file)
-        await vault.create(targetFilePath, content)
-        migrationLog.push(`Migrated file: ${file} → ${targetFilePath}`)
       }
+    } else {
+      migrationLog.push(`No files found in ${sourcePath}`)
     }
 
     // Process subfolders recursively
-    if (sourceListing.folders) {
+    if (sourceListing.folders && sourceListing.folders.length > 0) {
+      migrationLog.push(
+        `Found ${sourceListing.folders.length} subfolders to process`
+      )
+
       for (const subfolder of sourceListing.folders) {
-        const sourceSubfolderPath = subfolder
-        const subfolderName = subfolder.split('/').pop()
-        const targetSubfolderPath = `${targetPath}/${subfolderName}`
+        try {
+          const subfolderName = subfolder.split('/').pop() || ''
+          const targetSubfolderPath = `${targetPath}/${subfolderName}`
 
-        // Create target subfolder
-        if (!(await vault.adapter.exists(targetSubfolderPath))) {
-          await vault.createFolder(targetSubfolderPath)
-          migrationLog.push(`Created subfolder: ${targetSubfolderPath}`)
+          // Create target subfolder
+          if (!(await vault.adapter.exists(targetSubfolderPath))) {
+            await vault.createFolder(targetSubfolderPath)
+            migrationLog.push(`Created subfolder: ${targetSubfolderPath}`)
+          }
+
+          // Recursively migrate files in subfolder
+          await migrateFiles(app, subfolder, targetSubfolderPath, migrationLog)
+
+          // After migrating contents, try to delete the original subfolder if it's empty
+          try {
+            const checkFolder = await vault.adapter.list(subfolder)
+            if (
+              checkFolder.files.length === 0 &&
+              checkFolder.folders.length === 0
+            ) {
+              const folderObj = app.vault.getAbstractFileByPath(subfolder)
+              if (folderObj instanceof TFolder) {
+                await vault.delete(folderObj)
+                migrationLog.push(`Removed empty source folder: ${subfolder}`)
+              }
+            } else {
+              migrationLog.push(
+                `Source folder not empty, keeping: ${subfolder}`
+              )
+            }
+          } catch (deleteError) {
+            migrationLog.push(
+              `Error checking/deleting folder ${subfolder}: ${deleteError.message}`
+            )
+          }
+        } catch (subfolderError) {
+          migrationLog.push(
+            `Error processing subfolder ${subfolder}: ${subfolderError.message}`
+          )
+          console.error(
+            `Error processing subfolder ${subfolder}:`,
+            subfolderError
+          )
+          // Continue with other subfolders
         }
+      }
+    }
 
-        // Recursively migrate files in subfolder
-        await migrateFiles(
-          app,
-          sourceSubfolderPath,
-          targetSubfolderPath,
-          migrationLog
+    // Try to delete the original root folder if empty and migration was successful
+    if (sourcePath.includes(LEGACY_ROOT) || sourcePath.includes(HUGO_ROOT)) {
+      try {
+        const checkSourceFolder = await vault.adapter.list(sourcePath)
+        if (
+          checkSourceFolder.files.length === 0 &&
+          checkSourceFolder.folders.length === 0
+        ) {
+          const sourceRootFolder = app.vault.getAbstractFileByPath(sourcePath)
+          if (sourceRootFolder instanceof TFolder) {
+            await vault.delete(sourceRootFolder)
+            migrationLog.push(`Removed empty source root folder: ${sourcePath}`)
+          }
+        }
+      } catch (rootDeleteError) {
+        migrationLog.push(
+          `Could not delete root folder ${sourcePath}: ${rootDeleteError.message}`
         )
       }
     }

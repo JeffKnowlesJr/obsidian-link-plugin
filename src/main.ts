@@ -326,6 +326,63 @@ export default class LinkPlugin extends Plugin {
         }
       }
     })
+
+    console.debug('Registering migrate to vault root command...')
+    this.addCommand({
+      id: 'migrate-to-vault-root',
+      name: 'Migrate folders to vault root',
+      callback: async () => {
+        console.debug('Migrate to vault root command triggered')
+        try {
+          const migrationLog = await migrateFolderStructure(
+            this.app,
+            FolderStructureType.VAULT_ROOT,
+            true, // preserve files
+            true // ensure archive
+          )
+
+          // Update settings
+          this.settings.folderStructureType = FolderStructureType.VAULT_ROOT
+          await this.saveSettings()
+
+          // Log results
+          console.debug('Migration completed:', migrationLog)
+          new Notice('Folders migrated to vault root successfully')
+        } catch (error) {
+          console.error('Error during migration:', error)
+          new Notice('Error migrating folders: ' + error.message)
+        }
+      }
+    })
+
+    console.debug('Registering migrate to Link folder command...')
+    this.addCommand({
+      id: 'migrate-to-link-folder',
+      name: 'Migrate folders to Link folder',
+      callback: async () => {
+        console.debug('Migrate to Link folder command triggered')
+        try {
+          const migrationLog = await migrateFolderStructure(
+            this.app,
+            FolderStructureType.HUGO_COMPATIBLE,
+            true, // preserve files
+            true // ensure archive
+          )
+
+          // Update settings
+          this.settings.folderStructureType =
+            FolderStructureType.HUGO_COMPATIBLE
+          await this.saveSettings()
+
+          // Log results
+          console.debug('Migration completed:', migrationLog)
+          new Notice('Folders migrated to Link folder successfully')
+        } catch (error) {
+          console.error('Error during migration:', error)
+          new Notice('Error migrating folders: ' + error.message)
+        }
+      }
+    })
   }
 
   async onunload() {

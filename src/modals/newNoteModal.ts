@@ -67,23 +67,32 @@ export class NewNoteModal extends Modal {
       .setDesc('Choose the date for the note')
 
     datePickerSetting.addText((text) => {
-      const tomorrow = addDay(getCurrentMoment()).format('YYYY-MM-DD')
+      // Set tomorrow as default
+      const tomorrowDate = addDay(getCurrentMoment())
+      const tomorrow = tomorrowDate.format('YYYY-MM-DD')
+
+      // Configure the date picker
       const datePickerEl = text.inputEl
       this.dateInput = datePickerEl
       datePickerEl.type = 'date'
       datePickerEl.value = tomorrow
 
-      // Set initial date
-      const initialDate = getCurrentMoment()
-      this.result.date = initialDate
-      this.result.name = initialDate.format('YYYY-MM-DD dddd')
+      // Use tomorrow as the initial date value
+      this.result.date = tomorrowDate
+      // Format the name as YYYY-MM-DD-dddd
+      this.result.name = tomorrowDate.format('YYYY-MM-DD-dddd')
 
       datePickerEl.addEventListener('change', () => {
         if (datePickerEl.value) {
           // Parse the date from the input value
           const momentDate = window.moment(datePickerEl.value, 'YYYY-MM-DD')
+          console.debug(
+            `Date picker changed to: ${momentDate.format('YYYY-MM-DD')}`
+          )
+
           this.result.date = momentDate
-          this.result.name = momentDate.format('YYYY-MM-DD dddd')
+          // Format the name as YYYY-MM-DD-dddd
+          this.result.name = momentDate.format('YYYY-MM-DD-dddd')
         }
       })
     })

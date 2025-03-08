@@ -55,14 +55,12 @@ export async function createLinkedNote(
       return
     }
 
-    // Sanitize file name
+    // Sanitize file name - for all notes
     const sanitizedName = await validateAndSanitizeFileName(noteOptions.name)
 
     let fullPath: string
     if (noteOptions.folder === BASE_FOLDERS.JOURNAL && noteOptions.date) {
       // Handle journal note with date
-      const dateStr = noteOptions.date.format('YYYY-MM-DD')
-
       // Construct folder path using BASE_FOLDERS directly, handling empty ROOT_FOLDER
       const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : ''
       const folderPath = `${basePath}${
@@ -72,13 +70,19 @@ export async function createLinkedNote(
       // Ensure folder exists
       await ensureFutureDailyNoteFolder(plugin.app, noteOptions.date)
 
-      fullPath = `${folderPath}/${dateStr} ${sanitizedName}`
+      // For daily notes, use the sanitized name (which should already be in the format YYYY-MM-DD-dddd)
+      fullPath = `${folderPath}/${sanitizedName}`
       noteOptions.isFutureDaily = true
+
+      console.debug(`Creating daily note at path: ${fullPath}`)
     } else {
       // Handle normal note
       // Construct path handling empty ROOT_FOLDER
       const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : ''
       fullPath = `${basePath}${noteOptions.folder}/${sanitizedName}`
+      console.debug(
+        `Creating regular note with name: ${sanitizedName} at path: ${fullPath}`
+      )
     }
 
     // Create the file
@@ -143,6 +147,9 @@ async function createNoteFile(
   options: NoteCreationResult
 ): Promise<TFile> {
   try {
+    console.debug(`Attempting to create note at path: ${fullPath}.md`)
+
+    // Check if file already exists
     const exists = await plugin.app.vault.adapter.exists(`${fullPath}.md`)
     if (exists) {
       throw new LinkPluginError(
@@ -151,6 +158,23 @@ async function createNoteFile(
       )
     }
 
+    // Ensure all parent folders exist
+    const folderPath = fullPath.substring(0, fullPath.lastIndexOf('/'))
+    console.debug(`Ensuring parent folder exists: ${folderPath}`)
+
+    // Split the path and create each folder segment
+    const segments = folderPath.split('/').filter((s) => s.length > 0)
+    let currentPath = ''
+
+    for (const segment of segments) {
+      currentPath += (currentPath ? '/' : '') + segment
+      if (!(await plugin.app.vault.adapter.exists(currentPath))) {
+        console.debug(`Creating folder: ${currentPath}`)
+        await plugin.app.vault.createFolder(currentPath)
+      }
+    }
+
+    // Prepare content
     let content: string
     if (options.isFutureDaily) {
       content = await createDailyNoteContent(plugin.app, noteName, options.date)
@@ -158,11 +182,16 @@ async function createNoteFile(
       content = `# ${noteName}\n\n`
     }
 
+    // Create the file
+    console.debug(`Creating file: ${fullPath}.md`)
     return await plugin.app.vault.create(`${fullPath}.md`, content)
   } catch (error) {
+    console.error(`Error creating note file at ${fullPath}:`, error)
+
     if (error instanceof LinkPluginError) {
       throw error
     }
+
     throw new LinkPluginError(
       'Failed to create note file',
       ErrorCode.FILE_OPERATION_FAILED,
