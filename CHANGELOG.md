@@ -5,6 +5,21 @@ All notable changes to the Obsidian Link Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2024-03-08
+
+### Added
+
+- Intelligent Archive folder content restoration when applying templates
+- Template-aware folder preservation to maintain empty template folders
+- Recursive folder structure merging when restoring from Archive
+- Improved folder cleanup to preserve template structure
+
+### Fixed
+
+- Fixed issues with empty template folders being incorrectly deleted
+- Fixed folder structure handling to ensure template integrity
+- Prevented accidental deletion of important empty folders
+
 ## [2.3.0] - 2024-03-08
 
 ### Added

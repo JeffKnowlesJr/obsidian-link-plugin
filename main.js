@@ -5173,6 +5173,83 @@ var LinkPlugin = class extends import_obsidian5.Plugin {
           console.error("Error creating Archive folder:", error);
         }
       }
+      if (archiveFolder) {
+        console.log(`Checking Archive folder for content to restore...`);
+        for (const templateFolderName of templateRootFolders) {
+          if (templateFolderName === archiveFolderName)
+            continue;
+          const archivedFolderPath = `${archiveFolder.path}/${templateFolderName}`;
+          if (await vault.adapter.exists(archivedFolderPath)) {
+            console.log(
+              `Found archived folder that matches template: ${templateFolderName}`
+            );
+            const rootPath = templateFolderName;
+            const folderExistsInRoot = await vault.adapter.exists(rootPath);
+            if (folderExistsInRoot) {
+              console.log(
+                `Folder ${templateFolderName} exists in both Archive and root, merging...`
+              );
+              try {
+                const archivedFolder = archiveFolder.children.find(
+                  (item) => item instanceof import_obsidian5.TFolder && item.name === templateFolderName
+                );
+                if (archivedFolder) {
+                  const rootFolder = vault.getRoot().children.find(
+                    (item) => item instanceof import_obsidian5.TFolder && item.name === templateFolderName
+                  );
+                  await this.mergeFolderContents(
+                    archivedFolder,
+                    rootFolder,
+                    vault
+                  );
+                  if (archivedFolder.children.length === 0) {
+                    await vault.delete(archivedFolder);
+                    console.log(
+                      `Deleted empty archived folder after merging: ${archivedFolder.path}`
+                    );
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error merging folder ${templateFolderName}:`,
+                  error
+                );
+              }
+            } else {
+              console.log(
+                `Moving ${templateFolderName} from Archive to root...`
+              );
+              try {
+                await vault.createFolder(rootPath);
+                const sourceFolder = archiveFolder.children.find(
+                  (item) => item instanceof import_obsidian5.TFolder && item.name === templateFolderName
+                );
+                if (sourceFolder) {
+                  const targetFolder = vault.getRoot().children.find(
+                    (item) => item instanceof import_obsidian5.TFolder && item.name === templateFolderName
+                  );
+                  await this.mergeFolderContents(
+                    sourceFolder,
+                    targetFolder,
+                    vault
+                  );
+                  if (sourceFolder.children.length === 0) {
+                    await vault.delete(sourceFolder);
+                    console.log(
+                      `Deleted empty archived folder after moving: ${sourceFolder.path}`
+                    );
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error moving folder ${templateFolderName} from Archive:`,
+                  error
+                );
+              }
+            }
+          }
+        }
+      }
       for (const folderName of rootFolders) {
         if (folderName === archiveFolderName || folderName === ".obsidian" || templateRootFolders.includes(folderName)) {
           console.log(`Skipping folder (special or in template): ${folderName}`);
@@ -5261,6 +5338,57 @@ var LinkPlugin = class extends import_obsidian5.Plugin {
     }
   }
   /**
+   * Recursively merges the contents of a source folder into a target folder
+   */
+  async mergeFolderContents(sourceFolder, targetFolder, vault) {
+    for (const child of [...sourceFolder.children]) {
+      const destinationPath = `${targetFolder.path}/${child.name}`;
+      if (child instanceof import_obsidian5.TFile) {
+        if (await vault.adapter.exists(destinationPath)) {
+          console.log(`File ${child.name} already exists in target, skipping`);
+          continue;
+        }
+        try {
+          await vault.rename(child, destinationPath);
+          console.log(`Moved file ${child.name} to ${targetFolder.path}`);
+        } catch (error) {
+          console.error(`Error moving file ${child.name}:`, error);
+        }
+      } else if (child instanceof import_obsidian5.TFolder) {
+        if (!await vault.adapter.exists(destinationPath)) {
+          await vault.createFolder(destinationPath);
+          console.log(`Created subfolder: ${destinationPath}`);
+        }
+        const targetSubfolder = targetFolder.children.find(
+          (item) => item instanceof import_obsidian5.TFolder && item.name === child.name
+        );
+        if (targetSubfolder) {
+          await this.mergeFolderContents(child, targetSubfolder, vault);
+          if (child.children.length === 0) {
+            await vault.delete(child);
+            console.log(`Deleted empty source subfolder: ${child.path}`);
+          }
+        } else {
+          console.error(`Target subfolder not found: ${destinationPath}`);
+          const refreshedTarget = vault.getAbstractFileByPath(destinationPath);
+          if (refreshedTarget instanceof import_obsidian5.TFolder) {
+            await this.mergeFolderContents(child, refreshedTarget, vault);
+            if (child.children.length === 0) {
+              await vault.delete(child);
+              console.log(
+                `Deleted empty source subfolder after refresh: ${child.path}`
+              );
+            }
+          } else {
+            console.error(
+              `Unable to find target folder after creation: ${destinationPath}`
+            );
+          }
+        }
+      }
+    }
+  }
+  /**
    * Recursively checks for empty folders in the vault and deletes them,
    * but preserves folders defined in the template structure even if empty
    */
@@ -5302,6 +5430,11 @@ var LinkPlugin = class extends import_obsidian5.Plugin {
       if (folder.name === ".obsidian" || folder.name === "Archive") {
         return true;
       }
+      const essentialFolders = ["Journal", "Templates"];
+      if (essentialFolders.includes(folder.name)) {
+        console.log(`Preserving essential folder: ${folder.name}`);
+        return true;
+      }
       if (templateFolders.includes(folder.name)) {
         console.log(`Preserving template folder: ${folder.name}`);
         return true;
@@ -5311,6 +5444,11 @@ var LinkPlugin = class extends import_obsidian5.Plugin {
           console.log(`Preserving template subfolder: ${folder.path}`);
           return true;
         }
+      }
+      if (folder.path.indexOf("Journal/") === 0 && (/Journal\/y_\d{4}$/.test(folder.path) || // Year folders like Journal/y_2024
+      /Journal\/y_\d{4}\/[A-Z][a-z]+$/.test(folder.path))) {
+        console.log(`Preserving date structure folder: ${folder.path}`);
+        return true;
       }
       return false;
     };

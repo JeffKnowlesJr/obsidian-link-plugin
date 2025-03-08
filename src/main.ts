@@ -553,7 +553,122 @@ export default class LinkPlugin extends Plugin {
         }
       }
 
-      // Process each existing root folder
+      // STEP 1: Check Archive for folders that are part of the template and restore them
+      if (archiveFolder) {
+        console.log(`Checking Archive folder for content to restore...`)
+
+        for (const templateFolderName of templateRootFolders) {
+          // Skip Archive folder itself
+          if (templateFolderName === archiveFolderName) continue
+
+          // Check if this template folder exists in the Archive
+          const archivedFolderPath = `${archiveFolder.path}/${templateFolderName}`
+          if (await vault.adapter.exists(archivedFolderPath)) {
+            console.log(
+              `Found archived folder that matches template: ${templateFolderName}`
+            )
+
+            // Check if folder already exists in root (could be empty)
+            const rootPath = templateFolderName
+            const folderExistsInRoot = await vault.adapter.exists(rootPath)
+
+            if (folderExistsInRoot) {
+              // If it already exists in root, we need to merge contents
+              console.log(
+                `Folder ${templateFolderName} exists in both Archive and root, merging...`
+              )
+
+              try {
+                // Get the archived folder
+                const archivedFolder = archiveFolder.children.find(
+                  (item) =>
+                    item instanceof TFolder && item.name === templateFolderName
+                ) as TFolder
+
+                if (archivedFolder) {
+                  // Get the root folder
+                  const rootFolder = vault
+                    .getRoot()
+                    .children.find(
+                      (item) =>
+                        item instanceof TFolder &&
+                        item.name === templateFolderName
+                    ) as TFolder
+
+                  // Recursively merge folder contents
+                  await this.mergeFolderContents(
+                    archivedFolder,
+                    rootFolder,
+                    vault
+                  )
+
+                  // If archived folder is now empty, delete it
+                  if (archivedFolder.children.length === 0) {
+                    await vault.delete(archivedFolder)
+                    console.log(
+                      `Deleted empty archived folder after merging: ${archivedFolder.path}`
+                    )
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error merging folder ${templateFolderName}:`,
+                  error
+                )
+              }
+            } else {
+              // If it doesn't exist in root, move the entire folder
+              console.log(
+                `Moving ${templateFolderName} from Archive to root...`
+              )
+
+              try {
+                // Create the target folder in root
+                await vault.createFolder(rootPath)
+
+                // Get source folder in archive
+                const sourceFolder = archiveFolder.children.find(
+                  (item) =>
+                    item instanceof TFolder && item.name === templateFolderName
+                ) as TFolder
+
+                if (sourceFolder) {
+                  // Get the newly created target folder
+                  const targetFolder = vault
+                    .getRoot()
+                    .children.find(
+                      (item) =>
+                        item instanceof TFolder &&
+                        item.name === templateFolderName
+                    ) as TFolder
+
+                  // Move all contents
+                  await this.mergeFolderContents(
+                    sourceFolder,
+                    targetFolder,
+                    vault
+                  )
+
+                  // Delete the now-empty source folder in Archive
+                  if (sourceFolder.children.length === 0) {
+                    await vault.delete(sourceFolder)
+                    console.log(
+                      `Deleted empty archived folder after moving: ${sourceFolder.path}`
+                    )
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error moving folder ${templateFolderName} from Archive:`,
+                  error
+                )
+              }
+            }
+          }
+        }
+      }
+
+      // STEP 2: Process each existing root folder that's not in the template
       for (const folderName of rootFolders) {
         // Skip special folders and folders in the template
         if (
@@ -681,6 +796,79 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
+   * Recursively merges the contents of a source folder into a target folder
+   */
+  private async mergeFolderContents(
+    sourceFolder: TFolder,
+    targetFolder: TFolder,
+    vault: Vault
+  ): Promise<void> {
+    // Process all children of the source folder
+    for (const child of [...sourceFolder.children]) {
+      const destinationPath = `${targetFolder.path}/${child.name}`
+
+      if (child instanceof TFile) {
+        // It's a file - check if it exists in target
+        if (await vault.adapter.exists(destinationPath)) {
+          console.log(`File ${child.name} already exists in target, skipping`)
+          continue
+        }
+
+        // Move the file to target
+        try {
+          await vault.rename(child, destinationPath)
+          console.log(`Moved file ${child.name} to ${targetFolder.path}`)
+        } catch (error) {
+          console.error(`Error moving file ${child.name}:`, error)
+        }
+      } else if (child instanceof TFolder) {
+        // It's a subfolder - create if doesn't exist and recursively process
+        if (!(await vault.adapter.exists(destinationPath))) {
+          await vault.createFolder(destinationPath)
+          console.log(`Created subfolder: ${destinationPath}`)
+        }
+
+        // Get or create the target subfolder
+        const targetSubfolder = targetFolder.children.find(
+          (item) => item instanceof TFolder && item.name === child.name
+        ) as TFolder | undefined
+
+        if (targetSubfolder) {
+          // Recursively merge the contents
+          await this.mergeFolderContents(child, targetSubfolder, vault)
+
+          // If source subfolder is now empty, delete it
+          if (child.children.length === 0) {
+            await vault.delete(child)
+            console.log(`Deleted empty source subfolder: ${child.path}`)
+          }
+        } else {
+          // Target subfolder not found - this shouldn't happen since we just created it if needed
+          console.error(`Target subfolder not found: ${destinationPath}`)
+
+          // Try to get it directly from the vault
+          const refreshedTarget = vault.getAbstractFileByPath(destinationPath)
+          if (refreshedTarget instanceof TFolder) {
+            await this.mergeFolderContents(child, refreshedTarget, vault)
+
+            // Clean up empty source folder
+            if (child.children.length === 0) {
+              await vault.delete(child)
+              console.log(
+                `Deleted empty source subfolder after refresh: ${child.path}`
+              )
+            }
+          } else {
+            console.error(
+              `Unable to find target folder after creation: ${destinationPath}`
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Recursively checks for empty folders in the vault and deletes them,
    * but preserves folders defined in the template structure even if empty
    */
@@ -739,6 +927,13 @@ export default class LinkPlugin extends Plugin {
         return true
       }
 
+      // Always preserve certain essential folders
+      const essentialFolders = ['Journal', 'Templates']
+      if (essentialFolders.includes(folder.name)) {
+        console.log(`Preserving essential folder: ${folder.name}`)
+        return true
+      }
+
       // Check if this is a root folder defined in the template
       if (templateFolders.includes(folder.name)) {
         console.log(`Preserving template folder: ${folder.name}`)
@@ -752,6 +947,16 @@ export default class LinkPlugin extends Plugin {
           console.log(`Preserving template subfolder: ${folder.path}`)
           return true
         }
+      }
+
+      // Also preserve year and month folders in Journal structure
+      if (
+        folder.path.indexOf('Journal/') === 0 &&
+        (/Journal\/y_\d{4}$/.test(folder.path) || // Year folders like Journal/y_2024
+          /Journal\/y_\d{4}\/[A-Z][a-z]+$/.test(folder.path)) // Month folders like Journal/y_2024/March
+      ) {
+        console.log(`Preserving date structure folder: ${folder.path}`)
+        return true
       }
 
       return false
