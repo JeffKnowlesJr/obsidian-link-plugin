@@ -40,8 +40,14 @@ interface ILinkPlugin extends Plugin {
   }
 }
 
-export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
+export async function createLinkedNote(
+  plugin: ILinkPlugin,
+  editor: Editor | null
+) {
   try {
+    // Check if we have an active editor - if not, we'll just create a note without linking
+    const hasActiveEditor = editor !== null
+
     // Get note name and options from modal
     const noteOptions = await getNoteName(editor, plugin)
     if (!noteOptions) {
@@ -56,7 +62,10 @@ export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
     if (noteOptions.folder === BASE_FOLDERS.JOURNAL && noteOptions.date) {
       // Handle journal note with date
       const dateStr = noteOptions.date.format('YYYY-MM-DD')
-      const folderPath = `${ROOT_FOLDER}/${
+
+      // Construct folder path using BASE_FOLDERS directly, handling empty ROOT_FOLDER
+      const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : ''
+      const folderPath = `${basePath}${
         BASE_FOLDERS.JOURNAL
       }/${noteOptions.date.format('YYYY/MM')}`
 
@@ -67,7 +76,9 @@ export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
       noteOptions.isFutureDaily = true
     } else {
       // Handle normal note
-      fullPath = `${ROOT_FOLDER}/${noteOptions.folder}/${sanitizedName}`
+      // Construct path handling empty ROOT_FOLDER
+      const basePath = ROOT_FOLDER ? `${ROOT_FOLDER}/` : ''
+      fullPath = `${basePath}${noteOptions.folder}/${sanitizedName}`
     }
 
     // Create the file
@@ -78,8 +89,10 @@ export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
       noteOptions
     )
 
-    // Insert link to the file at cursor position
-    await insertNoteLinkInEditor(editor, fullPath)
+    // Insert link to the file at cursor position (only if we have an active editor)
+    if (hasActiveEditor && editor) {
+      await insertNoteLinkInEditor(editor, fullPath)
+    }
 
     // Open the new note
     await plugin.app.workspace.getLeaf(false).openFile(file)
@@ -92,10 +105,11 @@ export async function createLinkedNote(plugin: ILinkPlugin, editor: Editor) {
 }
 
 async function getNoteName(
-  editor: Editor,
+  editor: Editor | null,
   plugin: ILinkPlugin
 ): Promise<NoteCreationResult | null> {
-  const selection = editor.getSelection()
+  // If we have an editor, get the selected text, otherwise null
+  const selection = editor?.getSelection() || null
 
   return new Promise((resolve) => {
     const modal = new NewNoteModal(plugin.app, (result) => {

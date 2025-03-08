@@ -174,25 +174,28 @@ export default class LinkPlugin extends Plugin {
         // Get active leaf
         const activeLeaf = this.app.workspace.activeLeaf
         if (!activeLeaf) {
-          new Notice('No active editor')
+          // No active leaf, but we can still create a note without linking
+          createLinkedNote(this, null)
           return
         }
 
         // Get editor from MarkdownView
         const view = activeLeaf.view
         if (!view) {
-          new Notice('No active view')
+          // No active view, but we can still create a note without linking
+          createLinkedNote(this, null)
           return
         }
 
         // Check if it's a markdown view with an editor
         const markdownView = view as any
         if (!markdownView.editor) {
-          new Notice('No markdown editor active')
+          // No markdown editor, but we can still create a note without linking
+          createLinkedNote(this, null)
           return
         }
 
-        // Create linked note
+        // Create linked note with the editor
         createLinkedNote(this, markdownView.editor)
       })
 
@@ -310,9 +313,17 @@ export default class LinkPlugin extends Plugin {
     this.addCommand({
       id: 'create-linked-note',
       name: 'Create new linked note',
-      editorCallback: async (editor: Editor, view: MarkdownView) => {
+      callback: async () => {
         console.debug('Create linked note command triggered')
-        await createLinkedNote(this, editor)
+        // Get active editor if available
+        const activeLeaf = this.app.workspace.activeLeaf
+        if (activeLeaf?.view && (activeLeaf.view as any).editor) {
+          const editor = (activeLeaf.view as any).editor
+          await createLinkedNote(this, editor)
+        } else {
+          // Create note without linking
+          await createLinkedNote(this, null)
+        }
       }
     })
   }
