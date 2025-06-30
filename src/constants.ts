@@ -64,6 +64,40 @@ export const COMMAND_IDS = {
   SHOW_LINK_SUGGESTIONS: 'show-link-suggestions'
 } as const;
 
+// Ribbon button configurations
+export const RIBBON_BUTTONS = {
+  TODAY_JOURNAL: {
+    icon: 'calendar-days',
+    title: 'Open Today\'s Journal',
+    tooltip: 'Open or create today\'s journal entry'
+  },
+  CREATE_NOTE: {
+    icon: 'file-plus',
+    title: 'Create Linked Note',
+    tooltip: 'Create a new linked note from selected text'
+  },
+  MONTHLY_FOLDERS: {
+    icon: 'folder-plus',
+    title: 'Create Monthly Folders',
+    tooltip: 'Create monthly folders for the current year'
+  },
+  SHORTCODE_HELP: {
+    icon: 'zap',
+    title: 'Shortcode Help',
+    tooltip: 'Show available shortcodes and examples'
+  },
+  REBUILD_STRUCTURE: {
+    icon: 'folder-sync',
+    title: 'Rebuild Directory Structure',
+    tooltip: 'Rebuild the plugin\'s directory structure'
+  },
+  PLUGIN_SETTINGS: {
+    icon: 'settings',
+    title: 'Link Plugin Settings',
+    tooltip: 'Open Link Plugin settings'
+  }
+} as const;
+
 export const DATE_FORMATS = {
   DEFAULT_JOURNAL: 'YYYY-MM-DD dddd',
   ISO_DATE: 'YYYY-MM-DD',

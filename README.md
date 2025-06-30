@@ -10,6 +10,11 @@ The Obsidian Link Plugin enhances your note-taking workflow by providing automat
 
 ### Core Features
 
+- **Ribbon Interface**
+  - 6 quick-access buttons for essential functions
+  - One-click access to journal, note creation, and directory management
+  - Visual feedback with success messages and error handling
+
 - **Quick Note Creation and Linking**
   - Create new notes from selected text with automatic wiki-style links
   - Intelligent linking between related content
@@ -157,16 +162,29 @@ The plugin has a well-structured architecture with:
 
 ## Usage
 
+### Ribbon Interface (Quick Access)
+
+The plugin provides a convenient ribbon interface with 6 buttons for instant access to key features:
+
+- **📅 Today's Journal**: Opens or creates today's journal entry
+- **📝 Create Linked Note**: Creates a new linked note from selected text
+- **📁 Create Monthly Folders**: Creates monthly folders for the current year
+- **⚡ Shortcode Help**: Shows available shortcodes and examples
+- **🔄 Rebuild Directory Structure**: Rebuilds the plugin's directory structure
+- **⚙️ Plugin Settings**: Opens Link Plugin settings
+
+*See [RIBBON_INTERFACE_GUIDE.md](docs/user-guides/RIBBON_INTERFACE_GUIDE.md) for detailed ribbon documentation.*
+
 ### Basic Usage
 
-1. Select text you want to convert to a linked note
-2. Use the command palette (Ctrl/Cmd + P) and search for "Create Linked Note"
+1. **Quick Method**: Select text and click the "📝 Create Linked Note" ribbon button
+2. **Command Method**: Use the command palette (Ctrl/Cmd + P) and search for "Create Linked Note"
 3. The plugin will create a new note with the selected text as the title and add a link in the original note
 
 ### Directory Management
 
-1. Access plugin settings to configure your preferred directory structure
-2. Use the "Rebuild Directory Structure" command to create or update folders
+1. **Quick Method**: Click the "🔄 Rebuild Directory Structure" ribbon button
+2. **Settings Method**: Access plugin settings to configure your preferred directory structure
 3. Notes will automatically be placed in the appropriate directories based on your settings
 
 ### Using Shortcodes (Coming Soon)
@@ -184,6 +202,16 @@ The plugin can be configured through the settings panel:
 - **Shortcode Settings**: Create and manage custom shortcodes (coming soon)
 - **Key Bindings**: Customize keyboard shortcuts for plugin commands
 
+## Documentation
+
+Complete documentation is available in the [`docs/`](docs/) directory:
+
+- **[📚 Documentation Index](docs/README.md)** - Overview of all documentation
+- **[👥 User Guides](docs/user-guides/)** - How to use plugin features
+- **[🔧 Development](docs/development/)** - Technical documentation for developers
+- **[🏗️ Architecture](docs/architecture/)** - Implementation details and design decisions
+- **[📊 Project Management](docs/project-management/)** - Progress tracking and summaries
+
 ## Development
 
 ### Setup Development Environment
@@ -197,6 +225,15 @@ The plugin can be configured through the settings panel:
 1. Run `npm run build` to create a production build
 2. The built files will be available in the `dist` folder
 
+### Documentation Organization
+
+To reorganize documentation files, run:
+```bash
+npm run organize-docs
+```
+
+This script automatically organizes all documentation into the structured `docs/` directory.
+
 ## License
 
 MIT
@@ -207,3 +244,14 @@ MIT
 
 - [[The Data Well]] - Technical documentation and architecture details
 - [[Goals]] - Development roadmap and milestones
+
+## Note for the future: closing thoughts
+
+Please make dynamic dialy note folder strucfture optional. There shoul be an alternate setting that allows that to be turned off. (it should probably begin off by default. All features should, by default, be turned off then enabled as needed by the plugins settings.)
+
+## TODO
+
+- [ ] Make dynamic dialy note folder strucfture optional. There shoul be an alternate setting that allows that to be turned off. (it should probably begin off by default. All features should, by default, be turned off then enabled as needed by the plugins settings.)
+- [ ] Make the plugin settings more user friendly.
+- [ ] Add a way to create a new note from a template.
+( I don't want to rebuild templater features) but I want to be able to create future daily notes.

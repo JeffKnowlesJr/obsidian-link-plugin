@@ -8,6 +8,7 @@
     "build": "npx tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch --passWithNoTests",
+    "organize-docs": "node scripts/organize-docs.js",
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "keywords": [
