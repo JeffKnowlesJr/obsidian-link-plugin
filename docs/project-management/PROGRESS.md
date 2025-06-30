@@ -5,7 +5,7 @@ As of the latest update, the Obsidian Link Plugin is in active development with 
 
 ## Completed Items
 - [x] Initial plugin concept and architecture planning
-- [x] Repository setup on GitHub (https://github.com/JeffKnowlesJr/obsidian-link-plugin-v.01)
+- [x] Repository setup on GitHub (https://github.com/JeffKnowlesJr/obsidian-link-plugin)
 - [x] Core feature definitions
 - [x] Plugin folder structure design
 - [x] Documentation framework (README.md)

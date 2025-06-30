@@ -18,7 +18,7 @@ This document outlines the architecture, structure, and development practices us
 ### Root Directory Layout
 
 ```
-obsidian-link-plugin-v.02/
+obsidian-link-plugin/
 ├── src/                          # Source code (TypeScript)
 ├── test/                         # Test files (Jest)
 ├── docs/                         # Documentation (organized by category)
