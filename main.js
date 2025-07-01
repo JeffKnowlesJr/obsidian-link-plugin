@@ -366,6 +366,12 @@ var DateService = class {
     return this.moment(date).subtract(amount, unit);
   }
   /**
+   * Adds days to a date and returns a new moment object
+   */
+  static addDays(date, days) {
+    return this.add(date, days, "days");
+  }
+  /**
    * Check if date is valid
    */
   static isValid(date) {
@@ -557,7 +563,7 @@ var DirectoryManager = class {
    * Gets the daily notes template content from the plugin assets
    */
   async getDailyNotesTemplateContent() {
-    return `---
+    const rawTemplate = `---
 previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
 next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
 tags:
@@ -585,6 +591,54 @@ stakeholders:
 	- [ ] Review [July Log](Yearly%20Log.md#July) \u{1F5D3}\uFE0F
 
 ---`;
+    if (this.isTemplaterAvailable()) {
+      return rawTemplate;
+    } else {
+      return this.renderTemplateWithFallback(rawTemplate);
+    }
+  }
+  /**
+   * Checks if Templater plugin is available and enabled
+   */
+  isTemplaterAvailable() {
+    var _a, _b;
+    const templaterPlugin = (_b = (_a = this.plugin.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
+    return templaterPlugin && templaterPlugin._loaded;
+  }
+  /**
+   * Renders template with fallback date functions when Templater is not available
+   */
+  renderTemplateWithFallback(template) {
+    return template.replace(
+      /<% tp\.date\.now\("([^"]+)",\s*(-?\d+)\s*\) %>/g,
+      (match, format, offset) => {
+        const offsetDays = parseInt(offset);
+        const targetDate = DateService.addDays(DateService.now(), offsetDays);
+        return this.formatDateForTemplate(targetDate, format);
+      }
+    );
+  }
+  /**
+   * Formats a date according to the template format string
+   */
+  formatDateForTemplate(date, format) {
+    switch (format) {
+      case "YYYY-MM-DD dddd":
+        return DateService.format(date, "YYYY-MM-DD dddd");
+      case "YYYY-MM-DD":
+        return DateService.format(date, "YYYY-MM-DD");
+      case "dddd, MMMM Do YYYY":
+        return DateService.format(date, "dddd, MMMM Do YYYY");
+      case "MMMM Do":
+        return DateService.format(date, "MMMM Do");
+      default:
+        try {
+          return DateService.format(date, format);
+        } catch (error) {
+          console.warn(`Unable to format date with format: ${format}`, error);
+          return DateService.format(date, "YYYY-MM-DD");
+        }
+    }
   }
   /**
    * Gets a directory path, creating it if it doesn't exist
@@ -1445,11 +1499,15 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         this.plugin.errorHandler.handleError(error, "Failed to rebuild journal structure");
       }
     }));
-    new import_obsidian7.Setting(containerEl).setName("Setup Templates").setDesc("Create templates directory and copy Daily Notes template").addButton((button) => button.setButtonText("Setup Templates").onClick(async () => {
+    new import_obsidian7.Setting(containerEl).setName("Setup Templates").setDesc("Create templates directory and copy Daily Notes template (auto-detects Templater plugin)").addButton((button) => button.setButtonText("Setup Templates").onClick(async () => {
+      var _a, _b;
       try {
         await this.plugin.directoryManager.setupTemplates();
         const templatesPath = this.plugin.settings.baseFolder ? `${this.plugin.settings.baseFolder}/templates` : "templates";
-        alert("\u2705 Templates setup successfully!\n\nTemplates directory and Daily Notes template created in: " + templatesPath);
+        const templaterPlugin = (_b = (_a = this.plugin.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
+        const hasTemplater = templaterPlugin && templaterPlugin._loaded;
+        const templaterStatus = hasTemplater ? "\n\n\u2705 Templater plugin detected - Dynamic date navigation enabled" : "\n\n\u26A0\uFE0F Templater plugin not detected - Static dates will be used instead";
+        alert("\u2705 Templates setup successfully!\n\nTemplates directory and Daily Notes template created in: " + templatesPath + templaterStatus);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert("\u274C Failed to setup templates.\n\nError: " + errorMessage);

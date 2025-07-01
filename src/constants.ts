@@ -1,12 +1,14 @@
 // Default base folder to prevent collision with existing vault structure
 export const DEFAULT_BASE_FOLDER = 'Link';
 
-// Simplified directory structure - only journal (templates created on-demand)
+// Core directory structure - journal, templates, and reference
 export const DEFAULT_DIRECTORIES = [
-  'journal'
+  'journal',
+  'templates', 
+  'reference'
 ];
 
-// Template settings
+// Template settings - sibling to journal structure for proper organization
 export const DEFAULT_TEMPLATES_PATH = 'templates';
 export const DAILY_NOTES_TEMPLATE_NAME = 'Daily Notes Template.md';
 

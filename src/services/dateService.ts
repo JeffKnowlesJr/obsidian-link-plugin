@@ -123,6 +123,13 @@ export class DateService {
   }
 
   /**
+   * Adds days to a date and returns a new moment object
+   */
+  static addDays(date: Date | string | any, days: number): any {
+    return this.add(date, days, 'days');
+  }
+
+  /**
    * Check if date is valid
    */
   static isValid(date: any): boolean {

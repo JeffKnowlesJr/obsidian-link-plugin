@@ -75,7 +75,7 @@ export class SettingsTab extends PluginSettingTab {
       // Setup Templates
       new Setting(containerEl)
         .setName('Setup Templates')
-        .setDesc('Create templates directory and copy Daily Notes template')
+        .setDesc('Create templates directory alongside journal and copy Daily Notes template (works with Templater plugin)')
         .addButton(button => button
           .setButtonText('Setup Templates')
           .onClick(async () => {
@@ -84,7 +84,17 @@ export class SettingsTab extends PluginSettingTab {
               const templatesPath = this.plugin.settings.baseFolder 
                 ? `${this.plugin.settings.baseFolder}/templates`
                 : 'templates';
-              alert('✅ Templates setup successfully!\n\nTemplates directory and Daily Notes template created in: ' + templatesPath);
+              
+              // Check if Templater is available for user feedback
+              // @ts-ignore - Access Obsidian's plugin system
+              const templaterPlugin = this.plugin.app.plugins?.plugins?.['templater-obsidian'];
+              const hasTemplater = templaterPlugin && templaterPlugin._loaded;
+              
+              const templaterStatus = hasTemplater 
+                ? '\n\n✅ Templater plugin detected - Template will work with dynamic dates'
+                : '\n\n⚠️ Templater plugin not detected - Template contains Templater syntax that may not render';
+              
+              alert('✅ Templates setup successfully!\n\nTemplates directory created alongside journal at: ' + templatesPath + templaterStatus);
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
               alert('❌ Failed to setup templates.\n\nError: ' + errorMessage);
