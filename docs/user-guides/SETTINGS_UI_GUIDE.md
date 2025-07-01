@@ -199,4 +199,174 @@ The settings UI is built using the modular settings system:
 ### Customization Options
 - **Theme Integration** - Better integration with Obsidian themes
 - **Keyboard Shortcuts** - Hotkeys for common settings operations
-- **Contextual Help** - In-app help system with examples 
+- **Contextual Help** - In-app help system with examples
+
+### Daily Notes Integration Settings ✨ NEW
+
+#### **Main Integration Toggle**
+**Enable Daily Notes Integration**
+- **Purpose**: Master switch for all Daily Notes integration features
+- **Safety**: All changes are backed up automatically
+- **Scope**: Affects Obsidian's Daily Notes plugin settings
+
+#### **Quick Controls** (shown when integration enabled)
+**Enable All Controls** / **Disable All Controls**
+- **Purpose**: Bulk enable/disable all integration controls
+- **Convenience**: Avoid clicking individual checkboxes
+- **Effect**: Updates all three control checkboxes at once
+
+#### **Individual Controls** (shown when integration enabled)
+
+**📁 Control Folder Location**
+- **Function**: Updates Daily Notes folder to use our monthly structure
+- **Example**: Changes from `Daily Notes` to `Link/journal/2025/07-July`
+- **Benefit**: Daily notes automatically appear in organized folders
+
+**📅 Control Date Format**
+- **Function**: Updates Daily Notes date format to match journal format
+- **Example**: Changes from `YYYY-MM-DD` to `YYYY-MM-DD dddd`
+- **Benefit**: Consistent naming across all daily notes
+
+**📝 Control Template**
+- **Function**: Updates Daily Notes template to use our template
+- **Example**: Sets template to `Link/templates/Daily Notes Template.md`
+- **Benefit**: Consistent template with Templater integration
+
+#### **Apply Integration Settings**
+**Apply Now Button**
+- **Function**: Applies selected controls to Daily Notes plugin
+- **Safety**: Creates automatic backup before any changes
+- **Feedback**: Shows success/error messages
+- **One-Time Setup**: Backup created only once per vault
+
+#### **Backup Information** (shown when backup exists)
+**📦 Backup Information**
+- **Display**: Shows backup creation date and plugin type
+- **Example**: "Backup created: 12/07/2025, 14:32:15 (core plugin)"
+- **Purpose**: Confirms your settings are safely backed up
+
+#### **⚠️ Danger Zone** (shown when backup exists)
+**Restore Original Settings**
+- **Function**: Restores Daily Notes to original settings
+- **Warning**: Prominently displayed with red styling
+- **Confirmation**: Requires explicit confirmation dialog
+- **Effect**: Disables integration, deletes backup, restores original settings
+- **Irreversible**: Cannot be undone once confirmed
+
+## 🔧 Configuration Workflows
+
+### Basic Setup (First Time)
+1. **Keep Defaults**: Base folder "Link" works for most users
+2. **Rebuild Structure**: Click to create initial folders
+3. **Setup Templates**: Click to create template with Templater compatibility
+4. **Configure Journal**: Adjust date formats if desired
+
+### Daily Notes Integration Setup
+1. **Enable Integration**: Toggle main switch
+2. **Select Controls**: Choose which aspects to manage (folder/format/template)
+3. **Enable All**: Use quick control for convenience (optional)
+4. **Apply Settings**: Click "Apply Now" to create backup and activate
+5. **Verify**: Check that backup information appears
+
+### Changing Settings Later
+1. **Journal Settings**: Changes take effect immediately
+2. **Integration Controls**: Must click "Apply Now" for changes to take effect
+3. **Directory Structure**: Use "Rebuild" if major changes needed
+
+### Restoring Original Settings (If Needed)
+1. **Scroll to Danger Zone**: Bottom of Daily Notes Integration section
+2. **Read Warning**: Understand consequences before proceeding
+3. **Click Restore**: "Restore & Disable" button
+4. **Confirm**: Acknowledge in confirmation dialog
+5. **Complete**: Integration disabled, original settings restored
+
+## 🎯 Settings Best Practices
+
+### Recommended Configuration
+```
+Base Folder: "Link"
+Simple Journal Mode: Disabled
+Year Format: "YYYY"
+Month Format: "MM-MMMM"
+Daily Note Format: "YYYY-MM-DD dddd"
+Daily Notes Integration: Enabled with all controls
+```
+
+### Format String Examples
+
+#### Year Formats
+- `YYYY` → "2025"
+- `YY` → "25"
+- `YYYY [Year]` → "2025 Year"
+
+#### Month Formats
+- `MM-MMMM` → "07-July" (recommended)
+- `MMMM` → "July"
+- `MM` → "07"
+- `MMM YYYY` → "Jul 2025"
+
+#### Daily Note Formats
+- `YYYY-MM-DD dddd` → "2025-07-01 Tuesday" (recommended)
+- `YYYY-MM-DD` → "2025-07-01"
+- `dddd, MMMM Do` → "Tuesday, July 1st"
+- `YYYY.MM.DD` → "2025.07.01"
+
+## 🛡️ Safety Features
+
+### Automatic Safeguards
+- **Backup Creation**: Original settings backed up automatically
+- **Confirmation Dialogs**: Important actions require confirmation
+- **Error Handling**: Graceful failure with user notifications
+- **Logging**: All operations logged for troubleshooting
+
+### Visual Indicators
+- **Success Messages**: Green checkmarks for successful operations
+- **Warning Text**: Yellow warnings for important information
+- **Error Messages**: Red text for problems requiring attention
+- **Danger Zone**: Red styling for potentially destructive actions
+
+### Recovery Options
+- **Complete Restore**: Return to original Daily Notes settings
+- **Plugin Disable**: Turn off plugin without losing configuration
+- **Rebuild Structure**: Recreate folders if they're accidentally deleted
+- **Settings Reset**: Return to plugin defaults (manual via settings file)
+
+## 📋 Troubleshooting
+
+### Common Issues
+
+**Integration section not visible**
+- Ensure Daily Notes plugin (core or community) is installed and enabled
+- Check that you're in the correct settings tab
+
+**Apply button does nothing**
+- Check console for error messages
+- Verify Daily Notes plugin is functioning
+- Try disabling and re-enabling Daily Notes plugin
+
+**Wrong folder structure created**
+- Check journal settings formats are valid moment.js formats
+- Use "Rebuild Directory Structure" to recreate folders
+- Verify base folder path is correct
+
+**Backup not working**
+- Plugin will create backup automatically on first "Apply Now"
+- Check that Daily Notes plugin is accessible
+- Verify plugin permissions in Obsidian settings
+
+### Settings Validation
+The plugin validates settings in real-time:
+- **Invalid Format Strings**: Will show error messages
+- **Missing Required Fields**: Highlighted with warnings
+- **Conflicting Settings**: Warnings about potential issues
+
+### Reset Instructions
+To completely reset plugin settings:
+1. Disable plugin in Community Plugins
+2. Delete plugin data file: `.obsidian/plugins/obsidian-link-plugin/data.json`
+3. Re-enable plugin (will recreate with defaults)
+4. Reconfigure as needed
+
+---
+
+**Remember**: The settings UI is designed to be self-explanatory with helpful descriptions. When in doubt, hover over settings for additional information or check the reference documentation in your vault's `Link/reference/` folder. 

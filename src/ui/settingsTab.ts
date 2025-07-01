@@ -101,6 +101,9 @@ export class SettingsTab extends PluginSettingTab {
               this.plugin.errorHandler.handleError(error, 'Failed to setup templates');
             }
           }));
+
+      // Daily Notes Integration Section
+      this.addDailyNotesIntegrationSettings(containerEl);
   }
 
   private addJournalSettings(containerEl: HTMLElement): void {
@@ -162,5 +165,173 @@ export class SettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           }
         }));
+  }
+
+  /**
+   * Adds Daily Notes integration settings with backup and restore functionality
+   */
+  private addDailyNotesIntegrationSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h2', { text: 'Daily Notes Integration' });
+    containerEl.createEl('p', { 
+      text: 'Control how this plugin integrates with Obsidian\'s Daily Notes plugin. Your original settings will be backed up automatically.',
+      cls: 'setting-item-description'
+    });
+
+    // Main enable/disable toggle
+    new Setting(containerEl)
+      .setName('Enable Daily Notes Integration')
+      .setDesc('Allow this plugin to update Daily Notes plugin settings to use our folder structure')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.dailyNotesIntegration.enabled)
+        .onChange(async (value) => {
+          this.plugin.settings.dailyNotesIntegration.enabled = value;
+          await this.plugin.saveSettings();
+          this.display(); // Refresh to show/hide controls
+        }));
+
+    if (this.plugin.settings.dailyNotesIntegration.enabled) {
+      // Enable All button
+      new Setting(containerEl)
+        .setName('Quick Controls')
+        .setDesc('Enable or disable all integration controls at once')
+        .addButton(button => button
+          .setButtonText('Enable All Controls')
+          .onClick(async () => {
+            this.plugin.settings.dailyNotesIntegration.controls = {
+              folder: true,
+              format: true,
+              template: true,
+            };
+            await this.plugin.saveSettings();
+            this.display(); // Refresh to show updated checkboxes
+          }))
+        .addButton(button => button
+          .setButtonText('Disable All Controls')
+          .onClick(async () => {
+            this.plugin.settings.dailyNotesIntegration.controls = {
+              folder: false,
+              format: false,
+              template: false,
+            };
+            await this.plugin.saveSettings();
+            this.display(); // Refresh to show updated checkboxes
+          }));
+
+      // Individual control checkboxes
+      new Setting(containerEl)
+        .setName('📁 Control Folder Location')
+        .setDesc('Update Daily Notes folder to use our monthly folder structure')
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.dailyNotesIntegration.controls.folder)
+          .onChange(async (value) => {
+            this.plugin.settings.dailyNotesIntegration.controls.folder = value;
+            await this.plugin.saveSettings();
+          }));
+
+      new Setting(containerEl)
+        .setName('📅 Control Date Format')
+        .setDesc('Update Daily Notes date format to match our journal format')
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.dailyNotesIntegration.controls.format)
+          .onChange(async (value) => {
+            this.plugin.settings.dailyNotesIntegration.controls.format = value;
+            await this.plugin.saveSettings();
+          }));
+
+      new Setting(containerEl)
+        .setName('📝 Control Template')
+        .setDesc('Update Daily Notes template to use our daily note template')
+        .addToggle(toggle => toggle
+          .setValue(this.plugin.settings.dailyNotesIntegration.controls.template)
+          .onChange(async (value) => {
+            this.plugin.settings.dailyNotesIntegration.controls.template = value;
+            await this.plugin.saveSettings();
+          }));
+
+      // Apply settings button
+      new Setting(containerEl)
+        .setName('Apply Integration Settings')
+        .setDesc('Apply the selected controls to Daily Notes plugin (creates backup automatically)')
+        .addButton(button => button
+          .setButtonText('Apply Now')
+          .onClick(async () => {
+            try {
+              await this.plugin.updateDailyNotesSettings();
+              alert('✅ Daily Notes integration settings applied successfully!\n\nYour original settings have been backed up and can be restored at any time.');
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              alert('❌ Failed to apply integration settings.\n\nError: ' + errorMessage);
+              this.plugin.errorHandler.handleError(error, 'Failed to apply Daily Notes integration');
+            }
+          }));
+
+      // Show backup info if exists
+      const backup = this.plugin.settings.dailyNotesIntegration.backup;
+      if (backup) {
+        const backupDate = new Date(backup.timestamp).toLocaleString();
+        new Setting(containerEl)
+          .setName('📦 Backup Information')
+          .setDesc(`Backup created: ${backupDate} (${backup.pluginType} plugin)`);
+      }
+    }
+
+    // Danger zone - restore settings
+    if (this.plugin.settings.dailyNotesIntegration.backup) {
+      containerEl.createEl('h3', { text: '⚠️ Danger Zone', cls: 'danger-zone-header' });
+      
+      const dangerContainer = containerEl.createDiv({ cls: 'danger-zone' });
+      dangerContainer.createEl('p', { 
+        text: '⚠️ WARNING: This will restore your original Daily Notes settings and disable all integration. This action cannot be undone.',
+        cls: 'danger-warning'
+      });
+
+      new Setting(dangerContainer)
+        .setName('🔄 Restore Original Settings')
+        .setDesc('Restore Daily Notes plugin to your original settings and disable integration')
+        .addButton(button => button
+          .setButtonText('Restore & Disable')
+          .setClass('mod-warning')
+          .onClick(async () => {
+            const confirmed = confirm(
+              '⚠️ CONFIRM RESTORE\n\n' +
+              'This will:\n' +
+              '• Restore your original Daily Notes settings\n' +
+              '• Disable all integration controls\n' +
+              '• Delete the backup\n\n' +
+              'This action cannot be undone. Continue?'
+            );
+            
+            if (confirmed) {
+              try {
+                await this.plugin.restoreDailyNotesSettings();
+                this.display(); // Refresh settings UI
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                alert('❌ Failed to restore settings.\n\nError: ' + errorMessage);
+              }
+            }
+          }));
+
+      // Add danger zone styling
+      const style = document.createElement('style');
+      style.textContent = `
+        .danger-zone-header {
+          color: var(--text-error);
+          margin-top: 2em;
+        }
+        .danger-zone {
+          border: 1px solid var(--background-modifier-error);
+          border-radius: 6px;
+          padding: 16px;
+          background: var(--background-modifier-error-hover);
+        }
+        .danger-warning {
+          color: var(--text-error);
+          font-weight: 500;
+          margin-bottom: 16px;
+        }
+      `;
+      containerEl.appendChild(style);
+    }
   }
 }

@@ -1,16 +1,17 @@
-# Obsidian Link Plugin v2.2.0
+# Obsidian Link Plugin v2.3.0
 
-A focused Obsidian plugin for **intelligent daily note organization** with automatic monthly folder management. No clutter, just the core functionality that matters.
+A focused Obsidian plugin for **intelligent daily note organization** with automatic monthly folder management and seamless Daily Notes integration. No clutter, just the core functionality that matters.
 
-## 🚀 What's New in v2.2.0
+## 🚀 What's New in v2.3.0
 
-- **FIXED: July 1st Issue**: Daily notes now correctly create in July folder (was using invalid date format)
-- **Simplified Focus**: File sorting features moved to quarantine - focus on core journal management
-- **Streamlined Interface**: Just 2 essential ribbon buttons for daily note creation
-- **Bulletproof Date Detection**: Fixed moment.js formatting issues causing wrong month folders
-- **Professional Settings**: Clean interface focused on journal configuration only
+- **NEW: Daily Notes Integration**: Seamlessly integrate with Obsidian's Daily Notes plugin with automatic backup and restore
+- **Granular Control**: Choose exactly which Daily Notes settings to manage (folder, format, template)
+- **Automatic Backup**: Your original Daily Notes settings are safely backed up before any changes
+- **Template System**: Integrated template creation with Templater plugin compatibility
+- **Reference Documentation**: Built-in knowledge base documenting all architectural decisions and patterns
+- **Comprehensive Restore**: One-click restore to original Daily Notes settings
 
-## ✨ Core Feature (The Only Thing You Need)
+## ✨ Core Features
 
 ### 🎯 Smart Daily Note Management
 - **Automatic Monthly Folders**: Creates `2025/July/` folders automatically on July 1st
@@ -19,25 +20,39 @@ A focused Obsidian plugin for **intelligent daily note organization** with autom
 - **Today's Note Button**: One-click access to today's journal entry
 - **Future Note Creation**: Plan ahead with future daily notes
 
+### 🔗 Daily Notes Integration
+- **Seamless Integration**: Works alongside Obsidian's Daily Notes plugin without conflicts
+- **Automatic Backup**: Backs up your original Daily Notes settings before making any changes
+- **Granular Control**: Choose which settings to manage (folder location, date format, template)
+- **Safe Restore**: One-click restore to your original settings with confirmation
+- **Template Support**: Integrated with Templater plugin for dynamic date navigation
+
 ## 📁 Folder Structure (Simple & Working)
 
 The plugin creates this organized structure:
 
 ```
-LinkPlugin/
-└── journal/
-    ├── 2025/                    # Year folders
-    │   ├── July/                # Month folders (FIXED: July 1st notes go here!)
-    │   ├── August/
-    │   └── ...
-    └── [your daily notes]
+Link/
+├── journal/
+│   ├── 2025/                    # Year folders
+│   │   ├── July/                # Month folders (FIXED: July 1st notes go here!)
+│   │   ├── August/
+│   │   └── ...
+│   └── [your daily notes]
+├── templates/
+│   └── Daily Notes Template.md  # Created with Templater compatibility
+└── reference/
+    ├── Architecture Decisions.md
+    ├── Development Patterns.md
+    ├── Integration Guide.md
+    └── Troubleshooting Lessons.md
 ```
 
 **Key Benefits:**
 - **Actually Works**: July 1st notes go in July folder (fixed the core bug)
-- **No Complexity**: Just journal management, no file sorting distractions
-- **Clean Organization**: One predictable structure
-- **Reliable**: Uses valid moment.js formats
+- **No Conflicts**: Everything contained within configurable base folder (default: "Link")
+- **Clean Organization**: Sibling directories for different purposes
+- **Self-Documenting**: Built-in reference documentation explains all design decisions
 
 ## 🛠️ Installation
 
@@ -57,16 +72,24 @@ LinkPlugin/
 - **Daily Note Format**: `YYYY-MM-DD dddd` creates "2025-07-01 Tuesday"
 - **Year Format**: `YYYY` creates "2025" 
 - **Month Format**: `MMMM` creates "July" (FIXED: was using invalid MMmmmm)
+- **Daily Notes Integration**: Control how the plugin integrates with Daily Notes plugin
+- **Template Setup**: One-click template creation with Templater compatibility
 
 ## ⚙️ Configuration
 
 Access settings via the ribbon button:
 
-### Journal Settings (The Only Settings That Matter)
+### Journal Settings
 - **Simple Journal Mode**: Single folder vs. organized year/month structure
 - **Year Folder Format**: Configure year folder naming (default: `YYYY`)
 - **Month Folder Format**: Configure month folder naming (default: `MMMM` - FIXED!)
 - **Daily Note Format**: Customize daily note naming (default: `YYYY-MM-DD dddd`)
+
+### Daily Notes Integration Settings
+- **Enable Integration**: Toggle integration with Daily Notes plugin
+- **Granular Controls**: Individual checkboxes for folder, format, and template control
+- **Quick Controls**: Enable/disable all controls at once
+- **Backup & Restore**: Automatic backup with one-click restore in danger zone
 
 ## 🗂️ What's Been Removed (Moved to Quarantine)
 
@@ -83,13 +106,16 @@ To fix the core July 1st issue and eliminate complexity:
 - ✅ **July 1st Bug**: Daily notes now correctly create in July folder
 - ✅ **Date Format**: Fixed invalid `MMmmmm` format that caused wrong folders
 - ✅ **Month Detection**: Proper moment.js formatting ensures correct month
-- ✅ **Simplified UI**: No more confusing file sorting options
+- ✅ **Template Conflicts**: Fixed Templater integration to avoid processing conflicts
+- ✅ **Directory Structure**: Templates now siblings to journal (better organization)
 
 ### Core Functionality
 - ✅ **Daily Note Creation**: One-click today's note
 - ✅ **Monthly Folders**: Automatic creation based on current date
 - ✅ **Future Notes**: Plan ahead with any future date
-- ✅ **Clean Settings**: Only journal-related options
+- ✅ **Daily Notes Integration**: Seamless integration with backup and restore
+- ✅ **Template System**: Integrated template creation with Templater compatibility
+- ✅ **Reference Documentation**: Built-in architectural knowledge base
 
 ## 🚧 Development
 
@@ -113,7 +139,15 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## 📊 Version History
 
-### v2.2.0 (Current) - Journal-Focused Release
+### v2.3.0 (Current) - Integration Release
+- ✅ **NEW: Daily Notes Integration**: Seamless integration with automatic backup and restore
+- ✅ **Granular Control System**: Individual controls for folder, format, and template
+- ✅ **Template System**: Integrated template creation with Templater compatibility
+- ✅ **Reference Documentation**: Built-in architectural knowledge base
+- ✅ **Safety Features**: Automatic backup, danger zone, confirmation dialogs
+- ✅ **Directory Restructure**: Templates as siblings to journal for better organization
+
+### v2.2.0 - Journal-Focused Release
 - ✅ **FIXED: July 1st Bug**: Daily notes now correctly create in July folder
 - ✅ **Date Format Fix**: Changed invalid `MMmmmm` to proper `MMMM` format
 - ✅ **Simplified Interface**: Reduced to 2 essential ribbon buttons
@@ -127,4 +161,4 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-*The Obsidian Link Plugin now does one thing really well: intelligent daily note organization. The July 1st issue is fixed, file sorting complexity is gone, and you get a clean, focused tool for journal management.*
+*The Obsidian Link Plugin now does one thing really well: intelligent daily note organization with seamless Daily Notes integration. The July 1st issue is fixed, Daily Notes integration is safe and comprehensive, and you get a clean, focused tool for journal management that works alongside your existing workflow.*

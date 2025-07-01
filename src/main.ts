@@ -373,52 +373,153 @@ export default class LinkPlugin extends Plugin {
 
   /**
    * Update Obsidian's Daily Notes plugin settings to use our folder structure
+   * Only updates if integration is enabled and specific controls are enabled
    */
-  private async updateDailyNotesSettings(): Promise<void> {
+  async updateDailyNotesSettings(): Promise<void> {
+    // Skip if integration is disabled
+    if (!this.settings.dailyNotesIntegration.enabled) {
+      return;
+    }
+
     try {
       // Get the daily notes core plugin
       const dailyNotesPlugin = (this.app as any).internalPlugins?.plugins?.['daily-notes'];
       
       if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
-        // Get our current month folder path
-        const currentDate = DateService.now();
-        const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
-        
-        // Update the daily notes plugin settings
-        const dailyNotesSettings = dailyNotesPlugin.instance.options;
-        
-        // Use the full monthly folder path (including base folder)
-        dailyNotesSettings.folder = monthlyFolderPath;
-        
-        // Update format to match our format
-        dailyNotesSettings.format = this.settings.journalDateFormat;
-        
-        // Settings updated (no save needed - handled by Obsidian)
-        
-        console.log(`Updated Daily Notes plugin folder to: ${monthlyFolderPath}`);
-        this.errorHandler.showNotice(`✅ Daily Notes location updated to: ${monthlyFolderPath}`);
+        await this.updateCorePluginSettings(dailyNotesPlugin);
       } else {
         // Try community plugin approach
         const communityDailyNotes = (this.app as any).plugins?.plugins?.['daily-notes'];
         if (communityDailyNotes) {
-          const currentDate = DateService.now();
-          const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
-          
-          // Use the full monthly folder path (including base folder)
-          communityDailyNotes.settings.folder = monthlyFolderPath;
-          communityDailyNotes.settings.format = this.settings.journalDateFormat;
-          await communityDailyNotes.saveSettings();
-          
-          console.log(`Updated Community Daily Notes plugin folder to: ${monthlyFolderPath}`);
-          this.errorHandler.showNotice(`✅ Daily Notes location updated to: ${monthlyFolderPath}`);
+          await this.updateCommunityPluginSettings(communityDailyNotes);
         } else {
           console.log('Daily Notes plugin not found or not enabled - using plugin folder structure only');
-          this.errorHandler.showNotice('⚠️ Daily Notes plugin not found - notes created in plugin folder only');
         }
       }
     } catch (error) {
       console.log('Daily Notes integration skipped:', error instanceof Error ? error.message : String(error));
       // Don't show error to user - this is optional functionality
+    }
+  }
+
+  /**
+   * Updates core Daily Notes plugin settings with backup
+   */
+  private async updateCorePluginSettings(dailyNotesPlugin: any): Promise<void> {
+    const dailyNotesSettings = dailyNotesPlugin.instance.options;
+    
+    // Create backup if it doesn't exist
+    if (!this.settings.dailyNotesIntegration.backup) {
+      await this.createDailyNotesBackup('core', dailyNotesSettings);
+    }
+
+    const currentDate = DateService.now();
+    const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+    const controls = this.settings.dailyNotesIntegration.controls;
+
+    // Update only enabled controls
+    if (controls.folder) {
+      dailyNotesSettings.folder = monthlyFolderPath;
+    }
+    if (controls.format) {
+      dailyNotesSettings.format = this.settings.journalDateFormat;
+    }
+    if (controls.template) {
+      const templatesPath = this.settings.baseFolder 
+        ? `${this.settings.baseFolder}/templates`
+        : 'templates';
+      dailyNotesSettings.template = `${templatesPath}/Daily Notes Template.md`;
+    }
+    
+    console.log(`Updated Core Daily Notes plugin settings`);
+    this.errorHandler.showNotice(`✅ Daily Notes settings updated`);
+  }
+
+  /**
+   * Updates community Daily Notes plugin settings with backup
+   */
+  private async updateCommunityPluginSettings(communityDailyNotes: any): Promise<void> {
+    // Create backup if it doesn't exist
+    if (!this.settings.dailyNotesIntegration.backup) {
+      await this.createDailyNotesBackup('community', communityDailyNotes.settings);
+    }
+
+    const currentDate = DateService.now();
+    const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+    const controls = this.settings.dailyNotesIntegration.controls;
+
+    // Update only enabled controls
+    if (controls.folder) {
+      communityDailyNotes.settings.folder = monthlyFolderPath;
+    }
+    if (controls.format) {
+      communityDailyNotes.settings.format = this.settings.journalDateFormat;
+    }
+    if (controls.template) {
+      const templatesPath = this.settings.baseFolder 
+        ? `${this.settings.baseFolder}/templates`
+        : 'templates';
+      communityDailyNotes.settings.template = `${templatesPath}/Daily Notes Template.md`;
+    }
+    
+    await communityDailyNotes.saveSettings();
+    console.log(`Updated Community Daily Notes plugin settings`);
+    this.errorHandler.showNotice(`✅ Daily Notes settings updated`);
+  }
+
+  /**
+   * Creates a backup of current Daily Notes settings
+   */
+  private async createDailyNotesBackup(pluginType: 'core' | 'community', currentSettings: any): Promise<void> {
+    this.settings.dailyNotesIntegration.backup = {
+      timestamp: new Date().toISOString(),
+      pluginType,
+      originalSettings: { ...currentSettings }
+    };
+    
+    await this.saveSettings();
+    console.log(`Created Daily Notes backup for ${pluginType} plugin`);
+  }
+
+  /**
+   * Restores Daily Notes settings from backup
+   */
+  async restoreDailyNotesSettings(): Promise<void> {
+    const backup = this.settings.dailyNotesIntegration.backup;
+    if (!backup) {
+      this.errorHandler.showNotice('❌ No backup found to restore');
+      return;
+    }
+
+    try {
+      if (backup.pluginType === 'core') {
+        const dailyNotesPlugin = (this.app as any).internalPlugins?.plugins?.['daily-notes'];
+        if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
+          Object.assign(dailyNotesPlugin.instance.options, backup.originalSettings);
+          console.log('Restored Core Daily Notes settings from backup');
+        }
+      } else {
+        const communityDailyNotes = (this.app as any).plugins?.plugins?.['daily-notes'];
+        if (communityDailyNotes) {
+          Object.assign(communityDailyNotes.settings, backup.originalSettings);
+          await communityDailyNotes.saveSettings();
+          console.log('Restored Community Daily Notes settings from backup');
+        }
+      }
+
+      // Clear the backup and disable integration
+      this.settings.dailyNotesIntegration.enabled = false;
+      this.settings.dailyNotesIntegration.backup = null;
+      this.settings.dailyNotesIntegration.controls = {
+        folder: false,
+        format: false,
+        template: false,
+      };
+      
+      await this.saveSettings();
+      this.errorHandler.showNotice('✅ Daily Notes settings restored from backup');
+    } catch (error) {
+             this.errorHandler.handleError(error, 'Failed to restore Daily Notes settings');
     }
   }
 

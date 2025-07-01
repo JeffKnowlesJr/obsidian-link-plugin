@@ -17,6 +17,17 @@ export interface LinkPluginSettings {
   // Note creation settings
   noteTemplate: string;
 
+  // Daily Notes Integration Settings
+  dailyNotesIntegration: {
+    enabled: boolean;
+    controls: {
+      folder: boolean;
+      format: boolean;
+      template: boolean;
+    };
+    backup: DailyNotesBackup | null;
+  };
+
   // File sorting settings - QUARANTINED (kept for compatibility)
   fileSorting: {
     enableAutoSorting: boolean;
@@ -26,6 +37,17 @@ export interface LinkPluginSettings {
 
   // Other settings
   debugMode: boolean;
+}
+
+export interface DailyNotesBackup {
+  timestamp: string;
+  pluginType: 'core' | 'community';
+  originalSettings: {
+    folder?: string;
+    format?: string;
+    template?: string;
+    [key: string]: any;
+  };
 }
 
 // Shortcode types (deprecated - moved to quarantine)
