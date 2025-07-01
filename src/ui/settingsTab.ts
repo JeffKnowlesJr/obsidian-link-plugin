@@ -60,10 +60,10 @@ export class SettingsTab extends PluginSettingTab {
           }
         }));
 
-    // Open New Note Setting
+    // Open New Note Setting - clarified
     new Setting(containerEl)
-      .setName('Open new notes')
-      .setDesc('Open newly created notes in a new pane')
+      .setName('Open new notes in split pane')
+      .setDesc('When creating linked notes from selected text, open them in a new pane instead of the current one')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.openNewNote)
         .onChange(async (value) => {
@@ -71,20 +71,26 @@ export class SettingsTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         }));
 
-    // Rebuild Directory Structure Button
+    // Rebuild Directory Structure Button - moved to bottom and styled as warning
     new Setting(containerEl)
-      .setName('Rebuild Structure')
-      .setDesc('Recreate folder structure with current settings')
-      .addButton(button => button
-        .setButtonText('Rebuild')
-        .onClick(async () => {
-          try {
-            await this.plugin.directoryManager.rebuildDirectoryStructure();
-            this.showSuccessMessage(button.buttonEl, 'Structure rebuilt!');
-          } catch (error) {
-            this.plugin.errorHandler.handleError(error, 'Failed to rebuild structure');
-          }
-        }));
+      .setName('⚠️ Rebuild Structure')
+      .setDesc('Recreate folder structure with current settings. Use only if folders are missing or corrupted.')
+      .addButton(button => {
+        button.setButtonText('Rebuild')
+          .setWarning()
+          .onClick(async () => {
+            try {
+              await this.plugin.directoryManager.rebuildDirectoryStructure();
+              this.showSuccessMessage(button.buttonEl, 'Structure rebuilt!');
+            } catch (error) {
+              this.plugin.errorHandler.handleError(error, 'Failed to rebuild structure');
+            }
+          });
+        // Style the button as red/warning
+        button.buttonEl.style.backgroundColor = 'var(--color-red)';
+        button.buttonEl.style.color = 'white';
+        return button;
+      });
   }
 
   private addJournalSettings(containerEl: HTMLElement): void {
@@ -213,29 +219,16 @@ Next: {{next}}`);
           }
         }));
 
-    // Open Today's Journal Button
-    new Setting(containerEl)
-      .setName('Today\'s Journal')
-      .setDesc('Create or open today\'s journal entry')
-      .addButton(button => button
-        .setButtonText('Open Today')
-        .onClick(async () => {
-          try {
-            await this.plugin.journalManager.openTodayJournal();
-            this.showSuccessMessage(button.buttonEl, 'Journal opened!');
-          } catch (error) {
-            this.plugin.errorHandler.handleError(error, 'Failed to open journal');
-          }
-        }));
+    // Note: Removed "Today's Journal" button as requested - use ribbon button instead
   }
 
   private addFileSortingSettings(containerEl: HTMLElement): void {
     containerEl.createEl('h2', { text: '📂 File Sorting' });
     
-    // Auto Sorting Toggle
+    // Auto Sorting Toggle - clarified
     new Setting(containerEl)
       .setName('Auto Sort Files')
-      .setDesc('Automatically sort files when created or modified')
+      .setDesc('Automatically sort images, videos, PDFs, and audio files to reference/files/ folders. Markdown files sorted by frontmatter type/category.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.fileSorting.enableAutoSorting)
         .onChange(async (value) => {
@@ -243,10 +236,10 @@ Next: {{next}}`);
           await this.plugin.saveSettings();
         }));
 
-    // Sort on File Create
+    // Sort on File Create - clarified with link example
     new Setting(containerEl)
       .setName('Sort on Create')
-      .setDesc('Sort files immediately when created')
+      .setDesc('Sort files immediately when created. Creates directory-relative links like [[/reference/files/image]] for cross-folder linking.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.fileSorting.sortOnFileCreate)
         .onChange(async (value) => {

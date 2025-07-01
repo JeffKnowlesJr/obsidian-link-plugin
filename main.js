@@ -918,18 +918,23 @@ var SettingsTab = class extends import_obsidian2.PluginSettingTab {
         await this.plugin.saveSettings();
       }
     }));
-    new import_obsidian2.Setting(containerEl).setName("Open new notes").setDesc("Open newly created notes in a new pane").addToggle((toggle) => toggle.setValue(this.plugin.settings.openNewNote).onChange(async (value) => {
+    new import_obsidian2.Setting(containerEl).setName("Open new notes in split pane").setDesc("When creating linked notes from selected text, open them in a new pane instead of the current one").addToggle((toggle) => toggle.setValue(this.plugin.settings.openNewNote).onChange(async (value) => {
       this.plugin.settings.openNewNote = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian2.Setting(containerEl).setName("Rebuild Structure").setDesc("Recreate folder structure with current settings").addButton((button) => button.setButtonText("Rebuild").onClick(async () => {
-      try {
-        await this.plugin.directoryManager.rebuildDirectoryStructure();
-        this.showSuccessMessage(button.buttonEl, "Structure rebuilt!");
-      } catch (error) {
-        this.plugin.errorHandler.handleError(error, "Failed to rebuild structure");
-      }
-    }));
+    new import_obsidian2.Setting(containerEl).setName("\u26A0\uFE0F Rebuild Structure").setDesc("Recreate folder structure with current settings. Use only if folders are missing or corrupted.").addButton((button) => {
+      button.setButtonText("Rebuild").setWarning().onClick(async () => {
+        try {
+          await this.plugin.directoryManager.rebuildDirectoryStructure();
+          this.showSuccessMessage(button.buttonEl, "Structure rebuilt!");
+        } catch (error) {
+          this.plugin.errorHandler.handleError(error, "Failed to rebuild structure");
+        }
+      });
+      button.buttonEl.style.backgroundColor = "var(--color-red)";
+      button.buttonEl.style.color = "white";
+      return button;
+    });
   }
   addJournalSettings(containerEl) {
     containerEl.createEl("h2", { text: "\u{1F4C5} Journal Settings" });
@@ -1009,22 +1014,14 @@ Next: {{next}}`);
         await this.plugin.saveSettings();
       }
     }));
-    new import_obsidian2.Setting(containerEl).setName("Today's Journal").setDesc("Create or open today's journal entry").addButton((button) => button.setButtonText("Open Today").onClick(async () => {
-      try {
-        await this.plugin.journalManager.openTodayJournal();
-        this.showSuccessMessage(button.buttonEl, "Journal opened!");
-      } catch (error) {
-        this.plugin.errorHandler.handleError(error, "Failed to open journal");
-      }
-    }));
   }
   addFileSortingSettings(containerEl) {
     containerEl.createEl("h2", { text: "\u{1F4C2} File Sorting" });
-    new import_obsidian2.Setting(containerEl).setName("Auto Sort Files").setDesc("Automatically sort files when created or modified").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.enableAutoSorting).onChange(async (value) => {
+    new import_obsidian2.Setting(containerEl).setName("Auto Sort Files").setDesc("Automatically sort images, videos, PDFs, and audio files to reference/files/ folders. Markdown files sorted by frontmatter type/category.").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.enableAutoSorting).onChange(async (value) => {
       this.plugin.settings.fileSorting.enableAutoSorting = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian2.Setting(containerEl).setName("Sort on Create").setDesc("Sort files immediately when created").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.sortOnFileCreate).onChange(async (value) => {
+    new import_obsidian2.Setting(containerEl).setName("Sort on Create").setDesc("Sort files immediately when created. Creates directory-relative links like [[/reference/files/image]] for cross-folder linking.").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.sortOnFileCreate).onChange(async (value) => {
       this.plugin.settings.fileSorting.sortOnFileCreate = value;
       await this.plugin.saveSettings();
     }));

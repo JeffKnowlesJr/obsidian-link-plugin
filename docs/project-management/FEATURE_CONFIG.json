@@ -112,35 +112,6 @@
         "settings_system"
       ]
     },
-    "template_based_note_creation": {
-      "enabled": false,
-      "priority": 2,
-      "category": "Content Creation",
-      "description": "Create notes from templates (from README TODO) - QUARANTINED",
-      "components": {
-        "template_manager": {
-          "enabled": false,
-          "description": "Manage and organize note templates"
-        },
-        "template_selection_ui": {
-          "enabled": false,
-          "description": "UI for selecting templates when creating notes"
-        },
-        "variable_substitution": {
-          "enabled": false,
-          "description": "Support for variables in templates (date, title, etc.)"
-        },
-        "future_daily_notes": {
-          "enabled": false,
-          "description": "Create future daily notes from templates"
-        }
-      },
-      "estimated_effort": "2-3 days",
-      "dependencies": [
-        "directory_manager",
-        "template_system"
-      ]
-    },
     "enhanced_ribbon_interface": {
       "enabled": true,
       "priority": 3,
@@ -201,6 +172,61 @@
         "link_manager",
         "content_analysis"
       ]
+    }
+  },
+  "deprecated_features": {
+    "shortcode_system": {
+      "status": "quarantined",
+      "location": "quarantine/",
+      "reason": "Complexity reduction for MVP",
+      "restore_effort": "1-2 days",
+      "description": "Emmet-like shortcode expansion system"
+    },
+    "template_based_note_creation": {
+      "status": "quarantined",
+      "location": "quarantine/",
+      "reason": "Avoiding duplication of existing templating solutions",
+      "restore_effort": "2-3 days",
+      "description": "Template-based note creation system"
+    },
+    "backup_and_sync": {
+      "status": "removed",
+      "reason": "Feature scope unclear and not needed for MVP",
+      "description": "Backup and synchronization features"
+    },
+    "performance_optimizations": {
+      "status": "removed", 
+      "reason": "Premature optimization - focus on functionality first",
+      "description": "Performance improvements and optimizations"
+    },
+    "template_based_note_creation": {
+      "enabled": false,
+      "priority": 2,
+      "category": "Content Creation",
+      "description": "Create notes from templates (from README TODO) - QUARANTINED",
+      "components": {
+        "template_manager": {
+          "enabled": false,
+          "description": "Manage and organize note templates"
+        },
+        "template_selection_ui": {
+          "enabled": false,
+          "description": "UI for selecting templates when creating notes"
+        },
+        "variable_substitution": {
+          "enabled": false,
+          "description": "Support for variables in templates (date, title, etc.)"
+        },
+        "future_daily_notes": {
+          "enabled": false,
+          "description": "Create future daily notes from templates"
+        }
+      },
+      "estimated_effort": "2-3 days",
+      "dependencies": [
+        "directory_manager",
+        "template_system"
+      ]
     },
     "content_analysis_engine": {
       "enabled": false,
@@ -229,32 +255,6 @@
       "dependencies": [
         "natural_language_processing"
       ]
-    }
-  },
-  "deprecated_features": {
-    "shortcode_system": {
-      "status": "quarantined",
-      "location": "quarantine/",
-      "reason": "Complexity reduction for MVP",
-      "restore_effort": "1-2 days",
-      "description": "Emmet-like shortcode expansion system"
-    },
-    "template_based_note_creation": {
-      "status": "quarantined",
-      "location": "quarantine/",
-      "reason": "Avoiding duplication of existing templating solutions",
-      "restore_effort": "2-3 days",
-      "description": "Template-based note creation system"
-    },
-    "backup_and_sync": {
-      "status": "removed",
-      "reason": "Feature scope unclear and not needed for MVP",
-      "description": "Backup and synchronization features"
-    },
-    "performance_optimizations": {
-      "status": "removed", 
-      "reason": "Premature optimization - focus on functionality first",
-      "description": "Performance improvements and optimizations"
     }
   },
   "implementation_phases": {
