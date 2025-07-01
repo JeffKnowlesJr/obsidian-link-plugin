@@ -15,7 +15,7 @@ The Obsidian Link Plugin now includes **automatic monthly folder management** th
 - Supports creating notes weeks or months in advance
 
 ### 3. **Intelligent Folder Structure**
-- Uses the new base folder structure: `LinkPlugin/journal/y_YYYY/MonthName/`
+- Uses the new base folder structure: `LinkPlugin/journal/y_YYYY/MM_MonthName/`
 - Full month names (January, February, etc.) for better readability
 - Year prefix with `y_` for consistent sorting
 
@@ -29,9 +29,10 @@ LinkPlugin/
     │   ├── December/
     │   └── ...
     └── y_2025/
-        ├── January/     ← Created automatically when January starts
-        ├── February/    ← Created automatically when creating Feb notes
-        ├── March/       ← Created when needed
+        ├── 01_January/     ← Created automatically when January starts
+        ├── 02_February/    ← Created automatically when creating Feb notes
+        ├── 03_March/       ← Created when needed
+        ← sorted by numbering
         └── ...
 ```
 

@@ -11,7 +11,7 @@ export interface DirectorySettingsConfig {
 export class DirectorySettings {
   static getDefaults(): DirectorySettingsConfig {
     return {
-      baseFolder: DEFAULT_BASE_FOLDER, // Creates all directories under 'LinkPlugin/' by default
+      baseFolder: DEFAULT_BASE_FOLDER, // Creates all directories under 'Link/' by default
       directoryStructure: DEFAULT_DIRECTORIES,
       restrictedDirectories: [],
       documentDirectory: 'workspace', // Updated to match README structure
@@ -23,8 +23,10 @@ export class DirectorySettings {
     const validated: Partial<DirectorySettingsConfig> = {};
 
     // Validate base folder setting
-    if (settings.baseFolder && typeof settings.baseFolder === 'string') {
-      validated.baseFolder = settings.baseFolder.trim();
+    if (settings.baseFolder !== undefined && typeof settings.baseFolder === 'string') {
+      const trimmed = settings.baseFolder.trim();
+      // If empty, use root (empty string)
+      validated.baseFolder = trimmed === '' ? '' : trimmed;
     }
 
     // Validate directory structure

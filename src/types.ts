@@ -6,23 +6,18 @@ export interface LinkPluginSettings {
   documentDirectory: string;
   journalRootFolder: string;
 
-  // Journal settings
+  // Journal settings - SIMPLIFIED
   journalDateFormat: string;
   journalFolderFormat: string;
+  journalYearFormat: string;
+  journalMonthFormat: string;
   journalTemplate: string;
-  enableDynamicFolders: boolean;
-  simpleJournalMode: boolean;
+  simpleJournalMode: boolean; // Single setting: true = simple, false = dynamic
 
   // Note creation settings
   noteTemplate: string;
-  openNewNote: boolean;
 
-  // Shortcode settings (deprecated - moved to quarantine)
-  // shortcodeEnabled: boolean;
-  // shortcodeTriggerKey: string;
-  // customShortcodes: Record<string, string>;
-
-  // File sorting settings
+  // File sorting settings - QUARANTINED (kept for compatibility)
   fileSorting: {
     enableAutoSorting: boolean;
     sortOnFileCreate: boolean;

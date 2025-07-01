@@ -1,4 +1,4 @@
-import { Notice, MarkdownView } from 'obsidian';
+import { MarkdownView, Modal } from 'obsidian';
 import LinkPlugin from '../main';
 import { RIBBON_BUTTONS } from '../constants';
 import { DateService } from '../services/dateService';
@@ -12,75 +12,41 @@ export class RibbonManager {
   }
 
   /**
-   * Initialize ribbon buttons - minimized to 2 essential buttons
+   * Initialize ribbon with core journal functionality only
    */
   initializeRibbon(): void {
+    // Clear existing buttons
+    this.clearRibbon();
+
+    // Add core journal management buttons only
     this.addCreateFutureNoteButton();
     this.addSettingsButton();
 
-    if (this.plugin.settings.debugMode) {
-      console.log('[LinkPlugin] Ribbon initialized with', this.ribbonButtons.length, 'buttons');
-    }
+    console.log('Ribbon initialized - Core journal functionality enabled');
   }
 
   /**
-   * Clean up ribbon buttons on plugin unload
-   */
-  cleanup(): void {
-    this.ribbonButtons.forEach(button => {
-      button.remove();
-    });
-    this.ribbonButtons = [];
-  }
-
-  /**
-   * Add Today's Journal button
-   */
-  private addTodayJournalButton(): void {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.TODAY_JOURNAL.icon,
-      RIBBON_BUTTONS.TODAY_JOURNAL.tooltip,
-      async () => {
-        try {
-          await this.plugin.journalManager.openTodayJournal();
-          this.showSuccess('Today\'s journal opened');
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to open today\'s journal');
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-
-  /**
-   * Add Create Future Note button - combines multiple functions into one smart button
+   * Add Create Future Note button - CORE FEATURE with date picker
    */
   private addCreateFutureNoteButton(): void {
     const button = this.plugin.addRibbonIcon(
-      '📝',
-      'Create Future Note - Creates daily notes, linked notes, or opens today\'s journal',
+      'calendar-plus',
+      'Create Future Note - Select date to create note',
       async () => {
         try {
-          // Get the active markdown view
-          const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-          
-          if (activeView) {
-            const editor = activeView.editor;
-            const selection = editor.getSelection();
-
-            if (selection) {
-              // If text is selected, create a linked note
-              this.plugin.linkManager.createLinkedNote(selection, editor, activeView);
-              this.showSuccess('Linked note created');
-              return;
-            }
+          // Show date picker for future note creation
+          const selectedDate = await this.showDatePicker();
+          if (selectedDate) {
+            // Create the future note with automatic folder creation
+            const file = await this.plugin.journalManager.createFutureDailyNote(selectedDate);
+            const leaf = this.plugin.app.workspace.getLeaf();
+            await leaf.openFile(file);
+            
+            const formattedDate = DateService.format(DateService.from(selectedDate), 'YYYY-MM-DD');
+            this.showSuccess(`Created future note for ${formattedDate}`);
           }
-
-          // If no selection or no active view, open today's journal
-          await this.plugin.journalManager.openTodayJournal();
-          this.showSuccess('Today\'s journal opened');
         } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to create note');
+          this.plugin.errorHandler.handleError(error, 'Failed to create future note');
         }
       }
     );
@@ -88,51 +54,83 @@ export class RibbonManager {
   }
 
   /**
-   * Add Monthly Folders button
+   * Show date picker modal for future note creation - FIXED MODAL API
    */
-  private addMonthlyFoldersButton(): void {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.MONTHLY_FOLDERS.icon,
-      RIBBON_BUTTONS.MONTHLY_FOLDERS.tooltip,
-      async () => {
-        try {
-          const startOfYear = DateService.startOfYear();
-          const endOfYear = DateService.endOfYear();
-          
-          await this.plugin.journalManager.createMonthlyFoldersForRange(startOfYear, endOfYear);
-          this.showSuccess('Monthly folders created for current year');
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to create monthly folders');
+  private async showDatePicker(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const modal = new Modal(this.plugin.app);
+      modal.setTitle('Create Future Daily Note');
+      
+      const { contentEl } = modal;
+      
+      // Instructions
+      const instructions = contentEl.createEl('p');
+      instructions.textContent = 'Select a date to create a daily note. This will automatically create the required monthly folders.';
+      instructions.style.marginBottom = '1em';
+      instructions.style.color = 'var(--text-muted)';
+      
+      // Date input
+      const dateInput = contentEl.createEl('input');
+      dateInput.type = 'date';
+      dateInput.style.width = '100%';
+      dateInput.style.padding = '8px';
+      dateInput.style.marginBottom = '1em';
+      dateInput.style.border = '1px solid var(--background-modifier-border)';
+      dateInput.style.borderRadius = '4px';
+      
+      // Set default to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dateInput.value = tomorrow.toISOString().split('T')[0];
+      
+      // Button container
+      const buttonContainer = contentEl.createDiv();
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.gap = '8px';
+      buttonContainer.style.justifyContent = 'flex-end';
+      
+      // Cancel button
+      const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+      cancelButton.onclick = () => {
+        modal.close();
+        resolve(null);
+      };
+      
+      // Create button
+      const createButton = buttonContainer.createEl('button', { 
+        text: 'Create Note',
+        cls: 'mod-cta'
+      });
+      createButton.onclick = () => {
+        const selectedDate = dateInput.value;
+        if (selectedDate) {
+          modal.close();
+          resolve(selectedDate);
         }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-
-  /**
-   * Add Shortcode Help button (deprecated - moved to quarantine)
-   */
-  // private addShortcodeHelpButton(): void {
-  //   // Shortcode help button logic moved to quarantine
-  // }
-
-  /**
-   * Add Rebuild Directory Structure button
-   */
-  private addRebuildStructureButton(): void {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.REBUILD_STRUCTURE.icon,
-      RIBBON_BUTTONS.REBUILD_STRUCTURE.tooltip,
-      async () => {
-        try {
-          await this.plugin.directoryManager.rebuildDirectoryStructure();
-          this.showSuccess('Directory structure rebuilt');
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to rebuild directory structure');
+      };
+      
+      // Enter key creates note
+      dateInput.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          const selectedDate = dateInput.value;
+          if (selectedDate) {
+            modal.close();
+            resolve(selectedDate);
+          }
         }
-      }
-    );
-    this.ribbonButtons.push(button);
+      });
+      
+      // Escape key cancels
+      modal.scope.register([], 'Escape', () => {
+        modal.close();
+        resolve(null);
+      });
+      
+      modal.open();
+      
+      // Focus the date input
+      setTimeout(() => dateInput.focus(), 100);
+    });
   }
 
   /**
@@ -140,16 +138,18 @@ export class RibbonManager {
    */
   private addSettingsButton(): void {
     const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.PLUGIN_SETTINGS.icon,
-      RIBBON_BUTTONS.PLUGIN_SETTINGS.tooltip,
+      'link',
+      'Open Obsidian Link Journal Settings',
       () => {
         try {
-          // Open settings tab - use the app's settings interface
-          (this.plugin.app as any).setting.open();
-          (this.plugin.app as any).setting.openTabById(this.plugin.manifest.id);
+          // Open settings using the correct Obsidian API
+          // @ts-ignore - Obsidian API
+          this.plugin.app.setting.open();
+          // @ts-ignore - Obsidian API
+          this.plugin.app.setting.openTabById(this.plugin.manifest.id);
         } catch (error) {
-          // Fallback: show a notice to manually open settings
-          new Notice('Please open Settings manually and find the Link Plugin tab');
+          // Fallback - use notice to instruct user
+          this.plugin.errorHandler.showNotice('Please open Settings → Community Plugins → Obsidian Link Journal to configure');
           this.plugin.errorHandler.handleError(error, 'Failed to open settings automatically');
         }
       }
@@ -158,74 +158,45 @@ export class RibbonManager {
   }
 
   /**
+   * Clear all ribbon buttons
+   */
+  clearRibbon(): void {
+    this.ribbonButtons.forEach(button => button.remove());
+    this.ribbonButtons = [];
+  }
+
+  /**
+   * Cleanup method for plugin unload
+   */
+  cleanup(): void {
+    this.clearRibbon();
+  }
+
+  /**
+   * Update button states based on settings
+   */
+  updateButtonStates(): void {
+    // No state-dependent buttons in simplified ribbon
+    console.log('Ribbon buttons updated');
+  }
+
+  /**
+   * Show quick actions menu
+   */
+  showQuickActionsMenu(): void {
+    // Simple notice with core actions
+    const message = `Obsidian Link Journal Quick Actions:
+• Create Today's Note: Open or create today's journal
+• Create Monthly Folders: Set up folder structure
+• Settings: Configure journal management`;
+    
+    this.plugin.errorHandler.showNotice(message);
+  }
+
+  /**
    * Show success message
    */
   private showSuccess(message: string): void {
-    new Notice(`✅ ${message}`);
-    
-    if (this.plugin.settings.debugMode) {
-      console.log(`[LinkPlugin] ${message}`);
-    }
-  }
-
-  /**
-   * Update ribbon button states based on settings
-   */
-  updateButtonStates(): void {
-    // Could be used to enable/disable buttons based on settings
-    // For example, disable shortcode help if shortcodes are disabled
-    if (this.plugin.settings.debugMode) {
-      console.log('[LinkPlugin] Ribbon button states updated');
-    }
-  }
-
-  /**
-   * Get ribbon button count for debugging
-   */
-  getButtonCount(): number {
-    return this.ribbonButtons.length;
-  }
-
-  /**
-   * Add a custom ribbon button (for future extensibility)
-   */
-  addCustomButton(
-    icon: string, 
-    tooltip: string, 
-    callback: () => void | Promise<void>
-  ): HTMLElement {
-    const button = this.plugin.addRibbonIcon(icon, tooltip, callback);
-    this.ribbonButtons.push(button);
-    return button;
-  }
-
-  /**
-   * Remove a specific ribbon button
-   */
-  removeButton(button: HTMLElement): void {
-    const index = this.ribbonButtons.indexOf(button);
-    if (index > -1) {
-      this.ribbonButtons.splice(index, 1);
-      button.remove();
-    }
-  }
-
-  /**
-   * Show quick actions menu (future enhancement)
-   */
-  showQuickActionsMenu(): void {
-    // This could show a popup menu with additional actions
-    // For now, just show a notice about available features
-    const message = `
-Link Plugin Quick Actions:
-• Today's Journal: ${RIBBON_BUTTONS.TODAY_JOURNAL.tooltip}
-• Create Note: ${RIBBON_BUTTONS.CREATE_NOTE.tooltip}
-• Monthly Folders: ${RIBBON_BUTTONS.MONTHLY_FOLDERS.tooltip}
-• Shortcode Help: (deprecated - moved to quarantine)
-• Rebuild Structure: ${RIBBON_BUTTONS.REBUILD_STRUCTURE.tooltip}
-• Settings: ${RIBBON_BUTTONS.PLUGIN_SETTINGS.tooltip}
-    `.trim();
-    
-    new Notice(message, 8000);
+    this.plugin.errorHandler.showNotice(message);
   }
 } 

@@ -47,9 +47,5 @@ coverage/
 tmp/
 temp/
 
-# Documentation that's not actively maintained
-docs/architecture/MONTHLY_FOLDER_MANAGEMENT.md
-docs/development/TEST_RESULTS.md
-
 # Compiled JavaScript (we work with TypeScript source)
 *.js.map 

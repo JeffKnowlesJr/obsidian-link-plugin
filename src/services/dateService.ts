@@ -149,23 +149,40 @@ export class DateService {
   }
 
   /**
-   * Get journal path components for a date
+   * Get journal path components for a date with custom formats
    */
-  static getJournalPathComponents(date?: Date | string | any): {
+  static getJournalPathComponents(
+    date?: Date | string | any, 
+    yearFormat?: string, 
+    monthFormat?: string
+  ): {
     year: string;
     monthName: string;
+    monthNumber: string;
     yearFolder: string;
     monthFolder: string;
   } {
     const momentDate = date ? this.moment(date) : this.moment();
     const year = momentDate.format('YYYY');
     const monthName = momentDate.format('MMMM');
+    const monthNumber = momentDate.format('MM');
+    
+    // FORCE correct formats - never use old y_YYYY bullshit
+    const yearFolderFormat = yearFormat && yearFormat !== 'y_YYYY' ? yearFormat : 'YYYY';
+    const monthFolderFormat = monthFormat || 'MM-MMMM';
+    
+    // Handle legacy formats and force them to MM-MMMM
+    let cleanMonthFormat = monthFolderFormat;
+    if (monthFolderFormat === 'MMmmmm' || monthFolderFormat === 'MMMMM' || monthFolderFormat === 'MMMM') {
+      cleanMonthFormat = 'MM-MMMM'; // Force to MM-MMMM format
+    }
     
     return {
       year,
       monthName,
-      yearFolder: `y_${year}`,
-      monthFolder: monthName
+      monthNumber,
+      yearFolder: momentDate.format(yearFolderFormat),
+      monthFolder: momentDate.format(cleanMonthFormat)
     };
   }
 
@@ -207,10 +224,15 @@ export class DateService {
   }
 
   /**
-   * Get monthly folder path for a date
+   * Get monthly folder path for a date with custom formats
    */
-  static getMonthlyFolderPath(basePath: string, date?: Date | string | any): string {
-    const components = this.getJournalPathComponents(date);
+  static getMonthlyFolderPath(
+    basePath: string, 
+    date?: Date | string | any, 
+    yearFormat?: string, 
+    monthFormat?: string
+  ): string {
+    const components = this.getJournalPathComponents(date, yearFormat, monthFormat);
     return `${basePath}/${components.yearFolder}/${components.monthFolder}`;
   }
 

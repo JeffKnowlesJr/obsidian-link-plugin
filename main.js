@@ -7,9 +7,6 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
-};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -24,72 +21,46 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// src/main.ts
+var main_exports = {};
+__export(main_exports, {
+  default: () => LinkPlugin
+});
+module.exports = __toCommonJS(main_exports);
+var import_obsidian8 = require("obsidian");
+
 // src/constants.ts
-var DEFAULT_BASE_FOLDER, DEFAULT_DIRECTORIES, OPTIONAL_DIRECTORIES, COMMAND_IDS, RIBBON_BUTTONS, DATE_FORMATS, DEFAULT_TEMPLATES, REGEX_PATTERNS;
-var init_constants = __esm({
-  "src/constants.ts"() {
-    "use strict";
-    DEFAULT_BASE_FOLDER = "LinkPlugin";
-    DEFAULT_DIRECTORIES = [
-      "journal",
-      "templates",
-      "workspace",
-      "reference"
-    ];
-    OPTIONAL_DIRECTORIES = [
-      "context",
-      "schema",
-      "Projects"
-    ];
-    COMMAND_IDS = {
-      CREATE_LINKED_NOTE: "create-linked-note",
-      REBUILD_DIRECTORY: "rebuild-directory-structure",
-      OPEN_TODAY_JOURNAL: "open-today-journal",
-      CREATE_TODAY_NOTE: "create-today-note",
-      CREATE_FUTURE_NOTE: "create-future-note",
-      CREATE_MONTHLY_FOLDERS: "create-monthly-folders",
-      EXPAND_SHORTCODE: "expand-shortcode",
-      SHOW_LINK_SUGGESTIONS: "show-link-suggestions"
-    };
-    RIBBON_BUTTONS = {
-      TODAY_JOURNAL: {
-        icon: "calendar-days",
-        title: "Open Today's Journal",
-        tooltip: "Open or create today's journal entry"
-      },
-      CREATE_NOTE: {
-        icon: "file-plus",
-        title: "Create Linked Note",
-        tooltip: "Create a new linked note from selected text"
-      },
-      MONTHLY_FOLDERS: {
-        icon: "folder-plus",
-        title: "Create Monthly Folders",
-        tooltip: "Create monthly folders for the current year"
-      },
-      // SHORTCODE_HELP: {
-      //   icon: 'zap',
-      //   title: 'Shortcode Help',
-      //   tooltip: 'Show available shortcodes and examples'
-      // }, // Deprecated - moved to quarantine
-      REBUILD_STRUCTURE: {
-        icon: "folder-sync",
-        title: "Rebuild Directory Structure",
-        tooltip: "Rebuild the plugin's directory structure"
-      },
-      PLUGIN_SETTINGS: {
-        icon: "settings",
-        title: "Link Plugin Settings",
-        tooltip: "Open Link Plugin settings"
-      }
-    };
-    DATE_FORMATS = {
-      DEFAULT_JOURNAL: "YYYY-MM-DD dddd",
-      ISO_DATE: "YYYY-MM-DD",
-      FOLDER_FORMAT: "YYYY/MM"
-    };
-    DEFAULT_TEMPLATES = {
-      JOURNAL: `# {{date}}
+var DEFAULT_BASE_FOLDER = "Link";
+var DEFAULT_DIRECTORIES = [
+  "journal",
+  "templates",
+  "workspace",
+  "reference",
+  "files"
+  // Moved out of references as requested
+];
+var OPTIONAL_DIRECTORIES = [
+  "context",
+  "schema",
+  "Projects"
+];
+var COMMAND_IDS = {
+  CREATE_LINKED_NOTE: "create-linked-note",
+  REBUILD_DIRECTORY: "rebuild-directory-structure",
+  OPEN_TODAY_JOURNAL: "open-today-journal",
+  CREATE_TODAY_NOTE: "create-today-note",
+  CREATE_FUTURE_NOTE: "create-future-note",
+  CREATE_MONTHLY_FOLDERS: "create-monthly-folders",
+  EXPAND_SHORTCODE: "expand-shortcode",
+  SHOW_LINK_SUGGESTIONS: "show-link-suggestions"
+};
+var DATE_FORMATS = {
+  DEFAULT_JOURNAL: "YYYY-MM-DD dddd",
+  ISO_DATE: "YYYY-MM-DD",
+  FOLDER_FORMAT: "YYYY/MM"
+};
+var DEFAULT_TEMPLATES = {
+  JOURNAL: `# {{date}}
 
 ## Daily Log
 
@@ -104,7 +75,7 @@ var init_constants = __esm({
 Previous: {{previous}}
 Next: {{next}}
 `,
-      NOTE: `---
+  NOTE: `---
 title: {{title}}
 created: {{date}}
 source: {{source}}
@@ -114,183 +85,155 @@ tags: []
 # {{title}}
 
 `
-    };
-    REGEX_PATTERNS = {
-      WIKI_LINK: /\[\[(.*?)\]\]/g,
-      SHORTCODE: /[\w>+*{}\[\]()]+$/,
-      DATE_FILENAME: /\d{4}-\d{2}-\d{2}/,
-      INVALID_FILENAME_CHARS: /[\\/:*?"<>|]/g
-    };
-  }
-});
+};
+var REGEX_PATTERNS = {
+  WIKI_LINK: /\[\[(.*?)\]\]/g,
+  SHORTCODE: /[\w>+*{}\[\]()]+$/,
+  DATE_FILENAME: /\d{4}-\d{2}-\d{2}/,
+  INVALID_FILENAME_CHARS: /[\\/:*?"<>|]/g
+};
 
 // src/settings/directorySettings.ts
-var DirectorySettings;
-var init_directorySettings = __esm({
-  "src/settings/directorySettings.ts"() {
-    "use strict";
-    init_constants();
-    DirectorySettings = class {
-      static getDefaults() {
-        return {
-          baseFolder: DEFAULT_BASE_FOLDER,
-          // Creates all directories under 'LinkPlugin/' by default
-          directoryStructure: DEFAULT_DIRECTORIES,
-          restrictedDirectories: [],
-          documentDirectory: "workspace",
-          // Updated to match README structure
-          journalRootFolder: "journal"
-          // Updated to match README structure
-        };
-      }
-      static validate(settings) {
-        const validated = {};
-        if (settings.baseFolder && typeof settings.baseFolder === "string") {
-          validated.baseFolder = settings.baseFolder.trim();
-        }
-        if (settings.directoryStructure && Array.isArray(settings.directoryStructure)) {
-          validated.directoryStructure = settings.directoryStructure;
-        }
-        if (settings.restrictedDirectories && Array.isArray(settings.restrictedDirectories)) {
-          validated.restrictedDirectories = settings.restrictedDirectories;
-        }
-        if (settings.documentDirectory && typeof settings.documentDirectory === "string") {
-          validated.documentDirectory = settings.documentDirectory;
-        }
-        if (settings.journalRootFolder && typeof settings.journalRootFolder === "string") {
-          validated.journalRootFolder = settings.journalRootFolder;
-        }
-        return validated;
-      }
+var DirectorySettings = class {
+  static getDefaults() {
+    return {
+      baseFolder: DEFAULT_BASE_FOLDER,
+      // Creates all directories under 'Link/' by default
+      directoryStructure: DEFAULT_DIRECTORIES,
+      restrictedDirectories: [],
+      documentDirectory: "workspace",
+      // Updated to match README structure
+      journalRootFolder: "journal"
+      // Updated to match README structure
     };
   }
-});
+  static validate(settings) {
+    const validated = {};
+    if (settings.baseFolder !== void 0 && typeof settings.baseFolder === "string") {
+      const trimmed = settings.baseFolder.trim();
+      validated.baseFolder = trimmed === "" ? "" : trimmed;
+    }
+    if (settings.directoryStructure && Array.isArray(settings.directoryStructure)) {
+      validated.directoryStructure = settings.directoryStructure;
+    }
+    if (settings.restrictedDirectories && Array.isArray(settings.restrictedDirectories)) {
+      validated.restrictedDirectories = settings.restrictedDirectories;
+    }
+    if (settings.documentDirectory && typeof settings.documentDirectory === "string") {
+      validated.documentDirectory = settings.documentDirectory;
+    }
+    if (settings.journalRootFolder && typeof settings.journalRootFolder === "string") {
+      validated.journalRootFolder = settings.journalRootFolder;
+    }
+    return validated;
+  }
+};
 
 // src/settings/journalSettings.ts
-var JournalSettings;
-var init_journalSettings = __esm({
-  "src/settings/journalSettings.ts"() {
-    "use strict";
-    init_constants();
-    JournalSettings = class {
-      static getDefaults() {
-        return {
-          journalDateFormat: DATE_FORMATS.DEFAULT_JOURNAL,
-          journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
-          journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
-          enableDynamicFolders: false,
-          // Disabled by default for MVP
-          simpleJournalMode: true
-          // Simple mode enabled by default
-        };
-      }
-      static validate(settings) {
-        const validated = {};
-        if (settings.journalDateFormat && typeof settings.journalDateFormat === "string") {
-          validated.journalDateFormat = settings.journalDateFormat;
-        }
-        if (settings.journalFolderFormat && typeof settings.journalFolderFormat === "string") {
-          validated.journalFolderFormat = settings.journalFolderFormat;
-        }
-        if (settings.journalTemplate && typeof settings.journalTemplate === "string") {
-          validated.journalTemplate = settings.journalTemplate;
-        }
-        return validated;
-      }
-      static isValidDateFormat(format) {
-        try {
-          const validTokens = ["YYYY", "MM", "DD", "dddd", "MMM", "MMMM"];
-          return validTokens.some((token) => format.includes(token));
-        } catch (e) {
-          return false;
-        }
-      }
+var JournalSettings = class {
+  static getDefaults() {
+    return {
+      journalDateFormat: "YYYY-MM-DD dddd",
+      journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
+      journalYearFormat: "YYYY",
+      journalMonthFormat: "MM-MMMM",
+      // Changed to MM-MMMM for "07-July" format
+      journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
+      simpleJournalMode: false
+      // Default to dynamic monthly folders
     };
   }
-});
+  static validate(settings) {
+    const validated = {};
+    if (settings.journalDateFormat && typeof settings.journalDateFormat === "string") {
+      validated.journalDateFormat = settings.journalDateFormat;
+    }
+    if (settings.journalFolderFormat && typeof settings.journalFolderFormat === "string") {
+      validated.journalFolderFormat = settings.journalFolderFormat;
+    }
+    if (settings.journalTemplate && typeof settings.journalTemplate === "string") {
+      validated.journalTemplate = settings.journalTemplate;
+    }
+    if (typeof settings.simpleJournalMode === "boolean") {
+      validated.simpleJournalMode = settings.simpleJournalMode;
+    }
+    return validated;
+  }
+  static isValidDateFormat(format) {
+    try {
+      const validTokens = ["YYYY", "MM", "DD", "dddd", "MMM", "MMMM"];
+      return validTokens.some((token) => format.includes(token));
+    } catch (e) {
+      return false;
+    }
+  }
+};
 
 // src/settings/noteSettings.ts
-var NoteSettings;
-var init_noteSettings = __esm({
-  "src/settings/noteSettings.ts"() {
-    "use strict";
-    init_constants();
-    NoteSettings = class {
-      static getDefaults() {
-        return {
-          noteTemplate: DEFAULT_TEMPLATES.NOTE,
-          openNewNote: true
-        };
-      }
-      static validate(settings) {
-        const validated = {};
-        if (settings.noteTemplate && typeof settings.noteTemplate === "string") {
-          validated.noteTemplate = settings.noteTemplate;
-        }
-        if (typeof settings.openNewNote === "boolean") {
-          validated.openNewNote = settings.openNewNote;
-        }
-        return validated;
-      }
-      static validateTemplate(template) {
-        const errors = [];
-        const requiredVars = ["{{title}}"];
-        const missingVars = requiredVars.filter((varName) => !template.includes(varName));
-        if (missingVars.length > 0) {
-          errors.push(`Missing required template variables: ${missingVars.join(", ")}`);
-        }
-        const templateVarPattern = /\{\{[^}]*\}\}/g;
-        const matches = template.match(templateVarPattern);
-        if (matches) {
-          matches.forEach((match) => {
-            if (!match.endsWith("}}")) {
-              errors.push(`Malformed template variable: ${match}`);
-            }
-          });
-        }
-        return {
-          isValid: errors.length === 0,
-          errors
-        };
-      }
+var NoteSettings = class {
+  static getDefaults() {
+    return {
+      noteTemplate: DEFAULT_TEMPLATES.NOTE
     };
   }
-});
+  static validate(settings) {
+    const validated = {};
+    if (settings.noteTemplate && typeof settings.noteTemplate === "string") {
+      validated.noteTemplate = settings.noteTemplate;
+    }
+    return validated;
+  }
+  static validateTemplate(template) {
+    const errors = [];
+    const requiredVars = ["{{title}}"];
+    const missingVars = requiredVars.filter((varName) => !template.includes(varName));
+    if (missingVars.length > 0) {
+      errors.push(`Missing required template variables: ${missingVars.join(", ")}`);
+    }
+    const templateVarPattern = /\{\{[^}]*\}\}/g;
+    const matches = template.match(templateVarPattern);
+    if (matches) {
+      matches.forEach((match) => {
+        if (!match.endsWith("}}")) {
+          errors.push(`Malformed template variable: ${match}`);
+        }
+      });
+    }
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+};
 
 // src/settings/generalSettings.ts
-var GeneralSettings;
-var init_generalSettings = __esm({
-  "src/settings/generalSettings.ts"() {
-    "use strict";
-    GeneralSettings = class {
-      static getDefaults() {
-        return {
-          debugMode: false,
-          fileSorting: {
-            enableAutoSorting: false,
-            sortOnFileCreate: false,
-            sortOnFileModify: false
-          }
-        };
-      }
-      static validate(settings) {
-        const validated = {};
-        if (typeof settings.debugMode === "boolean") {
-          validated.debugMode = settings.debugMode;
-        }
-        return validated;
-      }
-      static getDebugInfo() {
-        return {
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          platform: navigator.platform,
-          language: navigator.language
-        };
+var GeneralSettings = class {
+  static getDefaults() {
+    return {
+      debugMode: false,
+      fileSorting: {
+        enableAutoSorting: false,
+        sortOnFileCreate: false,
+        sortOnFileModify: false
       }
     };
   }
-});
+  static validate(settings) {
+    const validated = {};
+    if (typeof settings.debugMode === "boolean") {
+      validated.debugMode = settings.debugMode;
+    }
+    return validated;
+  }
+  static getDebugInfo() {
+    return {
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language
+    };
+  }
+};
 
 // src/settings/settingsValidator.ts
 function validateSettings(settings) {
@@ -315,380 +258,29 @@ function validateSettings(settings) {
   );
   return validatedSettings;
 }
-function validateSettingsWithDetails(settings) {
-  const errors = [];
-  const warnings = [];
-  if (settings.noteTemplate) {
-    const templateValidation = NoteSettings.validateTemplate(settings.noteTemplate);
-    if (!templateValidation.isValid) {
-      errors.push(...templateValidation.errors);
-    }
-  }
-  if (settings.journalDateFormat && !JournalSettings.isValidDateFormat(settings.journalDateFormat)) {
-    warnings.push("Invalid journal date format provided, using default");
-  }
-  if (settings.directoryStructure && settings.directoryStructure.length === 0) {
-    warnings.push("Empty directory structure provided, using defaults");
-  }
-  const validatedSettings = validateSettings(settings);
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-    validatedSettings
-  };
-}
-var init_settingsValidator = __esm({
-  "src/settings/settingsValidator.ts"() {
-    "use strict";
-    init_directorySettings();
-    init_journalSettings();
-    init_noteSettings();
-    init_generalSettings();
-  }
-});
 
 // src/settings/defaultSettings.ts
-var DEFAULT_SETTINGS;
-var init_defaultSettings = __esm({
-  "src/settings/defaultSettings.ts"() {
-    "use strict";
-    init_directorySettings();
-    init_journalSettings();
-    init_noteSettings();
-    init_generalSettings();
-    DEFAULT_SETTINGS = {
-      ...DirectorySettings.getDefaults(),
-      ...JournalSettings.getDefaults(),
-      ...NoteSettings.getDefaults(),
-      // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
-      ...GeneralSettings.getDefaults()
-    };
-  }
-});
+var DEFAULT_SETTINGS = {
+  ...DirectorySettings.getDefaults(),
+  ...JournalSettings.getDefaults(),
+  ...NoteSettings.getDefaults(),
+  // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
+  ...GeneralSettings.getDefaults()
+};
 
-// src/settings.ts
-var settings_exports = {};
-__export(settings_exports, {
-  DEFAULT_SETTINGS: () => DEFAULT_SETTINGS,
-  DirectorySettings: () => DirectorySettings,
-  GeneralSettings: () => GeneralSettings,
-  JournalSettings: () => JournalSettings,
-  NoteSettings: () => NoteSettings,
-  validateSettings: () => validateSettings,
-  validateSettingsWithDetails: () => validateSettingsWithDetails
-});
-var init_settings = __esm({
-  "src/settings.ts"() {
-    "use strict";
-    init_settingsValidator();
-    init_directorySettings();
-    init_journalSettings();
-    init_noteSettings();
-    init_generalSettings();
-    init_defaultSettings();
-  }
-});
-
-// src/utils/errorHandler.ts
-var import_obsidian, ErrorHandler;
-var init_errorHandler = __esm({
-  "src/utils/errorHandler.ts"() {
-    "use strict";
-    import_obsidian = require("obsidian");
-    ErrorHandler = class {
-      constructor(plugin) {
-        this.plugin = plugin;
-      }
-      handleError(error, context) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`${context}: ${message}`);
-        new import_obsidian.Notice(`${context}: ${message}`);
-      }
-      showNotice(message, duration) {
-        new import_obsidian.Notice(message, duration);
-      }
-      showSuccess(message) {
-        new import_obsidian.Notice(message, 3e3);
-      }
-      showWarning(message) {
-        new import_obsidian.Notice(`\u26A0\uFE0F ${message}`, 5e3);
-      }
-    };
-  }
-});
-
-// src/managers/fileSortingManager.ts
-var fileSortingManager_exports = {};
-__export(fileSortingManager_exports, {
-  FileSortingManager: () => FileSortingManager
-});
-var FileSortingManager;
-var init_fileSortingManager = __esm({
-  "src/managers/fileSortingManager.ts"() {
-    "use strict";
-    init_errorHandler();
-    FileSortingManager = class {
-      constructor(vault, metadataCache, settings, directoryManager) {
-        // File type mappings for media files
-        this.FILE_TYPE_MAPPINGS = {
-          images: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico"],
-          videos: [".mp4", ".avi", ".mov", ".wmv", ".flv", ".webm", ".mkv", ".m4v"],
-          pdfs: [".pdf"],
-          audio: [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a"],
-          docs: [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".rtf", ".odt"]
-        };
-        this.vault = vault;
-        this.metadataCache = metadataCache;
-        this.settings = settings;
-        this.directoryManager = directoryManager;
-        this.errorHandler = new ErrorHandler(null);
-      }
-      /**
-       * Extract metadata from a file
-       */
-      async extractMetadata(file) {
-        var _a, _b, _c;
-        const frontmatter = (_a = this.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
-        const tags = ((_c = (_b = this.metadataCache.getFileCache(file)) == null ? void 0 : _b.tags) == null ? void 0 : _c.map((tag) => tag.tag)) || [];
-        return {
-          file,
-          extension: file.extension.toLowerCase(),
-          size: file.stat.size,
-          createdDate: new Date(file.stat.ctime),
-          modifiedDate: new Date(file.stat.mtime),
-          frontmatter,
-          tags,
-          category: frontmatter == null ? void 0 : frontmatter.category,
-          type: frontmatter == null ? void 0 : frontmatter.type,
-          priority: frontmatter == null ? void 0 : frontmatter.priority
-        };
-      }
-      /**
-       * Determine target directory for a file based on sorting rules
-       */
-      determineTargetDirectory(metadata) {
-        const baseDir = this.settings.baseFolder || "LinkPlugin";
-        for (const rule of this.getCustomRules()) {
-          if (rule.condition(metadata)) {
-            return `${baseDir}/${rule.targetDirectory}`;
-          }
-        }
-        const fileTypeDir = this.getFileTypeDirectory(metadata.extension);
-        if (fileTypeDir) {
-          return `${baseDir}/reference/files/${fileTypeDir}`;
-        }
-        if (metadata.extension === "md") {
-          return this.getMarkdownTargetDirectory(metadata, baseDir);
-        }
-        return null;
-      }
-      /**
-       * Get target directory for file types
-       */
-      getFileTypeDirectory(extension) {
-        for (const [category, extensions] of Object.entries(this.FILE_TYPE_MAPPINGS)) {
-          if (extensions.includes(`.${extension}`)) {
-            return category;
-          }
-        }
-        return extension === "md" ? null : "other";
-      }
-      /**
-       * Determine target directory for markdown files based on frontmatter
-       */
-      getMarkdownTargetDirectory(metadata, baseDir) {
-        const { frontmatter, file } = metadata;
-        if (!frontmatter)
-          return null;
-        if (frontmatter.type === "journal" || frontmatter.category === "journal") {
-          return `${baseDir}/journal`;
-        }
-        if (frontmatter.type === "project" || frontmatter.category === "project") {
-          return `${baseDir}/workspace`;
-        }
-        if (frontmatter.type === "reference" || frontmatter.category === "reference") {
-          return `${baseDir}/reference`;
-        }
-        if (frontmatter.type === "template" || frontmatter.category === "template") {
-          return `${baseDir}/templates`;
-        }
-        if (metadata.tags.includes("#journal")) {
-          return `${baseDir}/journal`;
-        }
-        if (metadata.tags.includes("#project")) {
-          return `${baseDir}/workspace`;
-        }
-        if (metadata.tags.includes("#reference")) {
-          return `${baseDir}/reference`;
-        }
-        return null;
-      }
-      /**
-       * Get custom sorting rules from settings
-       */
-      getCustomRules() {
-        return [
-          {
-            name: "High Priority Notes",
-            condition: (metadata) => metadata.priority !== void 0 && metadata.priority >= 8,
-            targetDirectory: "workspace/priority",
-            priority: 100,
-            description: "Notes with priority 8 or higher"
-          },
-          {
-            name: "Meeting Notes",
-            condition: (metadata) => {
-              var _a;
-              return ((_a = metadata.frontmatter) == null ? void 0 : _a.type) === "meeting" || metadata.tags.includes("#meeting");
-            },
-            targetDirectory: "workspace/meetings",
-            priority: 90,
-            description: "Meeting notes and minutes"
-          },
-          {
-            name: "Daily Notes",
-            condition: (metadata) => {
-              const fileName = metadata.file.basename;
-              return /^\d{4}-\d{2}-\d{2}$/.test(fileName);
-            },
-            targetDirectory: "journal",
-            priority: 80,
-            description: "Daily notes with YYYY-MM-DD format"
-          }
-        ];
-      }
-      /**
-       * Sort a single file
-       */
-      async sortFile(file, dryRun = false) {
-        var _a;
-        try {
-          const metadata = await this.extractMetadata(file);
-          const targetDir = this.determineTargetDirectory(metadata);
-          if (!targetDir) {
-            return {
-              moved: false,
-              from: file.path,
-              to: file.path,
-              reason: "No sorting rule applies"
-            };
-          }
-          const currentDir = ((_a = file.parent) == null ? void 0 : _a.path) || "";
-          if (currentDir === targetDir) {
-            return {
-              moved: false,
-              from: file.path,
-              to: file.path,
-              reason: "Already in correct location"
-            };
-          }
-          if (this.shouldExcludeFile(file)) {
-            return {
-              moved: false,
-              from: file.path,
-              to: file.path,
-              reason: "File excluded from sorting"
-            };
-          }
-          if (dryRun) {
-            return {
-              moved: true,
-              from: file.path,
-              to: `${targetDir}/${file.name}`,
-              reason: "Would be moved (dry run)"
-            };
-          }
-          await this.directoryManager.getOrCreateDirectory(targetDir);
-          const newPath = `${targetDir}/${file.name}`;
-          await this.vault.rename(file, newPath);
-          return {
-            moved: true,
-            from: file.path,
-            to: newPath,
-            reason: "Moved successfully"
-          };
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          this.errorHandler.handleError(error, `Failed to sort file: ${file.path}`);
-          return {
-            moved: false,
-            from: file.path,
-            to: file.path,
-            reason: `Error: ${errorMessage}`
-          };
-        }
-      }
-      /**
-       * Check if file should be excluded from sorting
-       */
-      shouldExcludeFile(file) {
-        const excludePatterns = [
-          ".obsidian",
-          ".git",
-          ".gitignore",
-          "node_modules",
-          "quarantine"
-        ];
-        const filePath = file.path.toLowerCase();
-        return excludePatterns.some((pattern) => filePath.includes(pattern.toLowerCase()));
-      }
-      /**
-       * Bulk sort all files in the vault
-       */
-      async bulkSort(dryRun = false) {
-        const results = [];
-        let processed = 0;
-        let moved = 0;
-        let skipped = 0;
-        let errors = 0;
-        const allFiles = this.vault.getFiles();
-        for (const file of allFiles) {
-          if (this.shouldExcludeFile(file)) {
-            skipped++;
-            continue;
-          }
-          const result = await this.sortFile(file, dryRun);
-          results.push(result);
-          processed++;
-          if (result.moved && !dryRun) {
-            moved++;
-          } else if (result.reason.startsWith("Error:")) {
-            errors++;
-          } else {
-            skipped++;
-          }
-        }
-        return { processed, moved, skipped, errors, results };
-      }
-      /**
-       * Sort file on creation/modification if auto-sort is enabled
-       */
-      async autoSort(file) {
-        var _a;
-        if (!((_a = this.settings.fileSorting) == null ? void 0 : _a.enableAutoSorting)) {
-          return;
-        }
-        setTimeout(async () => {
-          await this.sortFile(file);
-        }, 100);
-      }
-    };
-  }
-});
-
-// src/main.ts
-var main_exports = {};
-__export(main_exports, {
-  default: () => LinkPlugin
-});
-module.exports = __toCommonJS(main_exports);
-var import_obsidian8 = require("obsidian");
-init_settings();
-
-// src/ui/settingsTab.ts
+// src/managers/directoryManager.ts
 var import_obsidian2 = require("obsidian");
-init_settings();
+
+// src/utils/pathUtils.ts
+var import_obsidian = require("obsidian");
+var PathUtils = class {
+  static sanitizePath(path) {
+    return (0, import_obsidian.normalizePath)(path.replace(/[\/:*?"<>|]/g, "").trim());
+  }
+  static joinPath(...segments) {
+    return (0, import_obsidian.normalizePath)(segments.filter(Boolean).join("/"));
+  }
+};
 
 // src/services/dateService.ts
 var DateService = class {
@@ -805,17 +397,25 @@ var DateService = class {
     }
   }
   /**
-   * Get journal path components for a date
+   * Get journal path components for a date with custom formats
    */
-  static getJournalPathComponents(date) {
+  static getJournalPathComponents(date, yearFormat, monthFormat) {
     const momentDate = date ? this.moment(date) : this.moment();
     const year = momentDate.format("YYYY");
     const monthName = momentDate.format("MMMM");
+    const monthNumber = momentDate.format("MM");
+    const yearFolderFormat = yearFormat && yearFormat !== "y_YYYY" ? yearFormat : "YYYY";
+    const monthFolderFormat = monthFormat || "MM-MMMM";
+    let cleanMonthFormat = monthFolderFormat;
+    if (monthFolderFormat === "MMmmmm" || monthFolderFormat === "MMMMM" || monthFolderFormat === "MMMM") {
+      cleanMonthFormat = "MM-MMMM";
+    }
     return {
       year,
       monthName,
-      yearFolder: `y_${year}`,
-      monthFolder: monthName
+      monthNumber,
+      yearFolder: momentDate.format(yearFolderFormat),
+      monthFolder: momentDate.format(cleanMonthFormat)
     };
   }
   /**
@@ -851,10 +451,10 @@ var DateService = class {
     }
   }
   /**
-   * Get monthly folder path for a date
+   * Get monthly folder path for a date with custom formats
    */
-  static getMonthlyFolderPath(basePath, date) {
-    const components = this.getJournalPathComponents(date);
+  static getMonthlyFolderPath(basePath, date, yearFormat, monthFormat) {
+    const components = this.getJournalPathComponents(date, yearFormat, monthFormat);
     return `${basePath}/${components.yearFolder}/${components.monthFolder}`;
   }
   /**
@@ -890,538 +490,6 @@ var DateService = class {
   }
 };
 
-// src/ui/settingsTab.ts
-var SettingsTab = class extends import_obsidian2.PluginSettingTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
-    containerEl.createEl("h1", { text: "Link Plugin Settings" });
-    const description = containerEl.createEl("p");
-    description.innerHTML = `
-      Essential settings for the Link Plugin. <strong>Quality over quantity</strong> - only the most important options are shown.
-    `;
-    description.style.marginBottom = "2em";
-    description.style.color = "var(--text-muted)";
-    this.addCoreSettings(containerEl);
-    this.addSimplifiedJournalSettings(containerEl);
-    this.addFileSortingSettings(containerEl);
-  }
-  addCoreSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F3E0} Core Settings" });
-    new import_obsidian2.Setting(containerEl).setName("Base Folder").setDesc("Root folder for all plugin files (prevents vault collision)").addText((text) => text.setPlaceholder("LinkPlugin").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
-      if (value.trim()) {
-        this.plugin.settings.baseFolder = value.trim();
-        await this.plugin.saveSettings();
-      }
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Open new notes in split pane").setDesc("When creating linked notes from selected text, open them in a new pane instead of the current one").addToggle((toggle) => toggle.setValue(this.plugin.settings.openNewNote).onChange(async (value) => {
-      this.plugin.settings.openNewNote = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian2.Setting(containerEl).setName("\u26A0\uFE0F Rebuild Structure").setDesc("Recreate folder structure with current settings. Use only if folders are missing or corrupted.").addButton((button) => {
-      button.setButtonText("Rebuild").setWarning().onClick(async () => {
-        try {
-          await this.plugin.directoryManager.rebuildDirectoryStructure();
-          this.showSuccessMessage(button.buttonEl, "Structure rebuilt!");
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, "Failed to rebuild structure");
-        }
-      });
-      button.buttonEl.style.backgroundColor = "var(--color-red)";
-      button.buttonEl.style.color = "white";
-      return button;
-    });
-  }
-  addJournalSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4C5} Journal Settings" });
-    const journalDesc = containerEl.createEl("p");
-    journalDesc.textContent = "Configure date formats and templates for journal entries.";
-    journalDesc.style.color = "var(--text-muted)";
-    journalDesc.style.marginBottom = "1em";
-    new import_obsidian2.Setting(containerEl).setName("Journal Date Format").setDesc("Format for journal entry filenames. Uses moment.js format tokens (e.g., YYYY-MM-DD dddd).").addText((text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
-      if (value.trim()) {
-        if (JournalSettings.isValidDateFormat(value)) {
-          this.plugin.settings.journalDateFormat = value.trim();
-          await this.plugin.saveSettings();
-          this.showValidationMessage(text.inputEl, "\u2705 Valid format", "success");
-        } else {
-          this.showValidationMessage(text.inputEl, "\u274C Invalid date format", "error");
-        }
-      }
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Journal Folder Format").setDesc("Format for organizing journal folders by date.").addText((text) => text.setPlaceholder("YYYY/MM").setValue(this.plugin.settings.journalFolderFormat).onChange(async (value) => {
-      if (value.trim()) {
-        this.plugin.settings.journalFolderFormat = value.trim();
-        await this.plugin.saveSettings();
-      }
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Journal Template").setDesc("Template for new journal entries. Use {{date}}, {{title}}, {{previous}}, {{next}} as placeholders.").addTextArea((text) => {
-      text.inputEl.rows = 8;
-      text.inputEl.style.width = "100%";
-      text.inputEl.style.minHeight = "150px";
-      text.setPlaceholder(`# {{date}}
-
-## Daily Log
-
-## Tasks
-- [ ] 
-
-## Notes
-
-## Reflection
-
----
-Previous: {{previous}}
-Next: {{next}}`);
-      text.setValue(this.plugin.settings.journalTemplate);
-      text.onChange(async (value) => {
-        this.plugin.settings.journalTemplate = value;
-        await this.plugin.saveSettings();
-      });
-      return text;
-    });
-    new import_obsidian2.Setting(containerEl).setName("Create Monthly Folders").setDesc("Pre-create monthly folders for the current year.").addButton((button) => button.setButtonText("Create Folders").setTooltip("Create all monthly folders for the current year").onClick(async () => {
-      var _a;
-      try {
-        const startOfYear = DateService.startOfYear();
-        const endOfYear = DateService.endOfYear();
-        await this.plugin.journalManager.createMonthlyFoldersForRange(startOfYear, endOfYear);
-        const notice = document.createElement("div");
-        notice.textContent = "\u2705 Monthly folders created successfully!";
-        notice.style.color = "var(--text-success)";
-        notice.style.fontWeight = "bold";
-        (_a = button.buttonEl.parentElement) == null ? void 0 : _a.appendChild(notice);
-        setTimeout(() => notice.remove(), 3e3);
-      } catch (error) {
-        this.plugin.errorHandler.handleError(error, "Failed to create monthly folders");
-      }
-    }));
-  }
-  addSimplifiedJournalSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4C5} Journal Settings" });
-    new import_obsidian2.Setting(containerEl).setName("Simple Journal Mode").setDesc("Use simple folder structure (all notes in journal folder)").addToggle((toggle) => toggle.setValue(this.plugin.settings.simpleJournalMode).onChange(async (value) => {
-      this.plugin.settings.simpleJournalMode = value;
-      this.plugin.settings.enableDynamicFolders = !value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Date Format").setDesc("Format for journal filenames (YYYY-MM-DD recommended)").addText((text) => text.setPlaceholder("YYYY-MM-DD").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
-      if (value.trim()) {
-        this.plugin.settings.journalDateFormat = value.trim();
-        await this.plugin.saveSettings();
-      }
-    }));
-  }
-  addFileSortingSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4C2} File Sorting" });
-    new import_obsidian2.Setting(containerEl).setName("Auto Sort Files").setDesc("Automatically sort images, videos, PDFs, and audio files to reference/files/ folders. Markdown files sorted by frontmatter type/category.").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.enableAutoSorting).onChange(async (value) => {
-      this.plugin.settings.fileSorting.enableAutoSorting = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Sort on Create").setDesc("Sort files immediately when created. Creates directory-relative links like [[/reference/files/image]] for cross-folder linking.").addToggle((toggle) => toggle.setValue(this.plugin.settings.fileSorting.sortOnFileCreate).onChange(async (value) => {
-      this.plugin.settings.fileSorting.sortOnFileCreate = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Sort All Files").setDesc("Sort all existing files in vault (preview mode)").addButton((button) => button.setButtonText("Preview Sort").onClick(async () => {
-      try {
-        if (!this.plugin.fileSortingManager) {
-          const { FileSortingManager: FileSortingManager2 } = await Promise.resolve().then(() => (init_fileSortingManager(), fileSortingManager_exports));
-          this.plugin.fileSortingManager = new FileSortingManager2(
-            this.plugin.app.vault,
-            this.plugin.app.metadataCache,
-            this.plugin.settings,
-            this.plugin.directoryManager
-          );
-        }
-        const result = await this.plugin.fileSortingManager.bulkSort(true);
-        this.showSuccessMessage(button.buttonEl, `Preview: ${result.moved} files would be moved`);
-      } catch (error) {
-        this.plugin.errorHandler.handleError(error, "Failed to preview sort");
-      }
-    }));
-  }
-  addNoteSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4DD} Note Creation" });
-    const noteDesc = containerEl.createEl("p");
-    noteDesc.textContent = "Configure templates and behavior for new note creation.";
-    noteDesc.style.color = "var(--text-muted)";
-    noteDesc.style.marginBottom = "1em";
-    new import_obsidian2.Setting(containerEl).setName("Note Template").setDesc("Default template for new notes. Use {{title}}, {{date}}, {{source}} as placeholders.").addTextArea((text) => {
-      text.inputEl.rows = 6;
-      text.inputEl.style.width = "100%";
-      text.inputEl.style.minHeight = "120px";
-      text.setPlaceholder(`---
-title: {{title}}
-created: {{date}}
-source: {{source}}
-tags: []
----
-
-# {{title}}
-
-`);
-      text.setValue(this.plugin.settings.noteTemplate);
-      text.onChange(async (value) => {
-        const validation = NoteSettings.validateTemplate(value);
-        if (validation.isValid) {
-          this.plugin.settings.noteTemplate = value;
-          await this.plugin.saveSettings();
-          this.showValidationMessage(text.inputEl, "\u2705 Valid template", "success");
-        } else {
-          this.showValidationMessage(text.inputEl, `\u274C ${validation.errors.join(", ")}`, "error");
-        }
-      });
-      return text;
-    });
-    new import_obsidian2.Setting(containerEl).setName("Open New Notes").setDesc("Automatically open newly created notes in the editor.").addToggle((toggle) => toggle.setValue(this.plugin.settings.openNewNote).onChange(async (value) => {
-      this.plugin.settings.openNewNote = value;
-      await this.plugin.saveSettings();
-    }));
-  }
-  // DEPRECATED: Shortcode functionality moved to quarantine
-  // private addShortcodeSettings(containerEl: HTMLElement): void {
-  //   containerEl.createEl('h2', { text: '⚡ Shortcodes' });
-  //   
-  //   const shortcodeDesc = containerEl.createEl('p');
-  //   shortcodeDesc.innerHTML = `
-  //     Configure the shortcode system for rapid content creation. 
-  //     <br><small>Example: <code>h2+ul>li*3</code> creates a heading with a 3-item list.</small>
-  //   `;
-  //   shortcodeDesc.style.color = 'var(--text-muted)';
-  //   shortcodeDesc.style.marginBottom = '1em';
-  // }
-  addGeneralSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u2699\uFE0F General Settings" });
-    const generalDesc = containerEl.createEl("p");
-    generalDesc.textContent = "General plugin configuration and debugging options.";
-    generalDesc.style.color = "var(--text-muted)";
-    generalDesc.style.marginBottom = "1em";
-    new import_obsidian2.Setting(containerEl).setName("Debug Mode").setDesc("Enable detailed logging for troubleshooting. Check the developer console for debug messages.").addToggle((toggle) => toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
-      this.plugin.settings.debugMode = value;
-      await this.plugin.saveSettings();
-      if (value) {
-        console.log("[LinkPlugin] Debug mode enabled");
-        console.log("[LinkPlugin] Current settings:", this.plugin.settings);
-        console.log("[LinkPlugin] DateService info:", DateService.getDebugInfo());
-      }
-    }));
-  }
-  addAdvancedSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F527} Advanced" });
-    const advancedDesc = containerEl.createEl("p");
-    advancedDesc.textContent = "Advanced settings and maintenance tools.";
-    advancedDesc.style.color = "var(--text-muted)";
-    advancedDesc.style.marginBottom = "1em";
-    new import_obsidian2.Setting(containerEl).setName("Validate Settings").setDesc("Check current settings for any issues or conflicts.").addButton((button) => button.setButtonText("Validate").onClick(() => {
-      var _a, _b;
-      const validation = validateSettingsWithDetails(this.plugin.settings);
-      const resultEl = document.createElement("div");
-      resultEl.style.marginTop = "10px";
-      resultEl.style.padding = "10px";
-      resultEl.style.borderRadius = "4px";
-      resultEl.style.border = "1px solid var(--background-modifier-border)";
-      if (validation.isValid) {
-        resultEl.style.backgroundColor = "var(--background-modifier-success)";
-        resultEl.innerHTML = "<strong>\u2705 All settings are valid!</strong>";
-      } else {
-        resultEl.style.backgroundColor = "var(--background-modifier-error)";
-        let content = "<strong>\u274C Settings validation failed:</strong><ul>";
-        validation.errors.forEach((error) => {
-          content += `<li>${error}</li>`;
-        });
-        content += "</ul>";
-        if (validation.warnings.length > 0) {
-          content += "<strong>\u26A0\uFE0F Warnings:</strong><ul>";
-          validation.warnings.forEach((warning) => {
-            content += `<li>${warning}</li>`;
-          });
-          content += "</ul>";
-        }
-        resultEl.innerHTML = content;
-      }
-      const existing = (_a = button.buttonEl.parentElement) == null ? void 0 : _a.querySelector(".validation-result");
-      if (existing)
-        existing.remove();
-      resultEl.classList.add("validation-result");
-      (_b = button.buttonEl.parentElement) == null ? void 0 : _b.appendChild(resultEl);
-      setTimeout(() => resultEl.remove(), 1e4);
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Reset to Defaults").setDesc("\u26A0\uFE0F Reset all settings to their default values. This cannot be undone.").addButton((button) => button.setButtonText("Reset").setWarning().onClick(async () => {
-      var _a;
-      const confirmed = confirm("Are you sure you want to reset all settings to defaults? This cannot be undone.");
-      if (confirmed) {
-        const { DEFAULT_SETTINGS: DEFAULT_SETTINGS3 } = await Promise.resolve().then(() => (init_settings(), settings_exports));
-        this.plugin.settings = { ...DEFAULT_SETTINGS3 };
-        await this.plugin.saveSettings();
-        this.display();
-        const notice = document.createElement("div");
-        notice.textContent = "\u2705 Settings reset to defaults successfully!";
-        notice.style.color = "var(--text-success)";
-        notice.style.fontWeight = "bold";
-        notice.style.marginTop = "10px";
-        (_a = button.buttonEl.parentElement) == null ? void 0 : _a.appendChild(notice);
-        setTimeout(() => notice.remove(), 3e3);
-      }
-    }));
-    new import_obsidian2.Setting(containerEl).setName("Export Settings").setDesc("Export current settings as JSON for backup or sharing.").addButton((button) => button.setButtonText("Export").onClick(() => {
-      const settingsJson = JSON.stringify(this.plugin.settings, null, 2);
-      navigator.clipboard.writeText(settingsJson).then(() => {
-        var _a;
-        const notice = document.createElement("div");
-        notice.textContent = "\u2705 Settings copied to clipboard!";
-        notice.style.color = "var(--text-success)";
-        notice.style.fontWeight = "bold";
-        notice.style.marginTop = "10px";
-        (_a = button.buttonEl.parentElement) == null ? void 0 : _a.appendChild(notice);
-        setTimeout(() => notice.remove(), 3e3);
-      });
-    }));
-  }
-  showSuccessMessage(buttonEl, message) {
-    var _a;
-    const notice = document.createElement("div");
-    notice.textContent = `\u2705 ${message}`;
-    notice.style.color = "var(--text-success)";
-    notice.style.fontWeight = "bold";
-    notice.style.marginTop = "0.5em";
-    (_a = buttonEl.parentElement) == null ? void 0 : _a.appendChild(notice);
-    setTimeout(() => notice.remove(), 3e3);
-  }
-  showValidationMessage(inputEl, message, type) {
-    var _a, _b;
-    const existing = (_a = inputEl.parentElement) == null ? void 0 : _a.querySelector(".validation-message");
-    if (existing)
-      existing.remove();
-    const messageEl = document.createElement("div");
-    messageEl.classList.add("validation-message");
-    messageEl.textContent = message;
-    messageEl.style.fontSize = "0.8em";
-    messageEl.style.marginTop = "4px";
-    messageEl.style.color = type === "success" ? "var(--text-success)" : "var(--text-error)";
-    (_b = inputEl.parentElement) == null ? void 0 : _b.appendChild(messageEl);
-    setTimeout(() => messageEl.remove(), 3e3);
-  }
-  // DEPRECATED: Shortcode functionality moved to quarantine
-  // private displayCustomShortcodes(containerEl: HTMLElement): void {
-  //   // Shortcode display logic moved to quarantine
-  // }
-  // private showCustomShortcodeDialog(): void {
-  //   // Shortcode dialog logic moved to quarantine
-  // }
-};
-
-// src/ui/ribbonManager.ts
-var import_obsidian3 = require("obsidian");
-init_constants();
-var RibbonManager = class {
-  constructor(plugin) {
-    this.ribbonButtons = [];
-    this.plugin = plugin;
-  }
-  /**
-   * Initialize ribbon buttons - minimized to 2 essential buttons
-   */
-  initializeRibbon() {
-    this.addCreateFutureNoteButton();
-    this.addSettingsButton();
-    if (this.plugin.settings.debugMode) {
-      console.log("[LinkPlugin] Ribbon initialized with", this.ribbonButtons.length, "buttons");
-    }
-  }
-  /**
-   * Clean up ribbon buttons on plugin unload
-   */
-  cleanup() {
-    this.ribbonButtons.forEach((button) => {
-      button.remove();
-    });
-    this.ribbonButtons = [];
-  }
-  /**
-   * Add Today's Journal button
-   */
-  addTodayJournalButton() {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.TODAY_JOURNAL.icon,
-      RIBBON_BUTTONS.TODAY_JOURNAL.tooltip,
-      async () => {
-        try {
-          await this.plugin.journalManager.openTodayJournal();
-          this.showSuccess("Today's journal opened");
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, "Failed to open today's journal");
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-  /**
-   * Add Create Future Note button - combines multiple functions into one smart button
-   */
-  addCreateFutureNoteButton() {
-    const button = this.plugin.addRibbonIcon(
-      "\u{1F4DD}",
-      "Create Future Note - Creates daily notes, linked notes, or opens today's journal",
-      async () => {
-        try {
-          const activeView = this.plugin.app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView);
-          if (activeView) {
-            const editor = activeView.editor;
-            const selection = editor.getSelection();
-            if (selection) {
-              this.plugin.linkManager.createLinkedNote(selection, editor, activeView);
-              this.showSuccess("Linked note created");
-              return;
-            }
-          }
-          await this.plugin.journalManager.openTodayJournal();
-          this.showSuccess("Today's journal opened");
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, "Failed to create note");
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-  /**
-   * Add Monthly Folders button
-   */
-  addMonthlyFoldersButton() {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.MONTHLY_FOLDERS.icon,
-      RIBBON_BUTTONS.MONTHLY_FOLDERS.tooltip,
-      async () => {
-        try {
-          const startOfYear = DateService.startOfYear();
-          const endOfYear = DateService.endOfYear();
-          await this.plugin.journalManager.createMonthlyFoldersForRange(startOfYear, endOfYear);
-          this.showSuccess("Monthly folders created for current year");
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, "Failed to create monthly folders");
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-  /**
-   * Add Shortcode Help button (deprecated - moved to quarantine)
-   */
-  // private addShortcodeHelpButton(): void {
-  //   // Shortcode help button logic moved to quarantine
-  // }
-  /**
-   * Add Rebuild Directory Structure button
-   */
-  addRebuildStructureButton() {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.REBUILD_STRUCTURE.icon,
-      RIBBON_BUTTONS.REBUILD_STRUCTURE.tooltip,
-      async () => {
-        try {
-          await this.plugin.directoryManager.rebuildDirectoryStructure();
-          this.showSuccess("Directory structure rebuilt");
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, "Failed to rebuild directory structure");
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-  /**
-   * Add Settings button
-   */
-  addSettingsButton() {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.PLUGIN_SETTINGS.icon,
-      RIBBON_BUTTONS.PLUGIN_SETTINGS.tooltip,
-      () => {
-        try {
-          this.plugin.app.setting.open();
-          this.plugin.app.setting.openTabById(this.plugin.manifest.id);
-        } catch (error) {
-          new import_obsidian3.Notice("Please open Settings manually and find the Link Plugin tab");
-          this.plugin.errorHandler.handleError(error, "Failed to open settings automatically");
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
-  /**
-   * Show success message
-   */
-  showSuccess(message) {
-    new import_obsidian3.Notice(`\u2705 ${message}`);
-    if (this.plugin.settings.debugMode) {
-      console.log(`[LinkPlugin] ${message}`);
-    }
-  }
-  /**
-   * Update ribbon button states based on settings
-   */
-  updateButtonStates() {
-    if (this.plugin.settings.debugMode) {
-      console.log("[LinkPlugin] Ribbon button states updated");
-    }
-  }
-  /**
-   * Get ribbon button count for debugging
-   */
-  getButtonCount() {
-    return this.ribbonButtons.length;
-  }
-  /**
-   * Add a custom ribbon button (for future extensibility)
-   */
-  addCustomButton(icon, tooltip, callback) {
-    const button = this.plugin.addRibbonIcon(icon, tooltip, callback);
-    this.ribbonButtons.push(button);
-    return button;
-  }
-  /**
-   * Remove a specific ribbon button
-   */
-  removeButton(button) {
-    const index = this.ribbonButtons.indexOf(button);
-    if (index > -1) {
-      this.ribbonButtons.splice(index, 1);
-      button.remove();
-    }
-  }
-  /**
-   * Show quick actions menu (future enhancement)
-   */
-  showQuickActionsMenu() {
-    const message = `
-Link Plugin Quick Actions:
-\u2022 Today's Journal: ${RIBBON_BUTTONS.TODAY_JOURNAL.tooltip}
-\u2022 Create Note: ${RIBBON_BUTTONS.CREATE_NOTE.tooltip}
-\u2022 Monthly Folders: ${RIBBON_BUTTONS.MONTHLY_FOLDERS.tooltip}
-\u2022 Shortcode Help: (deprecated - moved to quarantine)
-\u2022 Rebuild Structure: ${RIBBON_BUTTONS.REBUILD_STRUCTURE.tooltip}
-\u2022 Settings: ${RIBBON_BUTTONS.PLUGIN_SETTINGS.tooltip}
-    `.trim();
-    new import_obsidian3.Notice(message, 8e3);
-  }
-};
-
-// src/managers/directoryManager.ts
-var import_obsidian5 = require("obsidian");
-init_constants();
-
-// src/utils/pathUtils.ts
-var import_obsidian4 = require("obsidian");
-var PathUtils = class {
-  static sanitizePath(path) {
-    return (0, import_obsidian4.normalizePath)(path.replace(/[\/:*?"<>|]/g, "").trim());
-  }
-  static joinPath(...segments) {
-    return (0, import_obsidian4.normalizePath)(segments.filter(Boolean).join("/"));
-  }
-};
-
 // src/managers/directoryManager.ts
 var DirectoryManager = class {
   constructor(plugin) {
@@ -1435,60 +503,69 @@ var DirectoryManager = class {
     const { vault } = this.plugin.app;
     const { baseFolder, directoryStructure } = this.plugin.settings;
     try {
-      const basePath = (0, import_obsidian5.normalizePath)(baseFolder);
-      await this.getOrCreateDirectory(basePath);
-      console.log(`Created base directory: ${basePath}`);
+      const basePath = baseFolder ? (0, import_obsidian2.normalizePath)(baseFolder) : "";
+      if (basePath) {
+        await this.getOrCreateDirectory(basePath);
+        console.log(`Created base directory: ${basePath}`);
+      } else {
+        console.log("Using vault root as base directory");
+      }
       for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
-        const dirPath = PathUtils.joinPath(basePath, dirName);
+        const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
         await this.getOrCreateDirectory(dirPath);
         console.log(`Created directory: ${dirPath}`);
       }
       await this.createJournalStructure(basePath);
       await this.createReferenceStructure(basePath);
+      await this.createFilesStructure(basePath);
     } catch (error) {
       throw new Error(`Failed to rebuild directory structure: ${error}`);
     }
   }
   /**
-   * Creates journal structure - simple or complex based on settings
+   * Creates journal structure - simple or dynamic based on single setting
    */
   async createJournalStructure(basePath) {
     const journalPath = PathUtils.joinPath(basePath, "journal");
     await this.getOrCreateDirectory(journalPath);
     console.log(`Created journal directory: ${journalPath}`);
-    if (this.plugin.settings.enableDynamicFolders && !this.plugin.settings.simpleJournalMode) {
-      const journalSubdirs = [
-        "Misc",
-        "y_2025/January",
-        "y_2025/February",
-        "y_2025/March",
-        "y_2025/April",
-        "y_2025/May",
-        "y_2025/June",
-        "y_2025/Misc",
-        "y_2025/Yearly List",
-        "y_2025/Yearly Log",
-        "z_Archives/y_2022",
-        "z_Archives/y_2023",
-        "z_Archives/y_2024"
-      ];
-      for (const subdir of journalSubdirs) {
-        const fullPath = PathUtils.joinPath(journalPath, subdir);
-        await this.getOrCreateDirectory(fullPath);
-        console.log(`Created journal directory: ${fullPath}`);
+    if (!this.plugin.settings.simpleJournalMode) {
+      const currentDate = DateService.now();
+      const currentYear = DateService.format(currentDate, "YYYY");
+      const currentMonth = DateService.format(currentDate, "MM-MMMM");
+      const currentYearPath = PathUtils.joinPath(journalPath, currentYear);
+      const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth);
+      await this.getOrCreateDirectory(currentYearPath);
+      await this.getOrCreateDirectory(currentMonthPath);
+      console.log(`Created current month directory: ${currentMonthPath}`);
+      const archivePath = PathUtils.joinPath(journalPath, "z_Archives");
+      await this.getOrCreateDirectory(archivePath);
+      const archiveYears = ["2022", "2023", "2024"];
+      for (const year of archiveYears) {
+        const archiveYearPath = PathUtils.joinPath(archivePath, year);
+        await this.getOrCreateDirectory(archiveYearPath);
       }
+      console.log("Created archive structure");
     }
   }
   /**
-   * Creates the reference file structure as specified in README
+   * Creates the reference structure (just reference folder, no files inside)
    */
   async createReferenceStructure(basePath) {
     const referencePath = PathUtils.joinPath(basePath, "reference");
+    await this.getOrCreateDirectory(referencePath);
+    console.log(`Created reference directory: ${referencePath}`);
+  }
+  /**
+   * Creates the FILES structure as TOP-LEVEL directory (NOT inside references!)
+   */
+  async createFilesStructure(basePath) {
+    const filesPath = PathUtils.joinPath(basePath, "files");
     const fileTypes = ["images", "pdfs", "videos", "audio", "docs", "other"];
     for (const fileType of fileTypes) {
-      const filePath = PathUtils.joinPath(referencePath, "files", fileType);
+      const filePath = PathUtils.joinPath(filesPath, fileType);
       await this.getOrCreateDirectory(filePath);
-      console.log(`Created reference directory: ${filePath}`);
+      console.log(`Created FILES directory: ${filePath}`);
     }
   }
   /**
@@ -1507,9 +584,9 @@ var DirectoryManager = class {
    */
   async getOrCreateDirectory(path) {
     const { vault } = this.plugin.app;
-    const normalizedPath = (0, import_obsidian5.normalizePath)(path);
+    const normalizedPath = (0, import_obsidian2.normalizePath)(path);
     const existingFolder = vault.getAbstractFileByPath(normalizedPath);
-    if (existingFolder instanceof import_obsidian5.TFolder) {
+    if (existingFolder instanceof import_obsidian2.TFolder) {
       return existingFolder;
     }
     const pathParts = normalizedPath.split("/");
@@ -1521,7 +598,7 @@ var DirectoryManager = class {
       const folder = vault.getAbstractFileByPath(currentPath);
       if (!folder) {
         await vault.createFolder(currentPath);
-      } else if (!(folder instanceof import_obsidian5.TFolder)) {
+      } else if (!(folder instanceof import_obsidian2.TFolder)) {
         throw new Error(`Path ${currentPath} exists but is not a folder`);
       }
     }
@@ -1532,21 +609,21 @@ var DirectoryManager = class {
    */
   getPluginDirectoryPath(relativePath) {
     const { baseFolder } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, relativePath);
+    return baseFolder ? PathUtils.joinPath(baseFolder, relativePath) : relativePath;
   }
   /**
    * Gets the journal directory path
    */
   getJournalPath() {
     const { baseFolder, journalRootFolder } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, journalRootFolder);
+    return baseFolder ? PathUtils.joinPath(baseFolder, journalRootFolder) : journalRootFolder;
   }
   /**
    * Gets the workspace directory path  
    */
   getWorkspacePath() {
     const { baseFolder, documentDirectory } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, documentDirectory);
+    return baseFolder ? PathUtils.joinPath(baseFolder, documentDirectory) : documentDirectory;
   }
   /**
    * Applies a directory template to create structured folders
@@ -1564,13 +641,13 @@ var DirectoryManager = class {
    * Validates if a given path is within allowed directories
    */
   isValidPath(path) {
-    const normalizedPath = (0, import_obsidian5.normalizePath)(path);
+    const normalizedPath = (0, import_obsidian2.normalizePath)(path);
     const { restrictedDirectories } = this.plugin.settings;
     if (!restrictedDirectories || restrictedDirectories.length === 0) {
       return true;
     }
     return !restrictedDirectories.some((dir) => {
-      const normalizedDir = (0, import_obsidian5.normalizePath)(dir);
+      const normalizedDir = (0, import_obsidian2.normalizePath)(dir);
       return normalizedPath === normalizedDir || normalizedPath.startsWith(normalizedDir + "/");
     });
   }
@@ -1579,7 +656,7 @@ var DirectoryManager = class {
    */
   getAllDirectories() {
     const { vault } = this.plugin.app;
-    return vault.getAllLoadedFiles().filter((file) => file instanceof import_obsidian5.TFolder);
+    return vault.getAllLoadedFiles().filter((file) => file instanceof import_obsidian2.TFolder);
   }
   /**
    * Creates a directory with a specific template structure within the plugin's base folder
@@ -1597,7 +674,7 @@ var DirectoryManager = class {
 };
 
 // src/managers/journalManager.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var JournalManager = class {
   constructor(plugin) {
     this.plugin = plugin;
@@ -1608,15 +685,14 @@ var JournalManager = class {
    */
   async createOrOpenJournalEntry(date) {
     const { vault } = this.plugin.app;
-    const { journalDateFormat, journalTemplate } = this.plugin.settings;
+    const { journalDateFormat } = this.plugin.settings;
     await this.ensureMonthlyFolderExists(date);
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
     const fileName = DateService.getJournalFilename(date, journalDateFormat);
-    const filePath = (0, import_obsidian6.normalizePath)(`${monthlyFolderPath}/${fileName}.md`);
+    const filePath = (0, import_obsidian3.normalizePath)(`${monthlyFolderPath}/${fileName}.md`);
     let file = vault.getAbstractFileByPath(filePath);
     if (!file) {
-      const content = await this.generateJournalContent(date);
-      file = await vault.create(filePath, content);
+      file = await vault.create(filePath, "");
       console.log(`Created daily note: ${filePath}`);
     }
     return file;
@@ -1627,19 +703,30 @@ var JournalManager = class {
    */
   async ensureMonthlyFolderExists(date) {
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
-    await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
-    console.log(`Ensured monthly folder exists: ${monthlyFolderPath}`);
+    const monthName = DateService.format(date, "MMMM YYYY");
+    const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath);
+    if (!folderExists) {
+      await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
+      console.log(`\u2705 Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
+    } else {
+      console.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
+    }
   }
   /**
    * Gets the monthly folder path for a given date
-   * Uses dynamic folders if enabled, otherwise simple journal folder
+   * Uses simple mode OR dynamic folders based on single setting
    */
   getMonthlyFolderPath(date) {
     const journalBasePath = this.plugin.directoryManager.getJournalPath();
-    if (!this.plugin.settings.enableDynamicFolders || this.plugin.settings.simpleJournalMode) {
+    if (this.plugin.settings.simpleJournalMode) {
       return journalBasePath;
     }
-    return DateService.getMonthlyFolderPath(journalBasePath, date);
+    return DateService.getMonthlyFolderPath(
+      journalBasePath,
+      date,
+      this.plugin.settings.journalYearFormat,
+      this.plugin.settings.journalMonthFormat
+    );
   }
   /**
    * Creates a daily note for today if it doesn't exist
@@ -1655,7 +742,11 @@ var JournalManager = class {
    */
   async createFutureDailyNote(date) {
     const targetDate = DateService.from(date);
-    return await this.createOrOpenJournalEntry(targetDate);
+    console.log(`Creating future daily note for: ${DateService.format(targetDate, "YYYY-MM-DD")}`);
+    const file = await this.createOrOpenJournalEntry(targetDate);
+    const monthlyPath = this.getMonthlyFolderPath(targetDate);
+    console.log(`Future note created in: ${monthlyPath}`);
+    return file;
   }
   /**
    * Generate content for a journal entry
@@ -1706,22 +797,28 @@ Previous: ${previousLink} | Next: ${nextLink}
   }
   /**
    * Checks if we need to create a new monthly folder
-   * Called when the plugin loads or when creating notes
+   * Called when the plugin loads, when creating notes, or when date changes
    */
   async checkAndCreateCurrentMonthFolder() {
     const currentDate = DateService.now();
     await this.ensureMonthlyFolderExists(currentDate);
+    const daysUntilNextMonth = DateService.endOfMonth(currentDate).diff(currentDate, "days");
+    if (daysUntilNextMonth <= 2) {
+      const nextMonth = DateService.add(currentDate, 1, "month");
+      await this.ensureMonthlyFolderExists(nextMonth);
+      console.log("Pre-created next month folder (end of month detected)");
+    }
   }
   /**
    * Creates monthly folders for a range of dates
    * Useful for batch creation or setup
    */
   async createMonthlyFoldersForRange(startDate, endDate) {
-    const current = DateService.startOfMonth(startDate);
+    let current = DateService.startOfMonth(startDate);
     const end = DateService.endOfMonth(endDate);
     while (DateService.isSameOrBefore(current, end)) {
       await this.ensureMonthlyFolderExists(current);
-      DateService.add(current, 1, "month");
+      current = DateService.add(current, 1, "month");
     }
   }
   /**
@@ -1759,7 +856,7 @@ Previous: ${previousLink} | Next: ${nextLink}
     const { vault } = this.plugin.app;
     const { journalDateFormat } = this.plugin.settings;
     const entries = [];
-    const current = DateService.from(startDate);
+    let current = DateService.from(startDate);
     while (DateService.isSameOrBefore(current, endDate)) {
       const filePath = DateService.getJournalFilePath(
         this.plugin.directoryManager.getJournalPath(),
@@ -1776,18 +873,124 @@ Previous: ${previousLink} | Next: ${nextLink}
           next: DateService.format(DateService.nextDay(current), "YYYY-MM-DD")
         });
       }
-      DateService.add(current, 1, "day");
+      current = DateService.add(current, 1, "day");
     }
     return entries;
   }
 };
 
 // src/managers/linkManager.ts
-var import_obsidian7 = require("obsidian");
-init_constants();
+var import_obsidian4 = require("obsidian");
+var CustomLinkSuggest = class extends import_obsidian4.EditorSuggest {
+  constructor(plugin) {
+    super(plugin.app);
+    this.plugin = plugin;
+  }
+  onTrigger(cursor, editor) {
+    const line = editor.getLine(cursor.line);
+    const beforeCursor = line.substring(0, cursor.ch);
+    const match = beforeCursor.match(/\[\[([^\]]*?)$/);
+    if (match) {
+      return {
+        start: { line: cursor.line, ch: cursor.ch - match[1].length },
+        end: cursor,
+        query: match[1]
+      };
+    }
+    return null;
+  }
+  async getSuggestions(context) {
+    const query = context.query.toLowerCase();
+    const suggestions = [];
+    const files = this.app.vault.getMarkdownFiles();
+    for (const file of files) {
+      if (file.path.toLowerCase().includes(query) || file.basename.toLowerCase().includes(query)) {
+        suggestions.push({
+          path: file.path,
+          displayText: file.path,
+          isCreate: false
+        });
+      }
+    }
+    if (query.length > 0 && !suggestions.some((s) => s.path.toLowerCase() === query.toLowerCase() + ".md")) {
+      const baseFolder = this.plugin.settings.baseFolder || "LinkPlugin";
+      if (query.includes("/") || query.startsWith(baseFolder.toLowerCase())) {
+        suggestions.unshift({
+          path: query.endsWith(".md") ? query : query + ".md",
+          displayText: `Create note: ${query}`,
+          isCreate: true
+        });
+      }
+    }
+    return suggestions.slice(0, 10);
+  }
+  renderSuggestion(suggestion, el) {
+    el.createEl("div", {
+      text: suggestion.displayText,
+      cls: suggestion.isCreate ? "link-suggest-create" : "link-suggest-existing"
+    });
+    if (suggestion.isCreate) {
+      el.addClass("mod-complex");
+      const icon = el.createEl("div", { cls: "suggestion-flair" });
+      icon.createEl("span", { text: "+ Create", cls: "suggestion-note" });
+    }
+  }
+  selectSuggestion(suggestion) {
+    var _a;
+    if (suggestion.isCreate) {
+      this.createFileFromPath(suggestion.path);
+    }
+    const linkText = `[[${suggestion.path.replace(".md", "")}]]`;
+    (_a = this.context) == null ? void 0 : _a.editor.replaceRange(linkText, this.context.start, this.context.end);
+  }
+  async createFileFromPath(path) {
+    const { vault } = this.app;
+    const normalizedPath = (0, import_obsidian4.normalizePath)(path);
+    const dirPath = normalizedPath.substring(0, normalizedPath.lastIndexOf("/"));
+    if (dirPath) {
+      await this.plugin.directoryManager.getOrCreateDirectory(dirPath);
+    }
+    const existingFile = vault.getAbstractFileByPath(normalizedPath);
+    if (!existingFile) {
+      const fileName = normalizedPath.substring(normalizedPath.lastIndexOf("/") + 1).replace(".md", "");
+      const content = this.generateNoteContent(fileName);
+      await vault.create(normalizedPath, content);
+    }
+  }
+  generateNoteContent(title) {
+    const { noteTemplate } = this.plugin.settings;
+    const currentDate = new Date().toISOString().split("T")[0];
+    if (noteTemplate) {
+      return noteTemplate.replace(/{{title}}/g, title).replace(/{{date}}/g, currentDate).replace(/{{source}}/g, "");
+    }
+    return `---
+title: ${title}
+created: ${currentDate}
+tags: []
+---
+
+# ${title}
+
+`;
+  }
+};
 var LinkManager = class {
   constructor(plugin) {
     this.plugin = plugin;
+    this.linkSuggest = new CustomLinkSuggest(plugin);
+  }
+  /**
+   * Initialize the link suggestion system
+   */
+  initialize() {
+    if (this.plugin.settings.fileSorting.sortOnFileCreate) {
+      this.plugin.registerEditorSuggest(this.linkSuggest);
+    }
+  }
+  /**
+   * Cleanup the link suggestion system
+   */
+  cleanup() {
   }
   /**
    * Create a new note from selected text and link to it
@@ -1800,7 +1003,7 @@ var LinkManager = class {
     }
     const fileName = this.sanitizeFileName(selection);
     const directoryPath = this.determineTargetDirectory(fileName);
-    const filePath = (0, import_obsidian7.normalizePath)(`${directoryPath}/${fileName}.md`);
+    const filePath = (0, import_obsidian4.normalizePath)(`${directoryPath}/${fileName}.md`);
     let file = vault.getAbstractFileByPath(filePath);
     if (!file) {
       await this.plugin.directoryManager.getOrCreateDirectory(directoryPath);
@@ -1809,8 +1012,8 @@ var LinkManager = class {
     }
     const linkText = this.generateLinkText(fileName, directoryPath, currentFile);
     editor.replaceSelection(linkText);
-    if (this.plugin.settings.openNewNote) {
-      const leaf = this.plugin.app.workspace.splitActiveLeaf();
+    const leaf = this.plugin.app.workspace.activeLeaf;
+    if (leaf) {
       await leaf.openFile(file);
     }
   }
@@ -2035,13 +1238,264 @@ tags: []
   }
 };
 
+// src/utils/errorHandler.ts
+var import_obsidian5 = require("obsidian");
+var ErrorHandler = class {
+  constructor(plugin) {
+    this.plugin = plugin;
+  }
+  handleError(error, context) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`${context}: ${message}`);
+    new import_obsidian5.Notice(`${context}: ${message}`);
+  }
+  showNotice(message, duration) {
+    new import_obsidian5.Notice(message, duration);
+  }
+  showSuccess(message) {
+    new import_obsidian5.Notice(message, 3e3);
+  }
+  showWarning(message) {
+    new import_obsidian5.Notice(`\u26A0\uFE0F ${message}`, 5e3);
+  }
+};
+
+// src/ui/ribbonManager.ts
+var import_obsidian6 = require("obsidian");
+var RibbonManager = class {
+  constructor(plugin) {
+    this.ribbonButtons = [];
+    this.plugin = plugin;
+  }
+  /**
+   * Initialize ribbon with core journal functionality only
+   */
+  initializeRibbon() {
+    this.clearRibbon();
+    this.addCreateFutureNoteButton();
+    this.addSettingsButton();
+    console.log("Ribbon initialized - Core journal functionality enabled");
+  }
+  /**
+   * Add Create Future Note button - CORE FEATURE with date picker
+   */
+  addCreateFutureNoteButton() {
+    const button = this.plugin.addRibbonIcon(
+      "calendar-plus",
+      "Create Future Note - Select date to create note",
+      async () => {
+        try {
+          const selectedDate = await this.showDatePicker();
+          if (selectedDate) {
+            const file = await this.plugin.journalManager.createFutureDailyNote(selectedDate);
+            const leaf = this.plugin.app.workspace.getLeaf();
+            await leaf.openFile(file);
+            const formattedDate = DateService.format(DateService.from(selectedDate), "YYYY-MM-DD");
+            this.showSuccess(`Created future note for ${formattedDate}`);
+          }
+        } catch (error) {
+          this.plugin.errorHandler.handleError(error, "Failed to create future note");
+        }
+      }
+    );
+    this.ribbonButtons.push(button);
+  }
+  /**
+   * Show date picker modal for future note creation - FIXED MODAL API
+   */
+  async showDatePicker() {
+    return new Promise((resolve) => {
+      const modal = new import_obsidian6.Modal(this.plugin.app);
+      modal.setTitle("Create Future Daily Note");
+      const { contentEl } = modal;
+      const instructions = contentEl.createEl("p");
+      instructions.textContent = "Select a date to create a daily note. This will automatically create the required monthly folders.";
+      instructions.style.marginBottom = "1em";
+      instructions.style.color = "var(--text-muted)";
+      const dateInput = contentEl.createEl("input");
+      dateInput.type = "date";
+      dateInput.style.width = "100%";
+      dateInput.style.padding = "8px";
+      dateInput.style.marginBottom = "1em";
+      dateInput.style.border = "1px solid var(--background-modifier-border)";
+      dateInput.style.borderRadius = "4px";
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dateInput.value = tomorrow.toISOString().split("T")[0];
+      const buttonContainer = contentEl.createDiv();
+      buttonContainer.style.display = "flex";
+      buttonContainer.style.gap = "8px";
+      buttonContainer.style.justifyContent = "flex-end";
+      const cancelButton = buttonContainer.createEl("button", { text: "Cancel" });
+      cancelButton.onclick = () => {
+        modal.close();
+        resolve(null);
+      };
+      const createButton = buttonContainer.createEl("button", {
+        text: "Create Note",
+        cls: "mod-cta"
+      });
+      createButton.onclick = () => {
+        const selectedDate = dateInput.value;
+        if (selectedDate) {
+          modal.close();
+          resolve(selectedDate);
+        }
+      };
+      dateInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const selectedDate = dateInput.value;
+          if (selectedDate) {
+            modal.close();
+            resolve(selectedDate);
+          }
+        }
+      });
+      modal.scope.register([], "Escape", () => {
+        modal.close();
+        resolve(null);
+      });
+      modal.open();
+      setTimeout(() => dateInput.focus(), 100);
+    });
+  }
+  /**
+   * Add Settings button
+   */
+  addSettingsButton() {
+    const button = this.plugin.addRibbonIcon(
+      "link",
+      "Open Link Plugin Settings",
+      () => {
+        try {
+          this.plugin.app.setting.open();
+          this.plugin.app.setting.openTabById(this.plugin.manifest.id);
+        } catch (error) {
+          this.plugin.errorHandler.showNotice("Please open Settings \u2192 Community Plugins \u2192 Link Plugin to configure");
+          this.plugin.errorHandler.handleError(error, "Failed to open settings automatically");
+        }
+      }
+    );
+    this.ribbonButtons.push(button);
+  }
+  /**
+   * Clear all ribbon buttons
+   */
+  clearRibbon() {
+    this.ribbonButtons.forEach((button) => button.remove());
+    this.ribbonButtons = [];
+  }
+  /**
+   * Cleanup method for plugin unload
+   */
+  cleanup() {
+    this.clearRibbon();
+  }
+  /**
+   * Update button states based on settings
+   */
+  updateButtonStates() {
+    console.log("Ribbon buttons updated");
+  }
+  /**
+   * Show quick actions menu
+   */
+  showQuickActionsMenu() {
+    const message = `Link Plugin Quick Actions:
+\u2022 Create Today's Note: Open or create today's journal
+\u2022 Create Monthly Folders: Set up folder structure
+\u2022 Settings: Configure journal management`;
+    this.plugin.errorHandler.showNotice(message);
+  }
+  /**
+   * Show success message
+   */
+  showSuccess(message) {
+    this.plugin.errorHandler.showNotice(message);
+  }
+};
+
+// src/ui/settingsTab.ts
+var import_obsidian7 = require("obsidian");
+var SettingsTab = class extends import_obsidian7.PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+  display() {
+    const { containerEl } = this;
+    containerEl.empty();
+    containerEl.createEl("h1", { text: "Link Plugin Settings" });
+    containerEl.createEl("p", {
+      text: "Simple journal management settings",
+      cls: "setting-item-description"
+    });
+    this.addCoreSettings(containerEl);
+    this.addJournalSettings(containerEl);
+  }
+  addCoreSettings(containerEl) {
+    containerEl.createEl("h2", { text: "\u{1F4C1} Core Settings" });
+    new import_obsidian7.Setting(containerEl).setName("Base Folder").setDesc("Root folder for all plugin content (empty = vault root)").addText((text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
+      this.plugin.settings.baseFolder = value.trim();
+      await this.plugin.saveSettings();
+    })).then((setting) => {
+      const textComponent = setting.components[0];
+      if (textComponent && textComponent.inputEl) {
+        const input = textComponent.inputEl;
+        const wrapper = input.parentElement;
+        if (wrapper) {
+          const prefix = wrapper.createSpan({ text: "/", cls: "path-prefix" });
+          wrapper.insertBefore(prefix, input);
+          prefix.style.marginRight = "2px";
+          prefix.style.opacity = "0.6";
+        }
+      }
+    });
+    new import_obsidian7.Setting(containerEl).setName("Rebuild Directory Structure").setDesc("Recreate the plugin folder structure").addButton((button) => button.setButtonText("Rebuild").onClick(async () => {
+      try {
+        await this.plugin.directoryManager.rebuildDirectoryStructure();
+        alert("\u2705 Directory structure rebuilt successfully!\n\nFolder structure has been recreated in: " + this.plugin.settings.baseFolder);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        alert("\u274C Failed to rebuild directory structure.\n\nError: " + errorMessage);
+        this.plugin.errorHandler.handleError(error, "Failed to rebuild directory structure");
+      }
+    }));
+  }
+  addJournalSettings(containerEl) {
+    containerEl.createEl("h2", { text: "\u{1F4C5} Journal Settings" });
+    new import_obsidian7.Setting(containerEl).setName("Simple Journal Mode").setDesc("Enable: Single journal folder | Disable: Dynamic monthly folders (2025/January/)").addToggle((toggle) => toggle.setValue(this.plugin.settings.simpleJournalMode).onChange(async (value) => {
+      this.plugin.settings.simpleJournalMode = value;
+      await this.plugin.saveSettings();
+      this.display();
+    }));
+    if (!this.plugin.settings.simpleJournalMode) {
+      new import_obsidian7.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText((text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.journalYearFormat).onChange(async (value) => {
+        if (value.trim()) {
+          this.plugin.settings.journalYearFormat = value.trim();
+          await this.plugin.saveSettings();
+        }
+      }));
+      new import_obsidian7.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText((text) => text.setPlaceholder("MM-MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
+        if (value.trim()) {
+          this.plugin.settings.journalMonthFormat = value.trim();
+          await this.plugin.saveSettings();
+        }
+      }));
+    }
+    new import_obsidian7.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText((text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
+      if (value.trim()) {
+        this.plugin.settings.journalDateFormat = value.trim();
+        await this.plugin.saveSettings();
+      }
+    }));
+  }
+};
+
 // src/main.ts
-init_fileSortingManager();
-init_errorHandler();
-init_constants();
 var LinkPlugin = class extends import_obsidian8.Plugin {
   async onload() {
-    console.log("Loading Link Plugin...");
+    console.log("Loading Link Plugin v2.2.0 - Journal Management Focus...");
     try {
       DateService.initialize();
       await this.loadSettings();
@@ -2049,20 +1503,22 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
       this.directoryManager = new DirectoryManager(this);
       this.journalManager = new JournalManager(this);
       this.linkManager = new LinkManager(this);
-      this.fileSortingManager = new FileSortingManager(
-        this.app.vault,
-        this.app.metadataCache,
-        this.settings,
-        this.directoryManager
-      );
       this.ribbonManager = new RibbonManager(this);
       this.addSettingTab(new SettingsTab(this.app, this));
       this.ribbonManager.initializeRibbon();
+      this.linkManager.initialize();
       this.registerCommands();
       this.registerEventHandlers();
       await this.directoryManager.rebuildDirectoryStructure();
       await this.journalManager.checkAndCreateCurrentMonthFolder();
-      console.log("Link Plugin loaded successfully");
+      await this.updateDailyNotesSettings();
+      this.startDateChangeMonitoring();
+      const debugInfo = DateService.getDebugInfo();
+      console.log("DateService initialized:", debugInfo);
+      console.log("Today:", DateService.today());
+      console.log("Current month:", DateService.currentMonth());
+      this.errorHandler.showNotice("Link Plugin loaded - Journal management ready!");
+      console.log("Link Plugin loaded successfully - Core journal functionality enabled");
     } catch (error) {
       console.error("Failed to load Link Plugin:", error);
       if (this.errorHandler) {
@@ -2137,6 +1593,23 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
       }
     });
     this.addCommand({
+      id: COMMAND_IDS.CREATE_FUTURE_NOTE,
+      name: "Create Future Daily Note",
+      callback: async () => {
+        try {
+          const dateInput = await this.promptForDate();
+          if (dateInput) {
+            const file = await this.journalManager.createFutureDailyNote(dateInput);
+            const leaf = this.app.workspace.getLeaf();
+            await leaf.openFile(file);
+            this.errorHandler.showNotice(`Created future note for ${DateService.format(DateService.from(dateInput), "YYYY-MM-DD")}`);
+          }
+        } catch (error) {
+          this.errorHandler.handleError(error, "Failed to create future note");
+        }
+      }
+    });
+    this.addCommand({
       id: COMMAND_IDS.CREATE_MONTHLY_FOLDERS,
       name: "Create Monthly Folders for Current Year",
       callback: async () => {
@@ -2165,20 +1638,6 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
   registerEventHandlers() {
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (file instanceof import_obsidian8.TFile && this.settings.fileSorting.sortOnFileCreate) {
-          this.fileSortingManager.autoSort(file);
-        }
-      })
-    );
-    this.registerEvent(
-      this.app.vault.on("modify", (file) => {
-        if (file instanceof import_obsidian8.TFile && this.settings.fileSorting.sortOnFileModify) {
-          this.fileSortingManager.autoSort(file);
-        }
-      })
-    );
-    this.registerEvent(
-      this.app.vault.on("create", (file) => {
         if ("stat" in file && "basename" in file && "extension" in file && file.path.includes(this.settings.journalRootFolder)) {
           this.journalManager.updateJournalLinks(file);
         }
@@ -2186,14 +1645,156 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (this.settings.debugMode) {
-          console.log("File modified:", file.path);
+        if (this.settings.debugMode && file.path.includes(this.settings.journalRootFolder)) {
+          console.log("Journal file modified:", file.path);
         }
       })
     );
   }
+  /**
+   * Prompt user for a date input
+   */
+  async promptForDate() {
+    return new Promise((resolve) => {
+      const modal = new import_obsidian8.Modal(this.app);
+      modal.setTitle("Create Future Daily Note");
+      const { contentEl } = modal;
+      contentEl.createEl("p", {
+        text: "Select a date to create a daily note. This will automatically create the required monthly folders.",
+        cls: "modal-description"
+      });
+      const inputContainer = contentEl.createDiv({ cls: "date-input-container" });
+      const input = inputContainer.createEl("input", {
+        type: "date",
+        value: DateService.today(),
+        cls: "date-input"
+      });
+      contentEl.createDiv({ cls: "date-picker-spacer" });
+      const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
+      const createButton = buttonContainer.createEl("button", {
+        text: "Create Note",
+        cls: "mod-cta"
+      });
+      const cancelButton = buttonContainer.createEl("button", {
+        text: "Cancel"
+      });
+      const style = document.createElement("style");
+      style.textContent = `
+        .date-input-container {
+          margin: 16px 0;
+          position: relative;
+          z-index: 1;
+        }
+        .date-input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid var(--background-modifier-border);
+          border-radius: 4px;
+          background: var(--background-primary);
+          color: var(--text-normal);
+          font-size: 14px;
+        }
+        .date-picker-spacer {
+          height: 40px;
+        }
+        .modal-button-container {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+          margin-top: 20px;
+        }
+        .modal-description {
+          margin-bottom: 16px;
+          color: var(--text-muted);
+        }
+      `;
+      contentEl.appendChild(style);
+      setTimeout(() => input.focus(), 100);
+      createButton.onclick = () => {
+        const dateValue = input.value;
+        if (dateValue) {
+          modal.close();
+          resolve(dateValue);
+        }
+      };
+      cancelButton.onclick = () => {
+        modal.close();
+        resolve(null);
+      };
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          createButton.click();
+        } else if (e.key === "Escape") {
+          cancelButton.click();
+        }
+      });
+      modal.open();
+    });
+  }
+  /**
+   * Start monitoring for date changes to automatically create new monthly folders
+   */
+  startDateChangeMonitoring() {
+    let lastCheckedMonth = DateService.format(DateService.now(), "YYYY-MM");
+    this.registerInterval(
+      window.setInterval(async () => {
+        try {
+          const currentMonth = DateService.format(DateService.now(), "YYYY-MM");
+          if (currentMonth !== lastCheckedMonth) {
+            console.log(`Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`);
+            await this.journalManager.checkAndCreateCurrentMonthFolder();
+            await this.updateDailyNotesSettings();
+            lastCheckedMonth = currentMonth;
+            const monthName = DateService.format(DateService.now(), "MMMM YYYY");
+            this.errorHandler.showNotice(`\u{1F4C5} New month detected: ${monthName} folder created`);
+          }
+        } catch (error) {
+          console.error("Error in date change monitoring:", error);
+        }
+      }, 60 * 60 * 1e3)
+      // Check every hour
+    );
+    console.log("Date change monitoring started - will auto-create monthly folders");
+  }
+  /**
+   * Update Obsidian's Daily Notes plugin settings to use our folder structure
+   */
+  async updateDailyNotesSettings() {
+    var _a, _b, _c, _d;
+    try {
+      const dailyNotesPlugin = (_b = (_a = this.app.internalPlugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["daily-notes"];
+      if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
+        const currentDate = DateService.now();
+        const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+        const dailyNotesSettings = dailyNotesPlugin.instance.options;
+        dailyNotesSettings.folder = monthlyFolderPath;
+        dailyNotesSettings.format = this.settings.journalDateFormat;
+        console.log(`Updated Daily Notes plugin folder to: ${monthlyFolderPath}`);
+        this.errorHandler.showNotice(`\u2705 Daily Notes location updated to: ${monthlyFolderPath}`);
+      } else {
+        const communityDailyNotes = (_d = (_c = this.app.plugins) == null ? void 0 : _c.plugins) == null ? void 0 : _d["daily-notes"];
+        if (communityDailyNotes) {
+          const currentDate = DateService.now();
+          const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+          communityDailyNotes.settings.folder = monthlyFolderPath;
+          communityDailyNotes.settings.format = this.settings.journalDateFormat;
+          await communityDailyNotes.saveSettings();
+          console.log(`Updated Community Daily Notes plugin folder to: ${monthlyFolderPath}`);
+          this.errorHandler.showNotice(`\u2705 Daily Notes location updated to: ${monthlyFolderPath}`);
+        } else {
+          console.log("Daily Notes plugin not found or not enabled - using plugin folder structure only");
+          this.errorHandler.showNotice("\u26A0\uFE0F Daily Notes plugin not found - notes created in plugin folder only");
+        }
+      }
+    } catch (error) {
+      console.log("Daily Notes integration skipped:", error instanceof Error ? error.message : String(error));
+    }
+  }
   onunload() {
     console.log("Link Plugin unloaded");
+    if (this.linkManager) {
+      this.linkManager.cleanup();
+    }
     if (this.ribbonManager) {
       this.ribbonManager.cleanup();
     }

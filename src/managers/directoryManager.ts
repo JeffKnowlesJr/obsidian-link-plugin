@@ -8,6 +8,7 @@ import {
 } from '../constants';
 import { PathUtils } from '../utils/pathUtils';
 import { DirectoryTemplate } from '../types';
+import { DateService } from '../services/dateService';
 
 export class DirectoryManager {
   plugin: LinkPlugin;
@@ -25,23 +26,24 @@ export class DirectoryManager {
     const { baseFolder, directoryStructure } = this.plugin.settings;
 
     try {
-      // Create the base folder first
-      const basePath = normalizePath(baseFolder);
-      await this.getOrCreateDirectory(basePath);
-      console.log(`Created base directory: ${basePath}`);
+      // Create the base folder first (if not root)
+      const basePath = baseFolder ? normalizePath(baseFolder) : '';
+      if (basePath) {
+        await this.getOrCreateDirectory(basePath);
+        console.log(`Created base directory: ${basePath}`);
+      } else {
+        console.log('Using vault root as base directory');
+      }
 
       // Create basic directory structure
       for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
-        const dirPath = PathUtils.joinPath(basePath, dirName);
+        const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
         await this.getOrCreateDirectory(dirPath);
         console.log(`Created directory: ${dirPath}`);
       }
 
-      // Create journal structure (simple or complex based on settings)
+      // Create journal structure (only journal folder needed)
       await this.createJournalStructure(basePath);
-      
-      // Create reference structure
-      await this.createReferenceStructure(basePath);
 
     } catch (error) {
       throw new Error(`Failed to rebuild directory structure: ${error}`);
@@ -49,7 +51,7 @@ export class DirectoryManager {
   }
 
   /**
-   * Creates journal structure - simple or complex based on settings
+   * Creates journal structure - simple or dynamic based on single setting
    */
   async createJournalStructure(basePath: string): Promise<void> {
     const journalPath = PathUtils.joinPath(basePath, 'journal');
@@ -58,46 +60,60 @@ export class DirectoryManager {
     await this.getOrCreateDirectory(journalPath);
     console.log(`Created journal directory: ${journalPath}`);
     
-    // Only create complex structure if dynamic folders are enabled
-    if (this.plugin.settings.enableDynamicFolders && !this.plugin.settings.simpleJournalMode) {
-      // Create complex journal subdirectories
-      const journalSubdirs = [
-        'Misc',
-        'y_2025/January',
-        'y_2025/February', 
-        'y_2025/March',
-        'y_2025/April',
-        'y_2025/May',
-        'y_2025/June',
-        'y_2025/Misc',
-        'y_2025/Yearly List',
-        'y_2025/Yearly Log',
-        'z_Archives/y_2022',
-        'z_Archives/y_2023',
-        'z_Archives/y_2024'
-      ];
-
-      for (const subdir of journalSubdirs) {
-        const fullPath = PathUtils.joinPath(journalPath, subdir);
-        await this.getOrCreateDirectory(fullPath);
-        console.log(`Created journal directory: ${fullPath}`);
+    // Only create complex structure if simple mode is disabled
+    if (!this.plugin.settings.simpleJournalMode) {
+      // Create CURRENT YEAR/MONTH structure using proper format
+      const currentDate = DateService.now();
+      const currentYear = DateService.format(currentDate, 'YYYY');
+      const currentMonth = DateService.format(currentDate, 'MM-MMMM');
+      
+      // Create current year/month folder
+      const currentYearPath = PathUtils.joinPath(journalPath, currentYear);
+      const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth);
+      
+      await this.getOrCreateDirectory(currentYearPath);
+      await this.getOrCreateDirectory(currentMonthPath);
+      
+      console.log(`Created current month directory: ${currentMonthPath}`);
+      
+      // Create archive structure
+      const archivePath = PathUtils.joinPath(journalPath, 'z_Archives');
+      await this.getOrCreateDirectory(archivePath);
+      
+      const archiveYears = ['2022', '2023', '2024'];
+      for (const year of archiveYears) {
+        const archiveYearPath = PathUtils.joinPath(archivePath, year);
+        await this.getOrCreateDirectory(archiveYearPath);
       }
+      
+      console.log('Created archive structure');
     }
   }
 
   /**
-   * Creates the reference file structure as specified in README
+   * Creates the reference structure (just reference folder, no files inside)
    */
   async createReferenceStructure(basePath: string): Promise<void> {
     const referencePath = PathUtils.joinPath(basePath, 'reference');
     
-    // Create reference file type directories
+    // Create reference directory for reference notes only
+    await this.getOrCreateDirectory(referencePath);
+    console.log(`Created reference directory: ${referencePath}`);
+  }
+
+  /**
+   * Creates the FILES structure as TOP-LEVEL directory (NOT inside references!)
+   */
+  async createFilesStructure(basePath: string): Promise<void> {
+    const filesPath = PathUtils.joinPath(basePath, 'files');
+    
+    // Create FILES file type directories at TOP LEVEL
     const fileTypes = ['images', 'pdfs', 'videos', 'audio', 'docs', 'other'];
     
     for (const fileType of fileTypes) {
-      const filePath = PathUtils.joinPath(referencePath, 'files', fileType);
+      const filePath = PathUtils.joinPath(filesPath, fileType);
       await this.getOrCreateDirectory(filePath);
-      console.log(`Created reference directory: ${filePath}`);
+      console.log(`Created FILES directory: ${filePath}`);
     }
   }
 
@@ -150,7 +166,7 @@ export class DirectoryManager {
    */
   getPluginDirectoryPath(relativePath: string): string {
     const { baseFolder } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, relativePath);
+    return baseFolder ? PathUtils.joinPath(baseFolder, relativePath) : relativePath;
   }
 
   /**
@@ -158,7 +174,7 @@ export class DirectoryManager {
    */
   getJournalPath(): string {
     const { baseFolder, journalRootFolder } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, journalRootFolder);
+    return baseFolder ? PathUtils.joinPath(baseFolder, journalRootFolder) : journalRootFolder;
   }
 
   /**
@@ -166,7 +182,7 @@ export class DirectoryManager {
    */
   getWorkspacePath(): string {
     const { baseFolder, documentDirectory } = this.plugin.settings;
-    return PathUtils.joinPath(baseFolder, documentDirectory);
+    return baseFolder ? PathUtils.joinPath(baseFolder, documentDirectory) : documentDirectory;
   }
 
   /**

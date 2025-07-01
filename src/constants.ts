@@ -1,48 +1,54 @@
 // Default base folder to prevent collision with existing vault structure
-export const DEFAULT_BASE_FOLDER = 'LinkPlugin';
+export const DEFAULT_BASE_FOLDER = 'Link';
 
-// Updated directory structure based on README specifications
+// Simplified directory structure - only journal
 export const DEFAULT_DIRECTORIES = [
-  'journal',
-  'templates',
-  'workspace',
-  'reference'
+  'journal'
 ];
 
-// Detailed journal structure as shown in README
+// Detailed journal structure with new format matching user preferences
 export const DEFAULT_JOURNAL_STRUCTURE = {
   'journal': {
     'Misc': null,
-    'y_2025': {
-      'January': null,
-      'February': null,
-      'March': null,
-      'April': null,
-      'May': null,
-      'June': null,
+    '2025': {
+      '01January': null,
+      '02February': null,
+      '03March': null,
+      '04April': null,
+      '05May': null,
+      '06June': null,
+      '07July': null,
+      '08August': null,
+      '09September': null,
+      '10October': null,
+      '11November': null,
+      '12December': null,
       'Misc': null,
       'Yearly List': null,
       'Yearly Log': null
     },
     'z_Archives': {
-      'y_2022': null,
-      'y_2023': null,
-      'y_2024': null
+      '2022': null,
+      '2023': null,
+      '2024': null
     }
   }
 };
 
-// Reference structure as shown in README
+// Reference structure - files folder moved out as separate directory
 export const DEFAULT_REFERENCE_STRUCTURE = {
-  'reference': {
-    'files': {
-      'images': null,
-      'pdfs': null,
-      'videos': null,
-      'audio': null,
-      'docs': null,
-      'other': null
-    }
+  'reference': null, // For reference notes and documents only
+};
+
+// Files structure - now separate from references
+export const DEFAULT_FILES_STRUCTURE = {
+  'files': {
+    'images': null,
+    'videos': null,
+    'pdfs': null,
+    'audio': null,
+    'docs': null,
+    'other': null
   }
 };
 

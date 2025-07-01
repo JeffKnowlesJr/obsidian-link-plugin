@@ -1,14 +1,160 @@
-import { Editor, MarkdownView, TFile, normalizePath } from 'obsidian';
+import { Editor, MarkdownView, TFile, normalizePath, EditorSuggest, EditorPosition, EditorSuggestTriggerInfo, EditorSuggestContext } from 'obsidian';
 import LinkPlugin from '../main';
 import { LinkSuggestion } from '../types';
 import { PathUtils } from '../utils/pathUtils';
 import { REGEX_PATTERNS } from '../constants';
 
-export class LinkManager {
+interface CustomLinkSuggestion {
+  path: string;
+  displayText: string;
+  isCreate: boolean;
+}
+
+class CustomLinkSuggest extends EditorSuggest<CustomLinkSuggestion> {
   plugin: LinkPlugin;
 
   constructor(plugin: LinkPlugin) {
+    super(plugin.app);
     this.plugin = plugin;
+  }
+
+  onTrigger(cursor: EditorPosition, editor: Editor): EditorSuggestTriggerInfo | null {
+    const line = editor.getLine(cursor.line);
+    const beforeCursor = line.substring(0, cursor.ch);
+    
+    // Look for [[ pattern
+    const match = beforeCursor.match(/\[\[([^\]]*?)$/);
+    if (match) {
+      return {
+        start: { line: cursor.line, ch: cursor.ch - match[1].length },
+        end: cursor,
+        query: match[1]
+      };
+    }
+    return null;
+  }
+
+  async getSuggestions(context: EditorSuggestContext): Promise<CustomLinkSuggestion[]> {
+    const query = context.query.toLowerCase();
+    const suggestions: CustomLinkSuggestion[] = [];
+    
+    // Get existing files that match
+    const files = this.app.vault.getMarkdownFiles();
+    for (const file of files) {
+      if (file.path.toLowerCase().includes(query) || file.basename.toLowerCase().includes(query)) {
+        suggestions.push({
+          path: file.path,
+          displayText: file.path,
+          isCreate: false
+        });
+      }
+    }
+
+    // If query looks like a path and no exact match exists, suggest creating it
+    if (query.length > 0 && !suggestions.some(s => s.path.toLowerCase() === query.toLowerCase() + '.md')) {
+      // Check if it's a path-like query (contains / or starts with plugin base folder)
+      const baseFolder = this.plugin.settings.baseFolder || 'LinkPlugin';
+      if (query.includes('/') || query.startsWith(baseFolder.toLowerCase())) {
+        suggestions.unshift({
+          path: query.endsWith('.md') ? query : query + '.md',
+          displayText: `Create note: ${query}`,
+          isCreate: true
+        });
+      }
+    }
+
+    return suggestions.slice(0, 10); // Limit suggestions
+  }
+
+  renderSuggestion(suggestion: CustomLinkSuggestion, el: HTMLElement): void {
+    el.createEl('div', { 
+      text: suggestion.displayText,
+      cls: suggestion.isCreate ? 'link-suggest-create' : 'link-suggest-existing'
+    });
+    
+    if (suggestion.isCreate) {
+      el.addClass('mod-complex');
+      const icon = el.createEl('div', { cls: 'suggestion-flair' });
+      icon.createEl('span', { text: '+ Create', cls: 'suggestion-note' });
+    }
+  }
+
+  selectSuggestion(suggestion: CustomLinkSuggestion): void {
+    if (suggestion.isCreate) {
+      // Create the file
+      this.createFileFromPath(suggestion.path);
+    }
+    
+    // Insert the link
+    const linkText = `[[${suggestion.path.replace('.md', '')}]]`;
+    this.context?.editor.replaceRange(linkText, this.context.start, this.context.end);
+  }
+
+  private async createFileFromPath(path: string): Promise<void> {
+    const { vault } = this.app;
+    const normalizedPath = normalizePath(path);
+    
+    // Ensure directory exists
+    const dirPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('/'));
+    if (dirPath) {
+      await this.plugin.directoryManager.getOrCreateDirectory(dirPath);
+    }
+    
+    // Create the file if it doesn't exist
+    const existingFile = vault.getAbstractFileByPath(normalizedPath);
+    if (!existingFile) {
+      const fileName = normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1).replace('.md', '');
+      const content = this.generateNoteContent(fileName);
+      await vault.create(normalizedPath, content);
+    }
+  }
+
+  private generateNoteContent(title: string): string {
+    const { noteTemplate } = this.plugin.settings;
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    if (noteTemplate) {
+      return noteTemplate
+        .replace(/{{title}}/g, title)
+        .replace(/{{date}}/g, currentDate)
+        .replace(/{{source}}/g, '');
+    }
+
+    return `---
+title: ${title}
+created: ${currentDate}
+tags: []
+---
+
+# ${title}
+
+`;
+  }
+}
+
+export class LinkManager {
+  plugin: LinkPlugin;
+  private linkSuggest: CustomLinkSuggest;
+
+  constructor(plugin: LinkPlugin) {
+    this.plugin = plugin;
+    this.linkSuggest = new CustomLinkSuggest(plugin);
+  }
+
+  /**
+   * Initialize the link suggestion system
+   */
+  initialize(): void {
+    if (this.plugin.settings.fileSorting.sortOnFileCreate) {
+      this.plugin.registerEditorSuggest(this.linkSuggest);
+    }
+  }
+
+  /**
+   * Cleanup the link suggestion system
+   */
+  cleanup(): void {
+    // EditorSuggest cleanup is handled automatically by Obsidian
   }
 
   /**
@@ -47,9 +193,9 @@ export class LinkManager {
     const linkText = this.generateLinkText(fileName, directoryPath, currentFile);
     editor.replaceSelection(linkText);
 
-    // Open the note in a new pane if configured
-    if (this.plugin.settings.openNewNote) {
-      const leaf = this.plugin.app.workspace.splitActiveLeaf();
+    // Open the note in the current pane
+    const leaf = this.plugin.app.workspace.activeLeaf;
+    if (leaf) {
       await leaf.openFile(file);
     }
   }

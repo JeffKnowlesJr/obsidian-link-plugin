@@ -17,7 +17,7 @@ export class JournalManager {
    */
   async createOrOpenJournalEntry(date: any): Promise<TFile> {
     const { vault } = this.plugin.app;
-    const { journalDateFormat, journalTemplate } = this.plugin.settings;
+    const { journalDateFormat } = this.plugin.settings;
 
     // Create the monthly folder structure for this date
     await this.ensureMonthlyFolderExists(date);
@@ -31,9 +31,9 @@ export class JournalManager {
     let file = vault.getAbstractFileByPath(filePath) as TFile;
 
     if (!file) {
-      // Create the file with template content
-      const content = await this.generateJournalContent(date);
-      file = await vault.create(filePath, content);
+      // Create the file using Obsidian's default daily note template (empty content)
+      // Let Obsidian's Daily Notes plugin handle the template
+      file = await vault.create(filePath, '');
       console.log(`Created daily note: ${filePath}`);
     }
 
@@ -46,24 +46,38 @@ export class JournalManager {
    */
   async ensureMonthlyFolderExists(date: any): Promise<void> {
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
-    await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
-    console.log(`Ensured monthly folder exists: ${monthlyFolderPath}`);
+    const monthName = DateService.format(date, 'MMMM YYYY');
+    
+    // Check if folder already exists
+    const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath);
+    
+    if (!folderExists) {
+      await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
+      console.log(`✅ Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
+    } else {
+      console.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
+    }
   }
 
   /**
    * Gets the monthly folder path for a given date
-   * Uses dynamic folders if enabled, otherwise simple journal folder
+   * Uses simple mode OR dynamic folders based on single setting
    */
-  private getMonthlyFolderPath(date: any): string {
+  public getMonthlyFolderPath(date: any): string {
     const journalBasePath = this.plugin.directoryManager.getJournalPath();
     
-    // If dynamic folders are disabled or simple mode is enabled, use simple structure
-    if (!this.plugin.settings.enableDynamicFolders || this.plugin.settings.simpleJournalMode) {
-      return journalBasePath; // Just use the journal root folder
+    // Single setting controls the mode
+    if (this.plugin.settings.simpleJournalMode) {
+      return journalBasePath; // Simple: just use journal root folder
     }
     
-    // Use complex dynamic folder structure
-    return DateService.getMonthlyFolderPath(journalBasePath, date);
+    // Dynamic: use year/month folder structure
+    return DateService.getMonthlyFolderPath(
+      journalBasePath, 
+      date, 
+      this.plugin.settings.journalYearFormat,
+      this.plugin.settings.journalMonthFormat
+    );
   }
 
   /**
@@ -82,8 +96,16 @@ export class JournalManager {
   async createFutureDailyNote(date: Date | string): Promise<TFile> {
     const targetDate = DateService.from(date);
     
+    console.log(`Creating future daily note for: ${DateService.format(targetDate, 'YYYY-MM-DD')}`);
+    
     // This will automatically create the monthly folder if it doesn't exist
-    return await this.createOrOpenJournalEntry(targetDate);
+    const file = await this.createOrOpenJournalEntry(targetDate);
+    
+    // Log the created folder structure for verification
+    const monthlyPath = this.getMonthlyFolderPath(targetDate);
+    console.log(`Future note created in: ${monthlyPath}`);
+    
+    return file;
   }
 
   /**
@@ -148,11 +170,19 @@ Previous: ${previousLink} | Next: ${nextLink}
 
   /**
    * Checks if we need to create a new monthly folder
-   * Called when the plugin loads or when creating notes
+   * Called when the plugin loads, when creating notes, or when date changes
    */
   async checkAndCreateCurrentMonthFolder(): Promise<void> {
     const currentDate = DateService.now();
     await this.ensureMonthlyFolderExists(currentDate);
+    
+    // Also ensure next month folder exists if we're near end of month
+    const daysUntilNextMonth = DateService.endOfMonth(currentDate).diff(currentDate, 'days');
+    if (daysUntilNextMonth <= 2) {
+      const nextMonth = DateService.add(currentDate, 1, 'month');
+      await this.ensureMonthlyFolderExists(nextMonth);
+      console.log('Pre-created next month folder (end of month detected)');
+    }
   }
 
   /**
@@ -160,12 +190,12 @@ Previous: ${previousLink} | Next: ${nextLink}
    * Useful for batch creation or setup
    */
   async createMonthlyFoldersForRange(startDate: any, endDate: any): Promise<void> {
-    const current = DateService.startOfMonth(startDate);
+    let current = DateService.startOfMonth(startDate);
     const end = DateService.endOfMonth(endDate);
 
     while (DateService.isSameOrBefore(current, end)) {
       await this.ensureMonthlyFolderExists(current);
-      DateService.add(current, 1, 'month');
+      current = DateService.add(current, 1, 'month'); // Properly reassign the new date
     }
   }
 
@@ -216,7 +246,7 @@ Previous: ${previousLink} | Next: ${nextLink}
     const { journalDateFormat } = this.plugin.settings;
     const entries: JournalEntry[] = [];
 
-    const current = DateService.from(startDate);
+    let current = DateService.from(startDate);
     
     while (DateService.isSameOrBefore(current, endDate)) {
       const filePath = DateService.getJournalFilePath(
@@ -236,7 +266,7 @@ Previous: ${previousLink} | Next: ${nextLink}
         });
       }
       
-      DateService.add(current, 1, 'day');
+      current = DateService.add(current, 1, 'day'); // Properly reassign the new date
     }
 
     return entries;

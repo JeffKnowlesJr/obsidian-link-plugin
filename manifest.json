@@ -1,11 +1,11 @@
 {
-  "id": "obsidian-link-plugin",
-  "name": "Link Plugin",
-  "version": "2.1.0",
+  	"id": "obsidian-link-plugin",
+	"name": "Obsidian Link Journal",
+  "version": "2.2.0",
   "minAppVersion": "0.15.0",
-  "description": "Enhanced linking, directory management, journal entries, and Emmet-like shortcodes for Obsidian",
+  "description": "Smart file organization with frontmatter-based sorting, enhanced linking, customizable journal management, and streamlined note creation for Obsidian",
   "author": "JKJR Digital Development",
   "authorUrl": "https://github.com/JeffKnowlesJr/obsidian-link-plugin",
-  "fundingUrl": "https:/patreon.com/jeffslink",
+  "fundingUrl": "https://patreon.com/jeffslink",
   "isDesktopOnly": false
 }

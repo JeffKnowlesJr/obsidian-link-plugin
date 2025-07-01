@@ -2,14 +2,12 @@ import { DEFAULT_TEMPLATES } from '../constants';
 
 export interface NoteSettingsConfig {
   noteTemplate: string;
-  openNewNote: boolean;
 }
 
 export class NoteSettings {
   static getDefaults(): NoteSettingsConfig {
     return {
       noteTemplate: DEFAULT_TEMPLATES.NOTE,
-      openNewNote: true,
     };
   }
 
@@ -19,11 +17,6 @@ export class NoteSettings {
     // Validate note template
     if (settings.noteTemplate && typeof settings.noteTemplate === 'string') {
       validated.noteTemplate = settings.noteTemplate;
-    }
-
-    // Validate open new note setting
-    if (typeof settings.openNewNote === 'boolean') {
-      validated.openNewNote = settings.openNewNote;
     }
 
     return validated;

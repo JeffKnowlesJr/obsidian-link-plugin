@@ -3,38 +3,41 @@ import { DATE_FORMATS, DEFAULT_TEMPLATES } from '../constants';
 export interface JournalSettingsConfig {
   journalDateFormat: string;
   journalFolderFormat: string;
+  journalYearFormat: string;
+  journalMonthFormat: string;
   journalTemplate: string;
-  enableDynamicFolders: boolean;
-  simpleJournalMode: boolean;
+  simpleJournalMode: boolean; // Single setting: true = simple, false = dynamic monthly folders
 }
 
 export class JournalSettings {
   static getDefaults(): JournalSettingsConfig {
     return {
-      journalDateFormat: DATE_FORMATS.DEFAULT_JOURNAL,
+      journalDateFormat: 'YYYY-MM-DD dddd',
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
+      journalYearFormat: 'YYYY',
+      journalMonthFormat: 'MM-MMMM', // Changed to MM-MMMM for "07-July" format
       journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
-      enableDynamicFolders: false, // Disabled by default for MVP
-      simpleJournalMode: true, // Simple mode enabled by default
+      simpleJournalMode: false, // Default to dynamic monthly folders
     };
   }
 
   static validate(settings: Partial<JournalSettingsConfig>): Partial<JournalSettingsConfig> {
     const validated: Partial<JournalSettingsConfig> = {};
 
-    // Validate journal date format
     if (settings.journalDateFormat && typeof settings.journalDateFormat === 'string') {
       validated.journalDateFormat = settings.journalDateFormat;
     }
 
-    // Validate journal folder format
     if (settings.journalFolderFormat && typeof settings.journalFolderFormat === 'string') {
       validated.journalFolderFormat = settings.journalFolderFormat;
     }
 
-    // Validate journal template
     if (settings.journalTemplate && typeof settings.journalTemplate === 'string') {
       validated.journalTemplate = settings.journalTemplate;
+    }
+
+    if (typeof settings.simpleJournalMode === 'boolean') {
+      validated.simpleJournalMode = settings.simpleJournalMode;
     }
 
     return validated;

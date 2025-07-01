@@ -1,0 +1,26 @@
+{
+  "baseFolder": "Link",
+  "directoryStructure": [
+    "journal",
+    "templates",
+    "workspace",
+    "reference"
+  ],
+  "restrictedDirectories": [],
+  "documentDirectory": "workspace",
+  "journalRootFolder": "journal",
+  "journalDateFormat": "YYYY-MM-DD dddd",
+  "journalFolderFormat": "YYYY/MM",
+  "journalYearFormat": "YYYY",
+  "journalMonthFormat": "MM-MMMM",
+  "journalTemplate": "# {{date}}\n\n## Daily Log\n\n## Tasks\n- [ ] \n\n## Notes\n\n## Reflection\n\n---\nPrevious: {{previous}}\nNext: {{next}}\n",
+  "enableDynamicFolders": true,
+  "simpleJournalMode": false,
+  "noteTemplate": "---\ntitle: {{title}}\ncreated: {{date}}\nsource: {{source}}\ntags: []\n---\n\n# {{title}}\n\n",
+  "debugMode": false,
+  "fileSorting": {
+    "enableAutoSorting": false,
+    "sortOnFileCreate": false,
+    "sortOnFileModify": false
+  }
+}
