@@ -81,11 +81,11 @@ export const RIBBON_BUTTONS = {
     title: 'Create Monthly Folders',
     tooltip: 'Create monthly folders for the current year'
   },
-  SHORTCODE_HELP: {
-    icon: 'zap',
-    title: 'Shortcode Help',
-    tooltip: 'Show available shortcodes and examples'
-  },
+  // SHORTCODE_HELP: {
+  //   icon: 'zap',
+  //   title: 'Shortcode Help',
+  //   tooltip: 'Show available shortcodes and examples'
+  // }, // Deprecated - moved to quarantine
   REBUILD_STRUCTURE: {
     icon: 'folder-sync',
     title: 'Rebuild Directory Structure',
@@ -104,15 +104,16 @@ export const DATE_FORMATS = {
   FOLDER_FORMAT: 'YYYY/MM'
 } as const;
 
-export const SHORTCODE_PATTERNS = {
-  ELEMENT: /^[a-zA-Z0-9_-]+$/,
-  MULTIPLIER: /^[a-zA-Z0-9_-]+\*\d+$/,
-  CHILD: />/,
-  SIBLING: /\+/,
-  CONTENT: /\{.*\}/,
-  ATTRIBUTE: /\[.*\]/,
-  GROUP: /\(.*\)/
-} as const;
+// Deprecated - moved to quarantine
+// export const SHORTCODE_PATTERNS = {
+//   ELEMENT: /^[a-zA-Z0-9_-]+$/,
+//   MULTIPLIER: /^[a-zA-Z0-9_-]+\*\d+$/,
+//   CHILD: />/,
+//   SIBLING: /\+/,
+//   CONTENT: /\{.*\}/,
+//   ATTRIBUTE: /\[.*\]/,
+//   GROUP: /\(.*\)/
+// } as const;
 
 export const ERROR_MESSAGES = {
   INVALID_PATH: 'Invalid file path provided',

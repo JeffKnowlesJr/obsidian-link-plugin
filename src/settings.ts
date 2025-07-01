@@ -21,10 +21,10 @@ export {
   type NoteSettingsConfig
 } from './settings/noteSettings';
 
-export {
-  ShortcodeSettings,
-  type ShortcodeSettingsConfig
-} from './settings/shortcodeSettings';
+// export {
+//   ShortcodeSettings,
+//   type ShortcodeSettingsConfig
+// } from './settings/shortcodeSettings'; // Deprecated - moved to quarantine
 
 export {
   GeneralSettings,

@@ -4,6 +4,8 @@ export interface JournalSettingsConfig {
   journalDateFormat: string;
   journalFolderFormat: string;
   journalTemplate: string;
+  enableDynamicFolders: boolean;
+  simpleJournalMode: boolean;
 }
 
 export class JournalSettings {
@@ -12,6 +14,8 @@ export class JournalSettings {
       journalDateFormat: DATE_FORMATS.DEFAULT_JOURNAL,
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
+      enableDynamicFolders: false, // Disabled by default for MVP
+      simpleJournalMode: true, // Simple mode enabled by default
     };
   }
 

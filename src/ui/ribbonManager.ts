@@ -12,14 +12,10 @@ export class RibbonManager {
   }
 
   /**
-   * Initialize all ribbon buttons
+   * Initialize ribbon buttons - minimized to 2 essential buttons
    */
   initializeRibbon(): void {
-    this.addTodayJournalButton();
-    this.addCreateNoteButton();
-    this.addMonthlyFoldersButton();
-    this.addShortcodeHelpButton();
-    this.addRebuildStructureButton();
+    this.addCreateFutureNoteButton();
     this.addSettingsButton();
 
     if (this.plugin.settings.debugMode) {
@@ -57,34 +53,34 @@ export class RibbonManager {
   }
 
   /**
-   * Add Create Linked Note button
+   * Add Create Future Note button - combines multiple functions into one smart button
    */
-  private addCreateNoteButton(): void {
+  private addCreateFutureNoteButton(): void {
     const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.CREATE_NOTE.icon,
-      RIBBON_BUTTONS.CREATE_NOTE.tooltip,
-      () => {
+      '📝',
+      'Create Future Note - Creates daily notes, linked notes, or opens today\'s journal',
+      async () => {
         try {
           // Get the active markdown view
           const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
           
-          if (!activeView) {
-            new Notice('Please open a markdown note first');
-            return;
+          if (activeView) {
+            const editor = activeView.editor;
+            const selection = editor.getSelection();
+
+            if (selection) {
+              // If text is selected, create a linked note
+              this.plugin.linkManager.createLinkedNote(selection, editor, activeView);
+              this.showSuccess('Linked note created');
+              return;
+            }
           }
 
-          const editor = activeView.editor;
-          const selection = editor.getSelection();
-
-          if (!selection) {
-            new Notice('Please select text to create a linked note');
-            return;
-          }
-
-          this.plugin.linkManager.createLinkedNote(selection, editor, activeView);
-          this.showSuccess('Linked note created');
+          // If no selection or no active view, open today's journal
+          await this.plugin.journalManager.openTodayJournal();
+          this.showSuccess('Today\'s journal opened');
         } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to create linked note');
+          this.plugin.errorHandler.handleError(error, 'Failed to create note');
         }
       }
     );
@@ -114,22 +110,11 @@ export class RibbonManager {
   }
 
   /**
-   * Add Shortcode Help button
+   * Add Shortcode Help button (deprecated - moved to quarantine)
    */
-  private addShortcodeHelpButton(): void {
-    const button = this.plugin.addRibbonIcon(
-      RIBBON_BUTTONS.SHORTCODE_HELP.icon,
-      RIBBON_BUTTONS.SHORTCODE_HELP.tooltip,
-      () => {
-        try {
-          this.plugin.shortcodeManager.showHelpModal();
-        } catch (error) {
-          this.plugin.errorHandler.handleError(error, 'Failed to show shortcode help');
-        }
-      }
-    );
-    this.ribbonButtons.push(button);
-  }
+  // private addShortcodeHelpButton(): void {
+  //   // Shortcode help button logic moved to quarantine
+  // }
 
   /**
    * Add Rebuild Directory Structure button
@@ -236,7 +221,7 @@ Link Plugin Quick Actions:
 • Today's Journal: ${RIBBON_BUTTONS.TODAY_JOURNAL.tooltip}
 • Create Note: ${RIBBON_BUTTONS.CREATE_NOTE.tooltip}
 • Monthly Folders: ${RIBBON_BUTTONS.MONTHLY_FOLDERS.tooltip}
-• Shortcode Help: ${RIBBON_BUTTONS.SHORTCODE_HELP.tooltip}
+• Shortcode Help: (deprecated - moved to quarantine)
 • Rebuild Structure: ${RIBBON_BUTTONS.REBUILD_STRUCTURE.tooltip}
 • Settings: ${RIBBON_BUTTONS.PLUGIN_SETTINGS.tooltip}
     `.trim();

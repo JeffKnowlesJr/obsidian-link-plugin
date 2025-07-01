@@ -43,7 +43,9 @@ export class LinkManager {
     }
 
     // Replace the selected text with a link to the note
-    editor.replaceSelection(`[[${fileName}]]`);
+    // Use directory-relative path if the note is in a different directory
+    const linkText = this.generateLinkText(fileName, directoryPath, currentFile);
+    editor.replaceSelection(linkText);
 
     // Open the note in a new pane if configured
     if (this.plugin.settings.openNewNote) {
@@ -98,6 +100,31 @@ tags: []
 # ${title}
 
 `;
+  }
+
+  /**
+   * Generate appropriate link text based on directory structure
+   * Supports directory-relative links like [[/reference/nesting]]
+   */
+  private generateLinkText(fileName: string, targetDirectory: string, currentFile: TFile): string {
+    const currentFileDir = currentFile.parent?.path || '';
+    const baseFolder = this.plugin.settings.baseFolder || 'LinkPlugin';
+    
+    // If target is in a different directory from current file, use directory-relative path
+    if (targetDirectory !== currentFileDir) {
+      // Check if target directory is under the base folder
+      if (targetDirectory.startsWith(baseFolder)) {
+        // Use path relative to vault root with leading slash
+        const relativePath = targetDirectory.replace(baseFolder + '/', '');
+        return `[[/${relativePath}/${fileName}]]`;
+      } else {
+        // Use full path with leading slash
+        return `[[/${targetDirectory}/${fileName}]]`;
+      }
+    }
+    
+    // Same directory, use simple filename
+    return `[[${fileName}]]`;
   }
 
   /**

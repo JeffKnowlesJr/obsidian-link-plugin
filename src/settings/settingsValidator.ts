@@ -2,7 +2,7 @@ import { LinkPluginSettings } from '../types';
 import { DirectorySettings } from './directorySettings';
 import { JournalSettings } from './journalSettings';
 import { NoteSettings } from './noteSettings';
-import { ShortcodeSettings } from './shortcodeSettings';
+// import { ShortcodeSettings } from './shortcodeSettings'; // Deprecated - moved to quarantine
 import { GeneralSettings } from './generalSettings';
 
 export function validateSettings(settings: Partial<LinkPluginSettings>): LinkPluginSettings {
@@ -11,7 +11,7 @@ export function validateSettings(settings: Partial<LinkPluginSettings>): LinkPlu
     ...DirectorySettings.getDefaults(),
     ...JournalSettings.getDefaults(),
     ...NoteSettings.getDefaults(),
-    ...ShortcodeSettings.getDefaults(),
+    // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
     ...GeneralSettings.getDefaults()
   };
 
@@ -19,7 +19,7 @@ export function validateSettings(settings: Partial<LinkPluginSettings>): LinkPlu
   const directoryValidation = DirectorySettings.validate(settings);
   const journalValidation = JournalSettings.validate(settings);
   const noteValidation = NoteSettings.validate(settings);
-  const shortcodeValidation = ShortcodeSettings.validate(settings);
+  // const shortcodeValidation = ShortcodeSettings.validate(settings); // Deprecated - moved to quarantine
   const generalValidation = GeneralSettings.validate(settings);
 
   // Merge validated settings
@@ -27,7 +27,7 @@ export function validateSettings(settings: Partial<LinkPluginSettings>): LinkPlu
     directoryValidation,
     journalValidation,
     noteValidation,
-    shortcodeValidation,
+    // shortcodeValidation, // Deprecated - moved to quarantine
     generalValidation
   );
 
@@ -58,14 +58,14 @@ export function validateSettingsWithDetails(settings: Partial<LinkPluginSettings
     warnings.push('Invalid journal date format provided, using default');
   }
 
-  // Validate shortcode patterns if provided
-  if (settings.customShortcodes) {
-    for (const [pattern, expansion] of Object.entries(settings.customShortcodes)) {
-      if (!ShortcodeSettings.isValidShortcodePattern(pattern)) {
-        warnings.push(`Invalid shortcode pattern: ${pattern}`);
-      }
-    }
-  }
+  // Validate shortcode patterns if provided (deprecated - moved to quarantine)
+  // if (settings.customShortcodes) {
+  //   for (const [pattern, expansion] of Object.entries(settings.customShortcodes)) {
+  //     if (!ShortcodeSettings.isValidShortcodePattern(pattern)) {
+  //       warnings.push(`Invalid shortcode pattern: ${pattern}`);
+  //     }
+  //   }
+  // }
 
   // Basic directory structure validation
   if (settings.directoryStructure && settings.directoryStructure.length === 0) {

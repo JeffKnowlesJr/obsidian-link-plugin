@@ -188,4 +188,4 @@ export class Tokenizer {
   private isOperator(char: string): boolean {
     return char === '>' || char === '+' || char === '*';
   }
-}
+} 

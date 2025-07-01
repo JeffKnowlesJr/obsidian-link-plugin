@@ -37,7 +37,7 @@ export class DirectoryManager {
         console.log(`Created directory: ${dirPath}`);
       }
 
-      // Create detailed journal structure
+      // Create journal structure (simple or complex based on settings)
       await this.createJournalStructure(basePath);
       
       // Create reference structure
@@ -49,32 +49,39 @@ export class DirectoryManager {
   }
 
   /**
-   * Creates the detailed journal structure as specified in README
+   * Creates journal structure - simple or complex based on settings
    */
   async createJournalStructure(basePath: string): Promise<void> {
     const journalPath = PathUtils.joinPath(basePath, 'journal');
     
-    // Create journal subdirectories
-    const journalSubdirs = [
-      'Misc',
-      'y_2025/January',
-      'y_2025/February', 
-      'y_2025/March',
-      'y_2025/April',
-      'y_2025/May',
-      'y_2025/June',
-      'y_2025/Misc',
-      'y_2025/Yearly List',
-      'y_2025/Yearly Log',
-      'z_Archives/y_2022',
-      'z_Archives/y_2023',
-      'z_Archives/y_2024'
-    ];
+    // Always create the basic journal directory
+    await this.getOrCreateDirectory(journalPath);
+    console.log(`Created journal directory: ${journalPath}`);
+    
+    // Only create complex structure if dynamic folders are enabled
+    if (this.plugin.settings.enableDynamicFolders && !this.plugin.settings.simpleJournalMode) {
+      // Create complex journal subdirectories
+      const journalSubdirs = [
+        'Misc',
+        'y_2025/January',
+        'y_2025/February', 
+        'y_2025/March',
+        'y_2025/April',
+        'y_2025/May',
+        'y_2025/June',
+        'y_2025/Misc',
+        'y_2025/Yearly List',
+        'y_2025/Yearly Log',
+        'z_Archives/y_2022',
+        'z_Archives/y_2023',
+        'z_Archives/y_2024'
+      ];
 
-    for (const subdir of journalSubdirs) {
-      const fullPath = PathUtils.joinPath(journalPath, subdir);
-      await this.getOrCreateDirectory(fullPath);
-      console.log(`Created journal directory: ${fullPath}`);
+      for (const subdir of journalSubdirs) {
+        const fullPath = PathUtils.joinPath(journalPath, subdir);
+        await this.getOrCreateDirectory(fullPath);
+        console.log(`Created journal directory: ${fullPath}`);
+      }
     }
   }
 

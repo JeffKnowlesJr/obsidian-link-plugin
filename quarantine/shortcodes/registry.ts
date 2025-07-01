@@ -1,16 +1,15 @@
-
-import LinkPlugin from '../main';
+// Note: This file is quarantined - LinkPlugin import would need to be updated if restored
 import { Editor } from 'obsidian';
 import { Tokenizer } from './tokenizer';
 import { Parser } from './parser';
 import { Transformer } from './transformer';
 
 export class ShortcodeManager {
-  plugin: LinkPlugin;
+  plugin: any; // LinkPlugin - temporarily set to any for quarantine
   tokenizer: Tokenizer;
   parser: Parser;
   transformer: Transformer;
-  constructor(plugin: LinkPlugin) {
+  constructor(plugin: any) { // LinkPlugin - temporarily set to any for quarantine
     this.plugin = plugin;
     this.tokenizer = new Tokenizer();
     this.parser = new Parser();
@@ -24,4 +23,4 @@ export class ShortcodeManager {
   showHelpModal(): void {
     // Implementation placeholder
   }
-}
+} 

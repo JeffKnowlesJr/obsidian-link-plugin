@@ -1,0 +1,55 @@
+# Cursor ignore file for Obsidian Link Plugin
+
+# Quarantine directory - contains deprecated/removed features
+quarantine/
+
+# Node modules and build artifacts
+node_modules/
+dist/
+*.log
+*.lock
+
+# Build outputs
+main.js
+main.js.map
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Jest coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Documentation that's not actively maintained
+docs/architecture/MONTHLY_FOLDER_MANAGEMENT.md
+docs/development/TEST_RESULTS.md
+
+# Compiled JavaScript (we work with TypeScript source)
+*.js.map 

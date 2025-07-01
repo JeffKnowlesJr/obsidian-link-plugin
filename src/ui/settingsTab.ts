@@ -4,7 +4,7 @@ import {
   DirectorySettings, 
   JournalSettings, 
   NoteSettings, 
-  ShortcodeSettings, 
+  // ShortcodeSettings, // Deprecated - moved to quarantine
   GeneralSettings,
   validateSettingsWithDetails 
 } from '../settings';
@@ -23,48 +23,33 @@ export class SettingsTab extends PluginSettingTab {
     containerEl.empty();
     
     // Main heading
-    containerEl.createEl('h1', { text: 'Obsidian Link Plugin Settings' });
+    containerEl.createEl('h1', { text: 'Link Plugin Settings' });
     
     // Add description
     const description = containerEl.createEl('p');
     description.innerHTML = `
-      Configure your Link Plugin settings below. Settings are organized into categories for easy management.
-      <br><strong>Tip:</strong> Hover over setting names for detailed descriptions.
+      Essential settings for the Link Plugin. <strong>Quality over quantity</strong> - only the most important options are shown.
     `;
     description.style.marginBottom = '2em';
     description.style.color = 'var(--text-muted)';
 
-    // Directory Settings Section
-    this.addDirectorySettings(containerEl);
+    // Core Settings - minimized and focused
+    this.addCoreSettings(containerEl);
     
-    // Journal Settings Section
-    this.addJournalSettings(containerEl);
+    // Journal Settings - simplified
+    this.addSimplifiedJournalSettings(containerEl);
     
-    // Note Settings Section
-    this.addNoteSettings(containerEl);
-    
-    // Shortcode Settings Section
-    this.addShortcodeSettings(containerEl);
-    
-    // General Settings Section
-    this.addGeneralSettings(containerEl);
-    
-    // Advanced Section
-    this.addAdvancedSettings(containerEl);
+    // File Sorting Settings - new
+    this.addFileSortingSettings(containerEl);
   }
 
-  private addDirectorySettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '📁 Directory Structure' });
+  private addCoreSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h2', { text: '🏠 Core Settings' });
     
-    const directoryDesc = containerEl.createEl('p');
-    directoryDesc.textContent = 'Configure how the plugin organizes your files and folders.';
-    directoryDesc.style.color = 'var(--text-muted)';
-    directoryDesc.style.marginBottom = '1em';
-
-    // Base Folder Setting
+    // Base Folder Setting - most important
     new Setting(containerEl)
       .setName('Base Folder')
-      .setDesc('Root folder for all plugin-created directories. Prevents collision with existing vault structure.')
+      .setDesc('Root folder for all plugin files (prevents vault collision)')
       .addText(text => text
         .setPlaceholder('LinkPlugin')
         .setValue(this.plugin.settings.baseFolder)
@@ -75,53 +60,29 @@ export class SettingsTab extends PluginSettingTab {
           }
         }));
 
-    // Document Directory Setting
+    // Open New Note Setting
     new Setting(containerEl)
-      .setName('Workspace Directory')
-      .setDesc('Directory name for general notes and documents within the base folder.')
-      .addText(text => text
-        .setPlaceholder('workspace')
-        .setValue(this.plugin.settings.documentDirectory)
+      .setName('Open new notes')
+      .setDesc('Open newly created notes in a new pane')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.openNewNote)
         .onChange(async (value) => {
-          if (value.trim()) {
-            this.plugin.settings.documentDirectory = value.trim();
-            await this.plugin.saveSettings();
-          }
-        }));
-
-    // Journal Root Folder Setting
-    new Setting(containerEl)
-      .setName('Journal Directory')
-      .setDesc('Directory name for journal entries within the base folder.')
-      .addText(text => text
-        .setPlaceholder('journal')
-        .setValue(this.plugin.settings.journalRootFolder)
-        .onChange(async (value) => {
-          if (value.trim()) {
-            this.plugin.settings.journalRootFolder = value.trim();
-            await this.plugin.saveSettings();
-          }
+          this.plugin.settings.openNewNote = value;
+          await this.plugin.saveSettings();
         }));
 
     // Rebuild Directory Structure Button
     new Setting(containerEl)
-      .setName('Rebuild Directory Structure')
-      .setDesc('Recreate the directory structure based on current settings.')
+      .setName('Rebuild Structure')
+      .setDesc('Recreate folder structure with current settings')
       .addButton(button => button
         .setButtonText('Rebuild')
-        .setTooltip('Click to rebuild the directory structure')
         .onClick(async () => {
           try {
             await this.plugin.directoryManager.rebuildDirectoryStructure();
-            // Show success message
-            const notice = document.createElement('div');
-            notice.textContent = '✅ Directory structure rebuilt successfully!';
-            notice.style.color = 'var(--text-success)';
-            notice.style.fontWeight = 'bold';
-            button.buttonEl.parentElement?.appendChild(notice);
-            setTimeout(() => notice.remove(), 3000);
+            this.showSuccessMessage(button.buttonEl, 'Structure rebuilt!');
           } catch (error) {
-            this.plugin.errorHandler.handleError(error, 'Failed to rebuild directory structure');
+            this.plugin.errorHandler.handleError(error, 'Failed to rebuild structure');
           }
         }));
   }
@@ -223,6 +184,103 @@ Next: {{next}}`);
         }));
   }
 
+  private addSimplifiedJournalSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h2', { text: '📅 Journal Settings' });
+    
+    // Simple Journal Mode Toggle
+    new Setting(containerEl)
+      .setName('Simple Journal Mode')
+      .setDesc('Use simple folder structure (all notes in journal folder)')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.simpleJournalMode)
+        .onChange(async (value) => {
+          this.plugin.settings.simpleJournalMode = value;
+          this.plugin.settings.enableDynamicFolders = !value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Journal Date Format - simplified
+    new Setting(containerEl)
+      .setName('Date Format')
+      .setDesc('Format for journal filenames (YYYY-MM-DD recommended)')
+      .addText(text => text
+        .setPlaceholder('YYYY-MM-DD')
+        .setValue(this.plugin.settings.journalDateFormat)
+        .onChange(async (value) => {
+          if (value.trim()) {
+            this.plugin.settings.journalDateFormat = value.trim();
+            await this.plugin.saveSettings();
+          }
+        }));
+
+    // Open Today's Journal Button
+    new Setting(containerEl)
+      .setName('Today\'s Journal')
+      .setDesc('Create or open today\'s journal entry')
+      .addButton(button => button
+        .setButtonText('Open Today')
+        .onClick(async () => {
+          try {
+            await this.plugin.journalManager.openTodayJournal();
+            this.showSuccessMessage(button.buttonEl, 'Journal opened!');
+          } catch (error) {
+            this.plugin.errorHandler.handleError(error, 'Failed to open journal');
+          }
+        }));
+  }
+
+  private addFileSortingSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h2', { text: '📂 File Sorting' });
+    
+    // Auto Sorting Toggle
+    new Setting(containerEl)
+      .setName('Auto Sort Files')
+      .setDesc('Automatically sort files when created or modified')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.fileSorting.enableAutoSorting)
+        .onChange(async (value) => {
+          this.plugin.settings.fileSorting.enableAutoSorting = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Sort on File Create
+    new Setting(containerEl)
+      .setName('Sort on Create')
+      .setDesc('Sort files immediately when created')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.fileSorting.sortOnFileCreate)
+        .onChange(async (value) => {
+          this.plugin.settings.fileSorting.sortOnFileCreate = value;
+          await this.plugin.saveSettings();
+        }));
+
+    // Bulk Sort Button
+    new Setting(containerEl)
+      .setName('Sort All Files')
+      .setDesc('Sort all existing files in vault (preview mode)')
+      .addButton(button => button
+        .setButtonText('Preview Sort')
+        .onClick(async () => {
+          try {
+            // Create file sorting manager if it doesn't exist
+            if (!this.plugin.fileSortingManager) {
+              const { FileSortingManager } = await import('../managers/fileSortingManager');
+              this.plugin.fileSortingManager = new FileSortingManager(
+                this.plugin.app.vault,
+                this.plugin.app.metadataCache,
+                this.plugin.settings,
+                this.plugin.directoryManager
+              );
+            }
+            
+            const result = await this.plugin.fileSortingManager.bulkSort(true); // dry run
+            this.showSuccessMessage(button.buttonEl, `Preview: ${result.moved} files would be moved`);
+          } catch (error) {
+            this.plugin.errorHandler.handleError(error, 'Failed to preview sort');
+          }
+        }));
+  }
+
   private addNoteSettings(containerEl: HTMLElement): void {
     containerEl.createEl('h2', { text: '📝 Note Creation' });
     
@@ -276,76 +334,18 @@ tags: []
         }));
   }
 
-  private addShortcodeSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '⚡ Shortcodes' });
-    
-    const shortcodeDesc = containerEl.createEl('p');
-    shortcodeDesc.innerHTML = `
-      Configure the shortcode system for rapid content creation. 
-      <br><small>Example: <code>h2+ul>li*3</code> creates a heading with a 3-item list.</small>
-    `;
-    shortcodeDesc.style.color = 'var(--text-muted)';
-    shortcodeDesc.style.marginBottom = '1em';
-
-    // Shortcode Enabled Setting
-    new Setting(containerEl)
-      .setName('Enable Shortcodes')
-      .setDesc('Enable the shortcode expansion system.')
-      .addToggle(toggle => toggle
-        .setValue(this.plugin.settings.shortcodeEnabled)
-        .onChange(async (value) => {
-          this.plugin.settings.shortcodeEnabled = value;
-          await this.plugin.saveSettings();
-        }));
-
-    // Shortcode Trigger Key Setting
-    new Setting(containerEl)
-      .setName('Trigger Key')
-      .setDesc('Key to trigger shortcode expansion.')
-      .addDropdown(dropdown => dropdown
-        .addOption('Tab', 'Tab')
-        .addOption('Enter', 'Enter')
-        .addOption('Space', 'Space')
-        .setValue(this.plugin.settings.shortcodeTriggerKey)
-        .onChange(async (value) => {
-          this.plugin.settings.shortcodeTriggerKey = value;
-          await this.plugin.saveSettings();
-        }));
-
-    // Built-in Shortcodes Display
-    const builtinContainer = containerEl.createDiv();
-    builtinContainer.createEl('h4', { text: 'Built-in Shortcodes' });
-    
-    const builtinShortcodes = ShortcodeSettings.getBuiltinShortcodes();
-    const shortcodeList = builtinContainer.createEl('ul');
-    shortcodeList.style.fontSize = '0.9em';
-    shortcodeList.style.color = 'var(--text-muted)';
-    
-    Object.entries(builtinShortcodes).forEach(([pattern, description]) => {
-      const item = shortcodeList.createEl('li');
-      item.innerHTML = `<code>${pattern}</code> - ${description}`;
-    });
-
-    // Custom Shortcodes Section
-    containerEl.createEl('h4', { text: 'Custom Shortcodes' });
-    containerEl.createEl('p', { 
-      text: 'Add your own shortcode patterns. Format: pattern → expansion',
-      attr: { style: 'color: var(--text-muted); font-size: 0.9em; margin-bottom: 1em;' }
-    });
-
-    // Add Custom Shortcode Button
-    new Setting(containerEl)
-      .setName('Add Custom Shortcode')
-      .setDesc('Create a new custom shortcode pattern.')
-      .addButton(button => button
-        .setButtonText('Add Shortcode')
-        .onClick(() => {
-          this.showCustomShortcodeDialog();
-        }));
-
-    // Display existing custom shortcodes
-    this.displayCustomShortcodes(containerEl);
-  }
+  // DEPRECATED: Shortcode functionality moved to quarantine
+  // private addShortcodeSettings(containerEl: HTMLElement): void {
+  //   containerEl.createEl('h2', { text: '⚡ Shortcodes' });
+  //   
+  //   const shortcodeDesc = containerEl.createEl('p');
+  //   shortcodeDesc.innerHTML = `
+  //     Configure the shortcode system for rapid content creation. 
+  //     <br><small>Example: <code>h2+ul>li*3</code> creates a heading with a 3-item list.</small>
+  //   `;
+  //   shortcodeDesc.style.color = 'var(--text-muted)';
+  //   shortcodeDesc.style.marginBottom = '1em';
+  // }
 
   private addGeneralSettings(containerEl: HTMLElement): void {
     containerEl.createEl('h2', { text: '⚙️ General Settings' });
@@ -475,6 +475,16 @@ tags: []
         }));
   }
 
+  private showSuccessMessage(buttonEl: HTMLElement, message: string): void {
+    const notice = document.createElement('div');
+    notice.textContent = `✅ ${message}`;
+    notice.style.color = 'var(--text-success)';
+    notice.style.fontWeight = 'bold';
+    notice.style.marginTop = '0.5em';
+    buttonEl.parentElement?.appendChild(notice);
+    setTimeout(() => notice.remove(), 3000);
+  }
+
   private showValidationMessage(inputEl: HTMLElement, message: string, type: 'success' | 'error'): void {
     // Remove any existing validation message
     const existing = inputEl.parentElement?.querySelector('.validation-message');
@@ -491,94 +501,12 @@ tags: []
     setTimeout(() => messageEl.remove(), 3000);
   }
 
-  private displayCustomShortcodes(containerEl: HTMLElement): void {
-    const customShortcodes = this.plugin.settings.customShortcodes;
-    
-    if (Object.keys(customShortcodes).length === 0) {
-      const emptyEl = containerEl.createEl('p');
-      emptyEl.textContent = 'No custom shortcodes defined.';
-      emptyEl.style.color = 'var(--text-muted)';
-      emptyEl.style.fontStyle = 'italic';
-      return;
-    }
+  // DEPRECATED: Shortcode functionality moved to quarantine
+  // private displayCustomShortcodes(containerEl: HTMLElement): void {
+  //   // Shortcode display logic moved to quarantine
+  // }
 
-    Object.entries(customShortcodes).forEach(([pattern, expansion]) => {
-      new Setting(containerEl)
-        .setName(pattern)
-        .setDesc(expansion.length > 50 ? expansion.substring(0, 50) + '...' : expansion)
-        .addButton(button => button
-          .setButtonText('Delete')
-          .setTooltip('Delete this custom shortcode')
-          .onClick(async () => {
-            delete this.plugin.settings.customShortcodes[pattern];
-            await this.plugin.saveSettings();
-            this.display(); // Refresh the display
-          }));
-    });
-  }
-
-  private showCustomShortcodeDialog(): void {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
-    `;
-    
-    const dialog = document.createElement('div');
-    dialog.style.cssText = `
-      background: var(--background-primary); padding: 20px; border-radius: 8px; max-width: 500px; width: 90%;
-      border: 1px solid var(--background-modifier-border);
-    `;
-    
-    dialog.innerHTML = `
-      <h3>Add Custom Shortcode</h3>
-      <div style="margin: 15px 0;">
-        <label>Pattern:</label>
-        <input type="text" id="shortcode-pattern" placeholder="e.g., mylist" style="width: 100%; margin-top: 5px; padding: 8px;">
-      </div>
-      <div style="margin: 15px 0;">
-        <label>Expansion:</label>
-        <textarea id="shortcode-expansion" placeholder="e.g., - [ ] Item 1&#10;- [ ] Item 2" style="width: 100%; height: 100px; margin-top: 5px; padding: 8px;"></textarea>
-      </div>
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-        <button id="cancel-btn">Cancel</button>
-        <button id="save-btn" style="background: var(--interactive-accent); color: var(--text-on-accent);">Save</button>
-      </div>
-    `;
-    
-    modal.appendChild(dialog);
-    document.body.appendChild(modal);
-    
-    const patternInput = dialog.querySelector('#shortcode-pattern') as HTMLInputElement;
-    const expansionInput = dialog.querySelector('#shortcode-expansion') as HTMLTextAreaElement;
-    const cancelBtn = dialog.querySelector('#cancel-btn') as HTMLButtonElement;
-    const saveBtn = dialog.querySelector('#save-btn') as HTMLButtonElement;
-    
-    const closeModal = () => document.body.removeChild(modal);
-    
-    cancelBtn.onclick = closeModal;
-    modal.onclick = (e) => e.target === modal && closeModal();
-    
-    saveBtn.onclick = async () => {
-      const pattern = patternInput.value.trim();
-      const expansion = expansionInput.value.trim();
-      
-      if (!pattern || !expansion) {
-        alert('Both pattern and expansion are required.');
-        return;
-      }
-      
-      if (!ShortcodeSettings.isValidShortcodePattern(pattern)) {
-        alert('Invalid shortcode pattern. Use alphanumeric characters and shortcode operators (+, >, *, {}, [], ()).');
-        return;
-      }
-      
-      this.plugin.settings.customShortcodes[pattern] = expansion;
-      await this.plugin.saveSettings();
-      closeModal();
-      this.display(); // Refresh the display
-    };
-    
-    patternInput.focus();
-  }
+  // private showCustomShortcodeDialog(): void {
+  //   // Shortcode dialog logic moved to quarantine
+  // }
 }

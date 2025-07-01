@@ -162,18 +162,14 @@ The plugin has a well-structured architecture with:
 
 ## Usage
 
-### Ribbon Interface (Quick Access)
+### Ribbon Interface (Minimized)
 
-The plugin provides a convenient ribbon interface with 6 buttons for instant access to key features:
+The plugin provides a clean ribbon interface with 2 essential buttons:
 
-- **📅 Today's Journal**: Opens or creates today's journal entry
-- **📝 Create Linked Note**: Creates a new linked note from selected text
-- **📁 Create Monthly Folders**: Creates monthly folders for the current year
-- **⚡ Shortcode Help**: Shows available shortcodes and examples
-- **🔄 Rebuild Directory Structure**: Rebuilds the plugin's directory structure
+- **📝 Create Future Note**: Smart button that creates linked notes from selected text or opens today's journal
 - **⚙️ Plugin Settings**: Opens Link Plugin settings
 
-*See [RIBBON_INTERFACE_GUIDE.md](docs/user-guides/RIBBON_INTERFACE_GUIDE.md) for detailed ribbon documentation.*
+*The ribbon has been simplified to reduce clutter and focus on the most essential functions.*
 
 ### Basic Usage
 
@@ -245,13 +241,24 @@ MIT
 - [[The Data Well]] - Technical documentation and architecture details
 - [[Goals]] - Development roadmap and milestones
 
-## Note for the future: closing thoughts
+## Recent Updates
 
-Please make dynamic dialy note folder strucfture optional. There shoul be an alternate setting that allows that to be turned off. (it should probably begin off by default. All features should, by default, be turned off then enabled as needed by the plugins settings.)
+### ✅ Completed Features
+
+- **Dynamic Daily Notes Made Optional**: The complex year/month folder structure is now disabled by default. Enable "Simple Journal Mode" in settings for a clean, single-folder approach.
+- **Simplified Settings UI**: Reduced settings to focus on quality over quantity. Only essential options are shown.
+- **File Sorting System**: Automatically sort files by type and frontmatter metadata. Images, videos, PDFs go to `reference/files/`, markdown files sort by category/type.
+- **Enhanced Linking**: Directory-relative links like `[[/reference/nesting]]` are now supported.
+- **Minimized Ribbon**: Reduced from 6 buttons to 2 essential ones: "Create Future Note" (smart button) and "Plugin Settings".
+
+### 🗃️ Quarantined Features
+
+- **Shortcode System**: Complex Emmet-like shortcode expansion moved to `quarantine/` for MVP simplification.
+- **Template System**: Avoided duplication with existing Obsidian templating solutions.
 
 ## TODO
 
-- [ ] Make dynamic dialy note folder strucfture optional. There shoul be an alternate setting that allows that to be turned off. (it should probably begin off by default. All features should, by default, be turned off then enabled as needed by the plugins settings.)
-- [ ] Make the plugin settings more user friendly.
-- [ ] Add a way to create a new note from a template.
-( I don't want to rebuild templater features) but I want to be able to create future daily notes.
+- [x] ~~Make dynamic daily note folder structure optional~~ ✅ **COMPLETED**
+- [x] ~~Make the plugin settings more user friendly~~ ✅ **COMPLETED** 
+- [x] ~~Reduce ribbon button complexity~~ ✅ **COMPLETED**
+- [x] ~~Add file sorting capabilities~~ ✅ **COMPLETED**

@@ -52,10 +52,17 @@ export class JournalManager {
 
   /**
    * Gets the monthly folder path for a given date
-   * Uses the new base folder structure: LinkPlugin/journal/y_YYYY/MonthName/
+   * Uses dynamic folders if enabled, otherwise simple journal folder
    */
   private getMonthlyFolderPath(date: any): string {
     const journalBasePath = this.plugin.directoryManager.getJournalPath();
+    
+    // If dynamic folders are disabled or simple mode is enabled, use simple structure
+    if (!this.plugin.settings.enableDynamicFolders || this.plugin.settings.simpleJournalMode) {
+      return journalBasePath; // Just use the journal root folder
+    }
+    
+    // Use complex dynamic folder structure
     return DateService.getMonthlyFolderPath(journalBasePath, date);
   }
 

@@ -6,7 +6,8 @@ import { RibbonManager } from './ui/ribbonManager';
 import { DirectoryManager } from './managers/directoryManager';
 import { JournalManager } from './managers/journalManager';
 import { LinkManager } from './managers/linkManager';
-import { ShortcodeManager } from './shortcodes/registry';
+import { FileSortingManager } from './managers/fileSortingManager';
+// import { ShortcodeManager } from './shortcodes/registry'; // Deprecated - moved to quarantine
 import { ErrorHandler } from './utils/errorHandler';
 import { DateService } from './services/dateService';
 import { COMMAND_IDS } from './constants';
@@ -16,7 +17,8 @@ export default class LinkPlugin extends Plugin {
   directoryManager!: DirectoryManager;
   journalManager!: JournalManager;
   linkManager!: LinkManager;
-  shortcodeManager!: ShortcodeManager;
+  fileSortingManager!: FileSortingManager;
+  // shortcodeManager!: ShortcodeManager; // Deprecated - moved to quarantine
   errorHandler!: ErrorHandler;
   ribbonManager!: RibbonManager;
 
@@ -37,7 +39,13 @@ export default class LinkPlugin extends Plugin {
       this.directoryManager = new DirectoryManager(this);
       this.journalManager = new JournalManager(this);
       this.linkManager = new LinkManager(this);
-      this.shortcodeManager = new ShortcodeManager(this);
+      this.fileSortingManager = new FileSortingManager(
+        this.app.vault,
+        this.app.metadataCache,
+        this.settings,
+        this.directoryManager
+      );
+      // this.shortcodeManager = new ShortcodeManager(this); // Deprecated - moved to quarantine
       this.ribbonManager = new RibbonManager(this);
 
       // Add settings tab
@@ -164,18 +172,18 @@ export default class LinkPlugin extends Plugin {
       }
     });
 
-    // Show shortcode help
-    this.addCommand({
-      id: 'show-shortcode-help',
-      name: 'Show Shortcode Help',
-      callback: () => {
-        try {
-          this.shortcodeManager.showHelpModal();
-        } catch (error) {
-          this.errorHandler.handleError(error, 'Failed to show shortcode help');
-        }
-      }
-    });
+    // Show shortcode help (deprecated - moved to quarantine)
+    // this.addCommand({
+    //   id: 'show-shortcode-help',
+    //   name: 'Show Shortcode Help',
+    //   callback: () => {
+    //     try {
+    //       this.shortcodeManager.showHelpModal();
+    //     } catch (error) {
+    //       this.errorHandler.handleError(error, 'Failed to show shortcode help');
+    //     }
+    //   }
+    // });
 
     // Show ribbon quick actions (new command)
     this.addCommand({
@@ -192,14 +200,32 @@ export default class LinkPlugin extends Plugin {
   }
 
   registerEventHandlers() {
-    // Listen for editor changes to detect shortcodes
+    // Listen for file creation for auto-sorting
     this.registerEvent(
-      this.app.workspace.on('editor-change', (editor) => {
-        if (this.settings.shortcodeEnabled) {
-          this.shortcodeManager.checkForShortcodes(editor);
+      this.app.vault.on('create', (file) => {
+        if (file instanceof TFile && this.settings.fileSorting.sortOnFileCreate) {
+          this.fileSortingManager.autoSort(file);
         }
       })
     );
+
+    // Listen for file modification for auto-sorting
+    this.registerEvent(
+      this.app.vault.on('modify', (file) => {
+        if (file instanceof TFile && this.settings.fileSorting.sortOnFileModify) {
+          this.fileSortingManager.autoSort(file);
+        }
+      })
+    );
+
+    // Listen for editor changes to detect shortcodes (deprecated - moved to quarantine)
+    // this.registerEvent(
+    //   this.app.workspace.on('editor-change', (editor) => {
+    //     if (this.settings.shortcodeEnabled) {
+    //       this.shortcodeManager.checkForShortcodes(editor);
+    //     }
+    //   })
+    // );
 
     // Listen for file creation to update journal links
     this.registerEvent(
