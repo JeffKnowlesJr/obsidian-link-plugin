@@ -54,23 +54,43 @@ export class SettingsTab extends PluginSettingTab {
         }
       });
 
-    // Rebuild Directory Structure
-    new Setting(containerEl)
-      .setName('Rebuild Journal Structure')
-      .setDesc('Recreate the journal folder structure')
-      .addButton(button => button
-        .setButtonText('Rebuild')
-        .onClick(async () => {
-          try {
-            await this.plugin.directoryManager.rebuildDirectoryStructure();
-            // Show results via alert as requested
-            alert('✅ Journal structure rebuilt successfully!\n\nJournal folder structure has been recreated in: ' + this.plugin.settings.baseFolder);
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            alert('❌ Failed to rebuild journal structure.\n\nError: ' + errorMessage);
-            this.plugin.errorHandler.handleError(error, 'Failed to rebuild journal structure');
-          }
-        }));
+          // Rebuild Directory Structure
+      new Setting(containerEl)
+        .setName('Rebuild Journal Structure')
+        .setDesc('Recreate the journal folder structure')
+        .addButton(button => button
+          .setButtonText('Rebuild')
+          .onClick(async () => {
+            try {
+              await this.plugin.directoryManager.rebuildDirectoryStructure();
+              // Show results via alert as requested
+              alert('✅ Journal structure rebuilt successfully!\n\nJournal folder structure has been recreated in: ' + this.plugin.settings.baseFolder);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              alert('❌ Failed to rebuild journal structure.\n\nError: ' + errorMessage);
+              this.plugin.errorHandler.handleError(error, 'Failed to rebuild journal structure');
+            }
+          }));
+
+      // Setup Templates
+      new Setting(containerEl)
+        .setName('Setup Templates')
+        .setDesc('Create templates directory and copy Daily Notes template')
+        .addButton(button => button
+          .setButtonText('Setup Templates')
+          .onClick(async () => {
+            try {
+              await this.plugin.directoryManager.setupTemplates();
+              const templatesPath = this.plugin.settings.baseFolder 
+                ? `${this.plugin.settings.baseFolder}/templates`
+                : 'templates';
+              alert('✅ Templates setup successfully!\n\nTemplates directory and Daily Notes template created in: ' + templatesPath);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              alert('❌ Failed to setup templates.\n\nError: ' + errorMessage);
+              this.plugin.errorHandler.handleError(error, 'Failed to setup templates');
+            }
+          }));
   }
 
   private addJournalSettings(containerEl: HTMLElement): void {

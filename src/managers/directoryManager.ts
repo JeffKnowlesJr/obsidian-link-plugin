@@ -2,7 +2,9 @@ import { TFolder, normalizePath } from 'obsidian';
 import LinkPlugin from '../main';
 import { 
   DEFAULT_DIRECTORIES, 
-  DEFAULT_JOURNAL_STRUCTURE
+  DEFAULT_JOURNAL_STRUCTURE,
+  DEFAULT_TEMPLATES_PATH,
+  DAILY_NOTES_TEMPLATE_NAME
 } from '../constants';
 import { PathUtils } from '../utils/pathUtils';
 import { DirectoryTemplate } from '../types';
@@ -78,9 +80,70 @@ export class DirectoryManager {
     }
   }
 
+  /**
+   * Creates templates directory and copies the daily notes template when enabled
+   */
+  async setupTemplates(): Promise<void> {
+    try {
+      const { baseFolder } = this.plugin.settings;
+      const templatesPath = baseFolder 
+        ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH)
+        : DEFAULT_TEMPLATES_PATH;
 
+      // Create templates directory
+      await this.getOrCreateDirectory(templatesPath);
+      console.log(`Created templates directory: ${templatesPath}`);
 
+      // Copy daily notes template if it doesn't exist
+      const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME);
+      const { vault } = this.plugin.app;
+      
+      if (!vault.getAbstractFileByPath(templateFilePath)) {
+        const templateContent = await this.getDailyNotesTemplateContent();
+        await vault.create(templateFilePath, templateContent);
+        console.log(`Created template file: ${templateFilePath}`);
+      } else {
+        console.log(`Template already exists: ${templateFilePath}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to setup templates: ${error}`);
+    }
+  }
 
+  /**
+   * Gets the daily notes template content from the plugin assets
+   */
+  private async getDailyNotesTemplateContent(): Promise<string> {
+    // Template content embedded in the plugin
+    return `---
+previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
+next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
+tags:
+  - ☀️
+resources: []
+stakeholders:
+---
+---
+## Log
+
+### Routine Checklist
+
+- [ ] Open Daily Note
+- [ ] **Daily Checks**
+	- [ ] Bed and Clothes 🛏️🧺
+		- [ ] Self Care🛀🧴
+	- [ ] Clean Kitchen
+		- [ ] Make Breakfast 🍽✨
+	- [ ] Pet Care 🐕🚶🏻‍♂️
+		- [ ] Wear Watch ⌚️
+	- [ ] Get Focused 🖥️💊
+		- [ ] Put [Calendar](https://calendar.google.com) 📆
+	- [ ] Check [Mail](https://mail.google.com) ✉️ 
+		- [ ] Reviews [[Yearly List]] ✅
+	- [ ] Review [July Log](Yearly%20Log.md#July) 🗓️
+
+---`;
+  }
 
   /**
    * Gets a directory path, creating it if it doesn't exist

@@ -34,6 +34,8 @@ var DEFAULT_BASE_FOLDER = "Link";
 var DEFAULT_DIRECTORIES = [
   "journal"
 ];
+var DEFAULT_TEMPLATES_PATH = "templates";
+var DAILY_NOTES_TEMPLATE_NAME = "Daily Notes Template.md";
 var COMMAND_IDS = {
   CREATE_LINKED_NOTE: "create-linked-note",
   REBUILD_DIRECTORY: "rebuild-directory-structure",
@@ -528,6 +530,61 @@ var DirectoryManager = class {
       console.log(`Created current month directory: ${currentMonthPath}`);
       console.log("Current month journal structure created");
     }
+  }
+  /**
+   * Creates templates directory and copies the daily notes template when enabled
+   */
+  async setupTemplates() {
+    try {
+      const { baseFolder } = this.plugin.settings;
+      const templatesPath = baseFolder ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH) : DEFAULT_TEMPLATES_PATH;
+      await this.getOrCreateDirectory(templatesPath);
+      console.log(`Created templates directory: ${templatesPath}`);
+      const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME);
+      const { vault } = this.plugin.app;
+      if (!vault.getAbstractFileByPath(templateFilePath)) {
+        const templateContent = await this.getDailyNotesTemplateContent();
+        await vault.create(templateFilePath, templateContent);
+        console.log(`Created template file: ${templateFilePath}`);
+      } else {
+        console.log(`Template already exists: ${templateFilePath}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to setup templates: ${error}`);
+    }
+  }
+  /**
+   * Gets the daily notes template content from the plugin assets
+   */
+  async getDailyNotesTemplateContent() {
+    return `---
+previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
+next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
+tags:
+  - \u2600\uFE0F
+resources: []
+stakeholders:
+---
+---
+## Log
+
+### Routine Checklist
+
+- [ ] Open Daily Note
+- [ ] **Daily Checks**
+	- [ ] Bed and Clothes \u{1F6CF}\uFE0F\u{1F9FA}
+		- [ ] Self Care\u{1F6C0}\u{1F9F4}
+	- [ ] Clean Kitchen
+		- [ ] Make Breakfast \u{1F37D}\u2728
+	- [ ] Pet Care \u{1F415}\u{1F6B6}\u{1F3FB}\u200D\u2642\uFE0F
+		- [ ] Wear Watch \u231A\uFE0F
+	- [ ] Get Focused \u{1F5A5}\uFE0F\u{1F48A}
+		- [ ] Put [Calendar](https://calendar.google.com) \u{1F4C6}
+	- [ ] Check [Mail](https://mail.google.com) \u2709\uFE0F 
+		- [ ] Reviews [[Yearly List]] \u2705
+	- [ ] Review [July Log](Yearly%20Log.md#July) \u{1F5D3}\uFE0F
+
+---`;
   }
   /**
    * Gets a directory path, creating it if it doesn't exist
@@ -1386,6 +1443,17 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert("\u274C Failed to rebuild journal structure.\n\nError: " + errorMessage);
         this.plugin.errorHandler.handleError(error, "Failed to rebuild journal structure");
+      }
+    }));
+    new import_obsidian7.Setting(containerEl).setName("Setup Templates").setDesc("Create templates directory and copy Daily Notes template").addButton((button) => button.setButtonText("Setup Templates").onClick(async () => {
+      try {
+        await this.plugin.directoryManager.setupTemplates();
+        const templatesPath = this.plugin.settings.baseFolder ? `${this.plugin.settings.baseFolder}/templates` : "templates";
+        alert("\u2705 Templates setup successfully!\n\nTemplates directory and Daily Notes template created in: " + templatesPath);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        alert("\u274C Failed to setup templates.\n\nError: " + errorMessage);
+        this.plugin.errorHandler.handleError(error, "Failed to setup templates");
       }
     }));
   }

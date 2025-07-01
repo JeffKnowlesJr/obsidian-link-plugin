@@ -273,4 +273,19 @@ After rebuild:
 **Final Structure**: `Link/journal/YYYY/MM-Month/` (only journal folders created)
 **Status**: ✅ FIXED - Pure journal management achieved
 
+### Issue 12: Daily Notes Template Integration ✅ FIXED
+**Request**: Add Daily Notes template functionality with template directory creation
+**Changes Applied**:
+- Created `src/assets/Daily Notes Template.md` with the provided template content
+- Added `DEFAULT_TEMPLATES_PATH` and `DAILY_NOTES_TEMPLATE_NAME` constants  
+- Added `setupTemplates()` method to DirectoryManager for creating templates directory
+- Added `getDailyNotesTemplateContent()` method with embedded template content
+- Added "Setup Templates" button in Settings UI
+- Templates directory defaults to `Link/templates` to prevent collisions
+- Template file only created if it doesn't already exist
+- Template content includes Templater plugin syntax for previous/next day navigation
+- Template includes structured daily routine checklist and logging sections
+**Template Location**: `Link/templates/Daily Notes Template.md`
+**Status**: ✅ FIXED - Template functionality integrated
+
 ## NEW UI ISSUE
