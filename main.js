@@ -32,17 +32,7 @@ var import_obsidian8 = require("obsidian");
 // src/constants.ts
 var DEFAULT_BASE_FOLDER = "Link";
 var DEFAULT_DIRECTORIES = [
-  "journal",
-  "templates",
-  "workspace",
-  "reference",
-  "files"
-  // Moved out of references as requested
-];
-var OPTIONAL_DIRECTORIES = [
-  "context",
-  "schema",
-  "Projects"
+  "journal"
 ];
 var COMMAND_IDS = {
   CREATE_LINKED_NOTE: "create-linked-note",
@@ -101,8 +91,8 @@ var DirectorySettings = class {
       // Creates all directories under 'Link/' by default
       directoryStructure: DEFAULT_DIRECTORIES,
       restrictedDirectories: [],
-      documentDirectory: "workspace",
-      // Updated to match README structure
+      documentDirectory: "journal",
+      // Simplified to journal only
       journalRootFolder: "journal"
       // Updated to match README structure
     };
@@ -516,8 +506,6 @@ var DirectoryManager = class {
         console.log(`Created directory: ${dirPath}`);
       }
       await this.createJournalStructure(basePath);
-      await this.createReferenceStructure(basePath);
-      await this.createFilesStructure(basePath);
     } catch (error) {
       throw new Error(`Failed to rebuild directory structure: ${error}`);
     }
@@ -538,44 +526,7 @@ var DirectoryManager = class {
       await this.getOrCreateDirectory(currentYearPath);
       await this.getOrCreateDirectory(currentMonthPath);
       console.log(`Created current month directory: ${currentMonthPath}`);
-      const archivePath = PathUtils.joinPath(journalPath, "z_Archives");
-      await this.getOrCreateDirectory(archivePath);
-      const archiveYears = ["2022", "2023", "2024"];
-      for (const year of archiveYears) {
-        const archiveYearPath = PathUtils.joinPath(archivePath, year);
-        await this.getOrCreateDirectory(archiveYearPath);
-      }
-      console.log("Created archive structure");
-    }
-  }
-  /**
-   * Creates the reference structure (just reference folder, no files inside)
-   */
-  async createReferenceStructure(basePath) {
-    const referencePath = PathUtils.joinPath(basePath, "reference");
-    await this.getOrCreateDirectory(referencePath);
-    console.log(`Created reference directory: ${referencePath}`);
-  }
-  /**
-   * Creates the FILES structure as TOP-LEVEL directory (NOT inside references!)
-   */
-  async createFilesStructure(basePath) {
-    const filesPath = PathUtils.joinPath(basePath, "files");
-    const fileTypes = ["images", "pdfs", "videos", "audio", "docs", "other"];
-    for (const fileType of fileTypes) {
-      const filePath = PathUtils.joinPath(filesPath, fileType);
-      await this.getOrCreateDirectory(filePath);
-      console.log(`Created FILES directory: ${filePath}`);
-    }
-  }
-  /**
-   * Creates optional complex structure directories
-   */
-  async createOptionalStructure(basePath) {
-    for (const dirName of OPTIONAL_DIRECTORIES) {
-      const dirPath = PathUtils.joinPath(basePath, dirName);
-      await this.getOrCreateDirectory(dirPath);
-      console.log(`Created optional directory: ${dirPath}`);
+      console.log("Current month journal structure created");
     }
   }
   /**
@@ -619,13 +570,6 @@ var DirectoryManager = class {
     return baseFolder ? PathUtils.joinPath(baseFolder, journalRootFolder) : journalRootFolder;
   }
   /**
-   * Gets the workspace directory path  
-   */
-  getWorkspacePath() {
-    const { baseFolder, documentDirectory } = this.plugin.settings;
-    return baseFolder ? PathUtils.joinPath(baseFolder, documentDirectory) : documentDirectory;
-  }
-  /**
    * Applies a directory template to create structured folders
    */
   async applyDirectoryTemplate(basePath, template) {
@@ -657,19 +601,6 @@ var DirectoryManager = class {
   getAllDirectories() {
     const { vault } = this.plugin.app;
     return vault.getAllLoadedFiles().filter((file) => file instanceof import_obsidian2.TFolder);
-  }
-  /**
-   * Creates a directory with a specific template structure within the plugin's base folder
-   */
-  async createProjectDirectory(name, template) {
-    const sanitizedName = PathUtils.sanitizePath(name);
-    const workspacePath = this.getWorkspacePath();
-    const projectPath = PathUtils.joinPath(workspacePath, sanitizedName);
-    const projectFolder = await this.getOrCreateDirectory(projectPath);
-    if (template) {
-      await this.applyDirectoryTemplate(projectPath, template);
-    }
-    return projectFolder;
   }
 };
 
@@ -1024,11 +955,7 @@ var LinkManager = class {
     const { documentDirectory } = this.plugin.settings;
     const keywords = title.toLowerCase();
     if (keywords.includes("project") || keywords.includes("work")) {
-      return "Workspace";
-    } else if (keywords.includes("reference") || keywords.includes("definition")) {
-      return "References";
-    } else if (keywords.includes("template")) {
-      return "Templates";
+      return "Journal";
     }
     return documentDirectory || "Documents";
   }
@@ -1054,7 +981,7 @@ tags: []
   }
   /**
    * Generate appropriate link text based on directory structure
-   * Supports directory-relative links like [[/reference/nesting]]
+        * Supports directory-relative links like [[/journal/nesting]]
    */
   generateLinkText(fileName, targetDirectory, currentFile) {
     var _a;
@@ -1365,13 +1292,13 @@ var RibbonManager = class {
   addSettingsButton() {
     const button = this.plugin.addRibbonIcon(
       "link",
-      "Open Link Plugin Settings",
+      "Open Obsidian Link Journal Settings",
       () => {
         try {
           this.plugin.app.setting.open();
           this.plugin.app.setting.openTabById(this.plugin.manifest.id);
         } catch (error) {
-          this.plugin.errorHandler.showNotice("Please open Settings \u2192 Community Plugins \u2192 Link Plugin to configure");
+          this.plugin.errorHandler.showNotice("Please open Settings \u2192 Community Plugins \u2192 Obsidian Link Journal to configure");
           this.plugin.errorHandler.handleError(error, "Failed to open settings automatically");
         }
       }
@@ -1401,7 +1328,7 @@ var RibbonManager = class {
    * Show quick actions menu
    */
   showQuickActionsMenu() {
-    const message = `Link Plugin Quick Actions:
+    const message = `Obsidian Link Journal Quick Actions:
 \u2022 Create Today's Note: Open or create today's journal
 \u2022 Create Monthly Folders: Set up folder structure
 \u2022 Settings: Configure journal management`;
@@ -1435,7 +1362,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
   }
   addCoreSettings(containerEl) {
     containerEl.createEl("h2", { text: "\u{1F4C1} Core Settings" });
-    new import_obsidian7.Setting(containerEl).setName("Base Folder").setDesc("Root folder for all plugin content (empty = vault root)").addText((text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
+    new import_obsidian7.Setting(containerEl).setName("Base Folder").setDesc("Root folder for journal content (empty = vault root)").addText((text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
       this.plugin.settings.baseFolder = value.trim();
       await this.plugin.saveSettings();
     })).then((setting) => {
@@ -1451,14 +1378,14 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       }
     });
-    new import_obsidian7.Setting(containerEl).setName("Rebuild Directory Structure").setDesc("Recreate the plugin folder structure").addButton((button) => button.setButtonText("Rebuild").onClick(async () => {
+    new import_obsidian7.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton((button) => button.setButtonText("Rebuild").onClick(async () => {
       try {
         await this.plugin.directoryManager.rebuildDirectoryStructure();
-        alert("\u2705 Directory structure rebuilt successfully!\n\nFolder structure has been recreated in: " + this.plugin.settings.baseFolder);
+        alert("\u2705 Journal structure rebuilt successfully!\n\nJournal folder structure has been recreated in: " + this.plugin.settings.baseFolder);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        alert("\u274C Failed to rebuild directory structure.\n\nError: " + errorMessage);
-        this.plugin.errorHandler.handleError(error, "Failed to rebuild directory structure");
+        alert("\u274C Failed to rebuild journal structure.\n\nError: " + errorMessage);
+        this.plugin.errorHandler.handleError(error, "Failed to rebuild journal structure");
       }
     }));
   }
@@ -1495,7 +1422,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
 // src/main.ts
 var LinkPlugin = class extends import_obsidian8.Plugin {
   async onload() {
-    console.log("Loading Link Plugin v2.2.0 - Journal Management Focus...");
+    console.log("Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...");
     try {
       DateService.initialize();
       await this.loadSettings();
@@ -1517,8 +1444,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
       console.log("DateService initialized:", debugInfo);
       console.log("Today:", DateService.today());
       console.log("Current month:", DateService.currentMonth());
-      this.errorHandler.showNotice("Link Plugin loaded - Journal management ready!");
-      console.log("Link Plugin loaded successfully - Core journal functionality enabled");
+      this.errorHandler.showNotice("Obsidian Link Journal loaded - Pure journal management ready!");
+      console.log("Obsidian Link Journal loaded successfully - Core journal functionality enabled");
     } catch (error) {
       console.error("Failed to load Link Plugin:", error);
       if (this.errorHandler) {
@@ -1791,7 +1718,7 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     }
   }
   onunload() {
-    console.log("Link Plugin unloaded");
+    console.log("Obsidian Link Journal unloaded");
     if (this.linkManager) {
       this.linkManager.cleanup();
     }

@@ -2,9 +2,7 @@ import { TFolder, normalizePath } from 'obsidian';
 import LinkPlugin from '../main';
 import { 
   DEFAULT_DIRECTORIES, 
-  DEFAULT_JOURNAL_STRUCTURE, 
-  DEFAULT_REFERENCE_STRUCTURE,
-  OPTIONAL_DIRECTORIES 
+  DEFAULT_JOURNAL_STRUCTURE
 } from '../constants';
 import { PathUtils } from '../utils/pathUtils';
 import { DirectoryTemplate } from '../types';
@@ -76,57 +74,13 @@ export class DirectoryManager {
       
       console.log(`Created current month directory: ${currentMonthPath}`);
       
-      // Create archive structure
-      const archivePath = PathUtils.joinPath(journalPath, 'z_Archives');
-      await this.getOrCreateDirectory(archivePath);
-      
-      const archiveYears = ['2022', '2023', '2024'];
-      for (const year of archiveYears) {
-        const archiveYearPath = PathUtils.joinPath(archivePath, year);
-        await this.getOrCreateDirectory(archiveYearPath);
-      }
-      
-      console.log('Created archive structure');
+      console.log('Current month journal structure created');
     }
   }
 
-  /**
-   * Creates the reference structure (just reference folder, no files inside)
-   */
-  async createReferenceStructure(basePath: string): Promise<void> {
-    const referencePath = PathUtils.joinPath(basePath, 'reference');
-    
-    // Create reference directory for reference notes only
-    await this.getOrCreateDirectory(referencePath);
-    console.log(`Created reference directory: ${referencePath}`);
-  }
 
-  /**
-   * Creates the FILES structure as TOP-LEVEL directory (NOT inside references!)
-   */
-  async createFilesStructure(basePath: string): Promise<void> {
-    const filesPath = PathUtils.joinPath(basePath, 'files');
-    
-    // Create FILES file type directories at TOP LEVEL
-    const fileTypes = ['images', 'pdfs', 'videos', 'audio', 'docs', 'other'];
-    
-    for (const fileType of fileTypes) {
-      const filePath = PathUtils.joinPath(filesPath, fileType);
-      await this.getOrCreateDirectory(filePath);
-      console.log(`Created FILES directory: ${filePath}`);
-    }
-  }
 
-  /**
-   * Creates optional complex structure directories
-   */
-  async createOptionalStructure(basePath: string): Promise<void> {
-    for (const dirName of OPTIONAL_DIRECTORIES) {
-      const dirPath = PathUtils.joinPath(basePath, dirName);
-      await this.getOrCreateDirectory(dirPath);
-      console.log(`Created optional directory: ${dirPath}`);
-    }
-  }
+
 
   /**
    * Gets a directory path, creating it if it doesn't exist
@@ -177,13 +131,7 @@ export class DirectoryManager {
     return baseFolder ? PathUtils.joinPath(baseFolder, journalRootFolder) : journalRootFolder;
   }
 
-  /**
-   * Gets the workspace directory path  
-   */
-  getWorkspacePath(): string {
-    const { baseFolder, documentDirectory } = this.plugin.settings;
-    return baseFolder ? PathUtils.joinPath(baseFolder, documentDirectory) : documentDirectory;
-  }
+
 
   /**
    * Applies a directory template to create structured folders
@@ -225,20 +173,5 @@ export class DirectoryManager {
       .filter(file => file instanceof TFolder) as TFolder[];
   }
 
-  /**
-   * Creates a directory with a specific template structure within the plugin's base folder
-   */
-  async createProjectDirectory(name: string, template?: DirectoryTemplate): Promise<TFolder> {
-    const sanitizedName = PathUtils.sanitizePath(name);
-    const workspacePath = this.getWorkspacePath();
-    const projectPath = PathUtils.joinPath(workspacePath, sanitizedName);
 
-    const projectFolder = await this.getOrCreateDirectory(projectPath);
-
-    if (template) {
-      await this.applyDirectoryTemplate(projectPath, template);
-    }
-
-    return projectFolder;
-  }
 }

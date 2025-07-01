@@ -210,11 +210,7 @@ export class LinkManager {
     const keywords = title.toLowerCase();
 
     if (keywords.includes('project') || keywords.includes('work')) {
-      return 'Workspace';
-    } else if (keywords.includes('reference') || keywords.includes('definition')) {
-      return 'References';
-    } else if (keywords.includes('template')) {
-      return 'Templates';
+      return 'Journal';
     }
 
     return documentDirectory || 'Documents';
@@ -250,7 +246,7 @@ tags: []
 
   /**
    * Generate appropriate link text based on directory structure
-   * Supports directory-relative links like [[/reference/nesting]]
+        * Supports directory-relative links like [[/journal/nesting]]
    */
   private generateLinkText(fileName: string, targetDirectory: string, currentFile: TFile): string {
     const currentFileDir = currentFile.parent?.path || '';

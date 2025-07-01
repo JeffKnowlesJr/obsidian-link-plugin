@@ -14,7 +14,7 @@ export class DirectorySettings {
       baseFolder: DEFAULT_BASE_FOLDER, // Creates all directories under 'Link/' by default
       directoryStructure: DEFAULT_DIRECTORIES,
       restrictedDirectories: [],
-      documentDirectory: 'workspace', // Updated to match README structure
+      documentDirectory: 'journal', // Simplified to journal only
       journalRootFolder: 'journal', // Updated to match README structure
     };
   }

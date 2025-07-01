@@ -256,4 +256,21 @@ After rebuild:
 - Plugin now creates only journal folder structure, nothing else
 **Status**: ✅ FIXED - Plugin simplified to pure journal management
 
+### Issue 11: Remove All Non-Journal Folder Creation ✅ FIXED
+**Request**: Remove workspace, templates, reference, files, and Z_archives folder creation entirely - only journal should be created
+**Changes Applied**:
+- Removed `createReferenceStructure()` method from directoryManager.ts
+- Removed `createFilesStructure()` method from directoryManager.ts  
+- Removed `createOptionalStructure()` method from directoryManager.ts
+- Removed `getWorkspacePath()` method from directoryManager.ts
+- Removed `createProjectDirectory()` method from directoryManager.ts
+- Removed Z_archives folder creation from journal structure
+- Removed `DEFAULT_REFERENCE_STRUCTURE`, `DEFAULT_FILES_STRUCTURE`, `DEFAULT_WORKSPACE_STRUCTURE`, `DEFAULT_TEMPLATES_STRUCTURE`, and `OPTIONAL_DIRECTORIES` from constants.ts
+- Updated directorySettings to use 'journal' instead of 'workspace'
+- Updated linkManager to only reference journal directories
+- Plugin now creates ONLY journal folder structure
+- All imports and references to removed structures cleaned up
+**Final Structure**: `Link/journal/YYYY/MM-Month/` (only journal folders created)
+**Status**: ✅ FIXED - Pure journal management achieved
+
 ## NEW UI ISSUE
