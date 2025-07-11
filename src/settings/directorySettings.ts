@@ -1,11 +1,11 @@
-import { DEFAULT_DIRECTORIES, DEFAULT_BASE_FOLDER } from '../constants';
+import { DEFAULT_DIRECTORIES, DEFAULT_BASE_FOLDER } from '../constants'
 
 export interface DirectorySettingsConfig {
-  baseFolder: string;
-  directoryStructure: string[];
-  restrictedDirectories: string[];
-  documentDirectory: string;
-  journalRootFolder: string;
+  baseFolder: string
+  directoryStructure: string[]
+  restrictedDirectories: string[]
+  documentDirectory: string
+  journalRootFolder: string
 }
 
 export class DirectorySettings {
@@ -15,40 +15,61 @@ export class DirectorySettings {
       directoryStructure: DEFAULT_DIRECTORIES,
       restrictedDirectories: [],
       documentDirectory: 'journal', // Simplified to journal only
-      journalRootFolder: 'journal', // Updated to match README structure
-    };
+      journalRootFolder: 'journal' // Updated to match README structure
+    }
   }
 
-  static validate(settings: Partial<DirectorySettingsConfig>): Partial<DirectorySettingsConfig> {
-    const validated: Partial<DirectorySettingsConfig> = {};
+  static validate(
+    settings: Partial<DirectorySettingsConfig>
+  ): Partial<DirectorySettingsConfig> {
+    const validated: Partial<DirectorySettingsConfig> = {}
 
     // Validate base folder setting
-    if (settings.baseFolder !== undefined && typeof settings.baseFolder === 'string') {
-      const trimmed = settings.baseFolder.trim();
-      // If empty, use root (empty string)
-      validated.baseFolder = trimmed === '' ? '' : trimmed;
+    if (
+      settings.baseFolder !== undefined &&
+      typeof settings.baseFolder === 'string'
+    ) {
+      const trimmed = settings.baseFolder.trim()
+      // If empty or only slashes, use root (empty string)
+      if (trimmed === '' || /^\/*$/.test(trimmed)) {
+        validated.baseFolder = ''
+      } else {
+        validated.baseFolder = trimmed
+      }
     }
 
     // Validate directory structure
-    if (settings.directoryStructure && Array.isArray(settings.directoryStructure)) {
-      validated.directoryStructure = settings.directoryStructure;
+    if (
+      settings.directoryStructure &&
+      Array.isArray(settings.directoryStructure)
+    ) {
+      validated.directoryStructure = settings.directoryStructure
     }
 
     // Validate restricted directories
-    if (settings.restrictedDirectories && Array.isArray(settings.restrictedDirectories)) {
-      validated.restrictedDirectories = settings.restrictedDirectories;
+    if (
+      settings.restrictedDirectories &&
+      Array.isArray(settings.restrictedDirectories)
+    ) {
+      validated.restrictedDirectories = settings.restrictedDirectories
     }
 
     // Validate document directory
-    if (settings.documentDirectory && typeof settings.documentDirectory === 'string') {
-      validated.documentDirectory = settings.documentDirectory;
+    if (
+      settings.documentDirectory &&
+      typeof settings.documentDirectory === 'string'
+    ) {
+      validated.documentDirectory = settings.documentDirectory
     }
 
     // Validate journal root folder
-    if (settings.journalRootFolder && typeof settings.journalRootFolder === 'string') {
-      validated.journalRootFolder = settings.journalRootFolder;
+    if (
+      settings.journalRootFolder &&
+      typeof settings.journalRootFolder === 'string'
+    ) {
+      validated.journalRootFolder = settings.journalRootFolder
     }
 
-    return validated;
+    return validated
   }
-} 
+}

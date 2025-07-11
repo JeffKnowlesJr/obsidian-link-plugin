@@ -14,9 +14,26 @@
   "journalYearFormat": "YYYY",
   "journalMonthFormat": "MM-MMMM",
   "journalTemplate": "# {{date}}\n\n## Daily Log\n\n## Tasks\n- [ ] \n\n## Notes\n\n## Reflection\n\n---\nPrevious: {{previous}}\nNext: {{next}}\n",
-  "enableDynamicFolders": true,
   "simpleJournalMode": false,
   "noteTemplate": "---\ntitle: {{title}}\ncreated: {{date}}\nsource: {{source}}\ntags: []\n---\n\n# {{title}}\n\n",
+  "dailyNotesIntegration": {
+    "enabled": true,
+    "controls": {
+      "folder": false,
+      "format": false,
+      "template": false
+    },
+    "backup": {
+      "timestamp": "2025-07-11T03:02:12.553Z",
+      "pluginType": "core",
+      "originalSettings": {
+        "autorun": true,
+        "template": "_templates/Daily Notes Template",
+        "folder": "_journal/y_2025/July",
+        "format": "YYYY-MM-DD dddd"
+      }
+    }
+  },
   "debugMode": false,
   "fileSorting": {
     "enableAutoSorting": false,

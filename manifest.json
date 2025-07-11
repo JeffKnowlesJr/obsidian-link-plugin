@@ -1,6 +1,6 @@
 {
   "id": "obsidian-link-journal",
-	"name": "Obsidian Link Journal",
+  "name": "Link Journal",
   "version": "2.3.0",
   "minAppVersion": "0.15.0",
   "description": "Pure journal management plugin for Obsidian. Creates organized monthly journal folders with seamless Daily Notes integration and future note creation capabilities.",
@@ -8,6 +8,12 @@
   "authorUrl": "https://github.com/JeffKnowlesJr/obsidian-link-journal",
   "fundingUrl": "https://patreon.com/jeffslink",
   "isDesktopOnly": false,
-  "keywords": ["journal", "daily notes", "organization", "productivity", "writing"],
+  "keywords": [
+    "journal",
+    "daily notes",
+    "organization",
+    "productivity",
+    "writing"
+  ],
   "main": "main.js"
 }

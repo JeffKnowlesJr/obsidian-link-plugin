@@ -1,53 +1,51 @@
 export interface LinkPluginSettings {
   // Directory structure settings
-  baseFolder: string; // Root folder for all plugin-created directories
-  directoryStructure: string[];
-  restrictedDirectories: string[];
-  documentDirectory: string;
-  journalRootFolder: string;
+  baseFolder: string // Root folder for all plugin-created directories
+  directoryStructure: string[]
+  restrictedDirectories: string[]
+  documentDirectory: string
+  journalRootFolder: string
 
   // Journal settings - SIMPLIFIED
-  journalDateFormat: string;
-  journalFolderFormat: string;
-  journalYearFormat: string;
-  journalMonthFormat: string;
-  journalTemplate: string;
-  simpleJournalMode: boolean; // Single setting: true = simple, false = dynamic
+  journalDateFormat: string
+  journalFolderFormat: string
+  journalYearFormat: string
+  journalMonthFormat: string
+  journalTemplate: string
+  simpleJournalMode: boolean // Single setting: true = simple, false = dynamic
 
   // Note creation settings
-  noteTemplate: string;
+  noteTemplate: string
 
   // Daily Notes Integration Settings
   dailyNotesIntegration: {
-    enabled: boolean;
-    controls: {
-      folder: boolean;
-      format: boolean;
-      template: boolean;
-    };
-    backup: DailyNotesBackup | null;
-  };
+    enabled: boolean
+    backup: DailyNotesBackup | null
+  }
 
   // File sorting settings - QUARANTINED (kept for compatibility)
   fileSorting: {
-    enableAutoSorting: boolean;
-    sortOnFileCreate: boolean;
-    sortOnFileModify: boolean;
-  };
+    enableAutoSorting: boolean
+    sortOnFileCreate: boolean
+    sortOnFileModify: boolean
+  }
 
   // Other settings
-  debugMode: boolean;
+  debugMode: boolean
+
+  // Custom template location (optional)
+  customTemplateLocation?: string
 }
 
 export interface DailyNotesBackup {
-  timestamp: string;
-  pluginType: 'core' | 'community';
+  timestamp: string
+  pluginType: 'core' | 'community'
   originalSettings: {
-    folder?: string;
-    format?: string;
-    template?: string;
-    [key: string]: any;
-  };
+    folder?: string
+    format?: string
+    template?: string
+    [key: string]: any
+  }
 }
 
 // Shortcode types (deprecated - moved to quarantine)
@@ -68,22 +66,22 @@ export interface DailyNotesBackup {
 // }
 
 export interface DirectoryTemplate {
-  [key: string]: DirectoryTemplate | null;
+  [key: string]: DirectoryTemplate | null
 }
 
 export interface JournalEntry {
-  date: string;
-  path: string;
-  title: string;
-  previous?: string;
-  next?: string;
+  date: string
+  path: string
+  title: string
+  previous?: string
+  next?: string
 }
 
 export interface LinkSuggestion {
-  title: string;
-  path: string;
-  relevance: number;
-  type: 'existing' | 'new';
+  title: string
+  path: string
+  relevance: number
+  type: 'existing' | 'new'
 }
 
 // export interface ShortcodeDefinition {
@@ -94,8 +92,8 @@ export interface LinkSuggestion {
 // }
 
 export interface ErrorLog {
-  timestamp: string;
-  context: string;
-  message: string;
-  stack?: string;
+  timestamp: string
+  context: string
+  message: string
+  stack?: string
 }
