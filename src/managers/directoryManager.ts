@@ -718,6 +718,15 @@ The best architecture emerges from understanding both the technical constraints 
   }
 
   /**
+   * Returns the full path to the journal directory, respecting baseFolder and settings
+   */
+  public getJournalPath(): string {
+    const { baseFolder } = this.plugin.settings
+    // Always use 'journal' as the subfolder
+    return baseFolder ? PathUtils.joinPath(baseFolder, 'journal') : 'journal'
+  }
+
+  /**
    * Gets a directory path, creating it if it doesn't exist
    * Handles both absolute paths and paths relative to the base folder
    */
