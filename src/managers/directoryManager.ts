@@ -1,20 +1,20 @@
-import { TFolder, normalizePath } from 'obsidian';
-import LinkPlugin from '../main';
-import { 
-  DEFAULT_DIRECTORIES, 
+import { TFolder, normalizePath } from 'obsidian'
+import LinkPlugin from '../main'
+import {
+  DEFAULT_DIRECTORIES,
   DEFAULT_JOURNAL_STRUCTURE,
   DEFAULT_TEMPLATES_PATH,
   DAILY_NOTES_TEMPLATE_NAME
-} from '../constants';
-import { PathUtils } from '../utils/pathUtils';
-import { DirectoryTemplate } from '../types';
-import { DateService } from '../services/dateService';
+} from '../constants'
+import { PathUtils } from '../utils/pathUtils'
+import { DirectoryTemplate } from '../types'
+import { DateService } from '../services/dateService'
 
 export class DirectoryManager {
-  plugin: LinkPlugin;
+  plugin: LinkPlugin
 
   constructor(plugin: LinkPlugin) {
-    this.plugin = plugin;
+    this.plugin = plugin
   }
 
   /**
@@ -22,34 +22,35 @@ export class DirectoryManager {
    * All directories are created under the configured baseFolder to prevent collisions
    */
   async rebuildDirectoryStructure(): Promise<void> {
-    const { vault } = this.plugin.app;
-    const { baseFolder, directoryStructure } = this.plugin.settings;
+    const { vault } = this.plugin.app
+    const { baseFolder, directoryStructure } = this.plugin.settings
 
     try {
       // Create the base folder first (if not root)
-      const basePath = baseFolder ? normalizePath(baseFolder) : '';
+      const basePath = baseFolder ? normalizePath(baseFolder) : ''
       if (basePath) {
-        await this.getOrCreateDirectory(basePath);
-        console.log(`Created base directory: ${basePath}`);
+        await this.getOrCreateDirectory(basePath)
+        console.log(`Created base directory: ${basePath}`)
       } else {
-        console.log('Using vault root as base directory');
+        console.log('Using vault root as base directory')
       }
 
-          // Create basic directory structure
-    for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
-      const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
-      await this.getOrCreateDirectory(dirPath);
-      console.log(`Created directory: ${dirPath}`);
-    }
+      // Create basic directory structure
+      for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
+        const dirPath = basePath
+          ? PathUtils.joinPath(basePath, dirName)
+          : dirName
+        await this.getOrCreateDirectory(dirPath)
+        console.log(`Created directory: ${dirPath}`)
+      }
 
-    // Create journal structure (only journal folder needed)
-    await this.createJournalStructure(basePath);
+      // Create journal structure (only journal folder needed)
+      await this.createJournalStructure(basePath)
 
-    // Create reference knowledge base
-    await this.createReferenceStructure(basePath);
-
+      // Create reference knowledge base
+      await this.createReferenceStructure(basePath)
     } catch (error) {
-      throw new Error(`Failed to rebuild directory structure: ${error}`);
+      throw new Error(`Failed to rebuild directory structure: ${error}`)
     }
   }
 
@@ -57,29 +58,29 @@ export class DirectoryManager {
    * Creates journal structure - simple or dynamic based on single setting
    */
   async createJournalStructure(basePath: string): Promise<void> {
-    const journalPath = PathUtils.joinPath(basePath, 'journal');
-    
+    const journalPath = PathUtils.joinPath(basePath, 'journal')
+
     // Always create the basic journal directory
-    await this.getOrCreateDirectory(journalPath);
-    console.log(`Created journal directory: ${journalPath}`);
-    
+    await this.getOrCreateDirectory(journalPath)
+    console.log(`Created journal directory: ${journalPath}`)
+
     // Only create complex structure if simple mode is disabled
     if (!this.plugin.settings.simpleJournalMode) {
       // Create CURRENT YEAR/MONTH structure using proper format
-      const currentDate = DateService.now();
-      const currentYear = DateService.format(currentDate, 'YYYY');
-      const currentMonth = DateService.format(currentDate, 'MM-MMMM');
-      
+      const currentDate = DateService.now()
+      const currentYear = DateService.format(currentDate, 'YYYY')
+      const currentMonth = DateService.format(currentDate, 'MM-MMMM')
+
       // Create current year/month folder
-      const currentYearPath = PathUtils.joinPath(journalPath, currentYear);
-      const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth);
-      
-      await this.getOrCreateDirectory(currentYearPath);
-      await this.getOrCreateDirectory(currentMonthPath);
-      
-      console.log(`Created current month directory: ${currentMonthPath}`);
-      
-      console.log('Current month journal structure created');
+      const currentYearPath = PathUtils.joinPath(journalPath, currentYear)
+      const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth)
+
+      await this.getOrCreateDirectory(currentYearPath)
+      await this.getOrCreateDirectory(currentMonthPath)
+
+      console.log(`Created current month directory: ${currentMonthPath}`)
+
+      console.log('Current month journal structure created')
     }
   }
 
@@ -89,28 +90,31 @@ export class DirectoryManager {
    */
   async setupTemplates(): Promise<void> {
     try {
-      const { baseFolder } = this.plugin.settings;
-      const templatesPath = baseFolder 
+      const { baseFolder } = this.plugin.settings
+      const templatesPath = baseFolder
         ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH)
-        : DEFAULT_TEMPLATES_PATH;
+        : DEFAULT_TEMPLATES_PATH
 
       // Create templates directory as sibling to journal
-      await this.getOrCreateDirectory(templatesPath);
-      console.log(`Created templates directory: ${templatesPath}`);
+      await this.getOrCreateDirectory(templatesPath)
+      console.log(`Created templates directory: ${templatesPath}`)
 
       // Copy daily notes template if it doesn't exist
-      const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME);
-      const { vault } = this.plugin.app;
-      
+      const templateFilePath = PathUtils.joinPath(
+        templatesPath,
+        DAILY_NOTES_TEMPLATE_NAME
+      )
+      const { vault } = this.plugin.app
+
       if (!vault.getAbstractFileByPath(templateFilePath)) {
-        const templateContent = await this.getDailyNotesTemplateContent();
-        await vault.create(templateFilePath, templateContent);
-        console.log(`Created template file: ${templateFilePath}`);
+        const templateContent = await this.getDailyNotesTemplateContent()
+        await vault.create(templateFilePath, templateContent)
+        console.log(`Created template file: ${templateFilePath}`)
       } else {
-        console.log(`Template already exists: ${templateFilePath}`);
+        console.log(`Template already exists: ${templateFilePath}`)
       }
     } catch (error) {
-      throw new Error(`Failed to setup templates: ${error}`);
+      throw new Error(`Failed to setup templates: ${error}`)
     }
   }
 
@@ -148,7 +152,7 @@ stakeholders:
 		- [ ] Reviews [[Yearly List]] ✅
 	- [ ] Review [July Log](Yearly%20Log.md#July) 🗓️
 
----`;
+---`
   }
 
   /**
@@ -156,35 +160,40 @@ stakeholders:
    */
   async createReferenceStructure(basePath: string): Promise<void> {
     // Create reference/linkplugin subfolder for all reference files
-    const referencePath = basePath 
+    const referencePath = basePath
       ? PathUtils.joinPath(basePath, 'reference', 'linkplugin')
-      : 'reference/linkplugin';
+      : 'reference/linkplugin'
 
     // Create main reference directory
-    await this.getOrCreateDirectory(referencePath);
-    console.log(`Created reference directory: ${referencePath}`);
+    await this.getOrCreateDirectory(referencePath)
+    console.log(`Created reference directory: ${referencePath}`)
 
     // Create architecture documentation
-    await this.createArchitectureDocumentation(referencePath);
-    
-    // Create patterns documentation  
-    await this.createPatternsDocumentation(referencePath);
-    
-    // Create integration guides
-    await this.createIntegrationDocumentation(referencePath);
-    
-    // Create troubleshooting lessons
-    await this.createTroubleshootingLessons(referencePath);
+    await this.createArchitectureDocumentation(referencePath)
 
-    console.log('Reference knowledge base created');
+    // Create patterns documentation
+    await this.createPatternsDocumentation(referencePath)
+
+    // Create integration guides
+    await this.createIntegrationDocumentation(referencePath)
+
+    // Create troubleshooting lessons
+    await this.createTroubleshootingLessons(referencePath)
+
+    console.log('Reference knowledge base created')
   }
 
   /**
    * Creates architecture documentation explaining key design decisions
    */
-  private async createArchitectureDocumentation(referencePath: string): Promise<void> {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, 'Architecture Decisions.md');
+  private async createArchitectureDocumentation(
+    referencePath: string
+  ): Promise<void> {
+    const { vault } = this.plugin.app
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      'Architecture Decisions.md'
+    )
 
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Architecture Decisions
@@ -256,19 +265,24 @@ Need to provide templates without interfering with existing template systems (Te
 - Detailed logging for debugging
 - User notifications for actionable errors only
 - Fallback behaviors when integrations fail
-`;
+`
 
-      await vault.create(filePath, content);
-      console.log(`Created architecture documentation: ${filePath}`);
+      await vault.create(filePath, content)
+      console.log(`Created architecture documentation: ${filePath}`)
     }
   }
 
   /**
    * Creates patterns documentation for common plugin development patterns
    */
-  private async createPatternsDocumentation(referencePath: string): Promise<void> {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, 'Development Patterns.md');
+  private async createPatternsDocumentation(
+    referencePath: string
+  ): Promise<void> {
+    const { vault } = this.plugin.app
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      'Development Patterns.md'
+    )
 
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Development Patterns
@@ -417,19 +431,21 @@ registerCommands() {
 - Consistent command structure
 - Easy to add/remove commands
 - Centralized command logic
-`;
+`
 
-      await vault.create(filePath, content);
-      console.log(`Created patterns documentation: ${filePath}`);
+      await vault.create(filePath, content)
+      console.log(`Created patterns documentation: ${filePath}`)
     }
   }
 
   /**
    * Creates integration documentation for working with Obsidian ecosystem
    */
-  private async createIntegrationDocumentation(referencePath: string): Promise<void> {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, 'Integration Guide.md');
+  private async createIntegrationDocumentation(
+    referencePath: string
+  ): Promise<void> {
+    const { vault } = this.plugin.app
+    const filePath = PathUtils.joinPath(referencePath, 'Integration Guide.md')
 
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Integration Guide
@@ -610,3 +626,120 @@ Provide quick access to common features.
 
 ### Solution: Contextual Ribbon Buttons
 \`\`\`
+`
+
+      await vault.create(filePath, content)
+      console.log(`Created integration documentation: ${filePath}`)
+    }
+  }
+
+  /**
+   * Creates troubleshooting lessons for common issues and best practices
+   */
+  private async createTroubleshootingLessons(
+    referencePath: string
+  ): Promise<void> {
+    const { vault } = this.plugin.app
+    const filePath = PathUtils.joinPath(referencePath, 'Troubleshooting.md')
+
+    if (!vault.getAbstractFileByPath(filePath)) {
+      const content = `# Troubleshooting
+
+## Common Issues
+
+### 1. Plugin Not Loading
+\`\`\`
+1. Ensure Obsidian is fully closed.
+2. Navigate to your Obsidian vault.
+3. Delete the \`Link\` folder from your vault.
+4. Re-open Obsidian.
+\`\`\`
+
+### 2. Directory Structure Not Created
+\`\`\`
+1. Check if \`Link\` folder exists in your vault.
+2. If it doesn't, try reinstalling the plugin.
+3. If it does, check your \`Link\` settings in Obsidian's settings.
+\`\`\`
+
+### 3. Daily Notes Not Updating
+\`\`\`
+1. Ensure \`Link\` is enabled in Daily Notes settings.
+2. Check if \`Link\` folder is correctly set as the daily notes folder.
+3. If it's not, try changing the folder in Daily Notes settings.
+\`\`\`
+
+### 4. Templates Not Working
+\`\`\`
+1. Ensure \`Link\` is enabled in Templater settings.
+2. Check if \`Link\` folder is correctly set as the templates folder.
+3. If it's not, try changing the folder in Templater settings.
+\`\`\`
+
+## Best Practices
+
+### 1. Regular Updates
+\`\`\`
+1. Keep your Obsidian vault updated.
+2. Keep the \`Link\` plugin updated.
+\`\`\`
+
+### 2. Backup
+\`\`\`
+1. Always backup your Obsidian vault.
+2. Backup the \`Link\` folder.
+\`\`\`
+
+### 3. Error Handling
+\`\`\`
+1. Always check the \`Link\` plugin logs for errors.
+2. If you encounter an error, try reinstalling the plugin.
+\`\`\`
+
+### 4. Performance
+\`\`\`
+1. Disable unnecessary features if performance is an issue.
+2. Keep your Obsidian settings optimized.
+\`\`\`
+
+## Final Wisdom:
+The best architecture emerges from understanding both the technical constraints and the user's mental model. Build systems that make sense to users while being maintainable for developers.`
+
+      await vault.create(filePath, content)
+      console.log(`Created troubleshooting lessons: ${filePath}`)
+    }
+  }
+
+  /**
+   * Gets a directory path, creating it if it doesn't exist
+   * Handles both absolute paths and paths relative to the base folder
+   */
+  async getOrCreateDirectory(path: string): Promise<TFolder> {
+    const { vault } = this.plugin.app
+    const normalizedPath = normalizePath(path)
+    const existingFolder = vault.getAbstractFileByPath(normalizedPath)
+
+    if (existingFolder instanceof TFolder) {
+      return existingFolder
+    }
+
+    // Create parent directories recursively
+    const pathParts = normalizedPath.split('/')
+    let currentPath = ''
+
+    for (const part of pathParts) {
+      if (!part) continue
+
+      currentPath += (currentPath ? '/' : '') + part
+      const folder = vault.getAbstractFileByPath(currentPath)
+
+      if (!folder) {
+        await vault.createFolder(currentPath)
+      } else if (!(folder instanceof TFolder)) {
+        throw new Error(`Path ${currentPath} exists but is not a folder`)
+      }
+    }
+
+    return vault.getAbstractFileByPath(normalizedPath) as TFolder
+  }
+}
