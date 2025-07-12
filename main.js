@@ -589,7 +589,10 @@ var DirectoryManager = class {
       const templatesPath = baseFolder ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH) : DEFAULT_TEMPLATES_PATH;
       await this.getOrCreateDirectory(templatesPath);
       console.log(`Created templates directory: ${templatesPath}`);
-      const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME);
+      const templateFilePath = PathUtils.joinPath(
+        templatesPath,
+        DAILY_NOTES_TEMPLATE_NAME
+      );
       const { vault } = this.plugin.app;
       if (!vault.getAbstractFileByPath(templateFilePath)) {
         const templateContent = await this.getDailyNotesTemplateContent();
@@ -640,7 +643,7 @@ stakeholders:
    * Creates reference directory structure and knowledge base documentation
    */
   async createReferenceStructure(basePath) {
-    const referencePath = basePath ? PathUtils.joinPath(basePath, "reference") : "reference";
+    const referencePath = basePath ? PathUtils.joinPath(basePath, "reference", "linkplugin") : "reference/linkplugin";
     await this.getOrCreateDirectory(referencePath);
     console.log(`Created reference directory: ${referencePath}`);
     await this.createArchitectureDocumentation(referencePath);
@@ -654,7 +657,10 @@ stakeholders:
    */
   async createArchitectureDocumentation(referencePath) {
     const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, "Architecture Decisions.md");
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      "Architecture Decisions.md"
+    );
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Architecture Decisions
 
@@ -735,7 +741,10 @@ Need to provide templates without interfering with existing template systems (Te
    */
   async createPatternsDocumentation(referencePath) {
     const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, "Development Patterns.md");
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      "Development Patterns.md"
+    );
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Development Patterns
 
@@ -1072,211 +1081,93 @@ registerCommands() {
 Provide quick access to common features.
 
 ### Solution: Contextual Ribbon Buttons
-\`\`\`typescript
-addRibbonIcon('calendar-days', 'Open Today\\'s Journal', () => {
-  this.openTodayJournal();
-});
 \`\`\`
-
-**Ribbon Best Practices:**
-- Use only for most common actions
-- Choose clear, recognizable icons
-- Provide helpful tooltips
-- Don't overcrowd the ribbon
-- Consider user's workflow patterns
 `;
       await vault.create(filePath, content);
       console.log(`Created integration documentation: ${filePath}`);
     }
   }
   /**
-   * Creates troubleshooting lessons learned from development process
+   * Creates troubleshooting lessons for common issues and best practices
    */
   async createTroubleshootingLessons(referencePath) {
     const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, "Troubleshooting Lessons.md");
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      "Troubleshooting Lessons.md"
+    );
     if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Troubleshooting Lessons Learned
+      const content = `# Troubleshooting
 
-## Template System Issues
+## Common Issues
 
-### Problem: Templates Not Syncing
-**Symptoms**: Templates created but application can't find them
-**Root Cause**: Template directory not properly integrated with base folder structure
-**Solution**: Ensure templates are created as siblings to journal, not nested within
+### 1. Plugin Not Loading
+\`\`\`
+1. Ensure Obsidian is fully closed.
+2. Navigate to your Obsidian vault.
+3. Delete the \`Link\` folder from your vault.
+4. Re-open Obsidian.
+\`\`\`
 
-### Problem: Templater Conflicts  
-**Symptoms**: Templates render incorrectly or cause errors
-**Root Cause**: Plugin trying to process Templater syntax instead of leaving it alone
-**Solution**: Always return raw template with original syntax - let Templater handle processing
+### 2. Directory Structure Not Created
+\`\`\`
+1. Check if \`Link\` folder exists in your vault.
+2. If it doesn't, try reinstalling the plugin.
+3. If it does, check your \`Link\` settings in Obsidian's settings.
+\`\`\`
 
-**Key Insight**: **Don't compete with existing plugins - complement them**
+### 3. Daily Notes Not Updating
+\`\`\`
+1. Ensure \`Link\` is enabled in Daily Notes settings.
+2. Check if \`Link\` folder is correctly set as the daily notes folder.
+3. If it's not, try changing the folder in Daily Notes settings.
+\`\`\`
 
-## Directory Structure Issues
+### 4. Templates Not Working
+\`\`\`
+1. Ensure \`Link\` is enabled in Templater settings.
+2. Check if \`Link\` folder is correctly set as the templates folder.
+3. If it's not, try changing the folder in Templater settings.
+\`\`\`
 
-### Problem: File/Folder Collisions
-**Symptoms**: Plugin creates directories that conflict with existing vault structure
-**Root Cause**: Creating directories at vault root level
-**Solution**: Base folder approach - contain all plugin content within configurable folder
+## Best Practices
 
-### Problem: Inconsistent Directory Creation
-**Symptoms**: Some directories created, others missing
-**Root Cause**: Directory creation logic scattered across multiple methods
-**Solution**: Centralize directory creation in single method with proper ordering
+### 1. Regular Updates
+\`\`\`
+1. Keep your Obsidian vault updated.
+2. Keep the \`Link\` plugin updated.
+\`\`\`
 
-**Key Insight**: **Defensive programming - always check if directory exists before creating**
+### 2. Backup
+\`\`\`
+1. Always backup your Obsidian vault.
+2. Backup the \`Link\` folder.
+\`\`\`
 
-## Plugin Integration Issues
+### 3. Error Handling
+\`\`\`
+1. Always check the \`Link\` plugin logs for errors.
+2. If you encounter an error, try reinstalling the plugin.
+\`\`\`
 
-### Problem: Daily Notes Plugin Not Updated
-**Symptoms**: Daily notes created in wrong location despite plugin folder structure
-**Root Cause**: Incorrect API usage - wrong plugin reference path
-**Solution**: 
-- Core plugins: \`internalPlugins.plugins['plugin-name']\`
-- Community plugins: \`plugins.plugins['plugin-name']\`
+### 4. Performance
+\`\`\`
+1. Disable unnecessary features if performance is an issue.
+2. Keep your Obsidian settings optimized.
+\`\`\`
 
-### Problem: Settings Not Persisting
-**Symptoms**: Plugin settings reset after restart
-**Root Cause**: Not calling \`saveSettings()\` after changes
-**Solution**: Always call \`await this.plugin.saveSettings()\` after setting changes
-
-**Key Insight**: **Obsidian has different APIs for core vs community plugins**
-
-## Error Handling Lessons
-
-### Problem: Silent Failures
-**Symptoms**: Features don't work but no error messages
-**Root Cause**: Try-catch blocks swallowing errors without logging
-**Solution**: Always log errors, show user messages for actionable issues
-
-### Problem: Modal Constructor Errors
-**Symptoms**: \`this.plugin.app.Modal is not a constructor\`
-**Root Cause**: Incorrect Modal import/usage
-**Solution**: Import Modal from 'obsidian' and use \`new Modal(this.app)\`
-
-**Key Insight**: **Make errors visible during development - silent failures waste time**
-
-## Date Handling Lessons
-
-### Problem: Date Format Inconsistencies
-**Symptoms**: Files created with wrong date formats or in wrong folders
-**Root Cause**: Using different date libraries/formats throughout codebase
-**Solution**: Centralized DateService with consistent formatting
-
-### Problem: Month Change Detection
-**Symptoms**: Monthly folders not created when month changes
-**Root Cause**: No monitoring for date changes
-**Solution**: Interval-based monitoring with month comparison
-
-**Key Insight**: **Date handling is complex - centralize it in a service class**
-
-## Settings UI Lessons
-
-### Problem: Settings Not User-Friendly
-**Symptoms**: Users confused by settings options
-**Root Cause**: Poor organization and lack of descriptions
-**Solution**: Group settings logically, provide clear descriptions and examples
-
-### Problem: No Immediate Feedback
-**Symptoms**: Users don't know if settings saved or took effect
-**Root Cause**: No visual feedback after changes
-**Solution**: Show confirmations, update UI immediately after changes
-
-**Key Insight**: **Good UX requires immediate feedback and clear organization**
-
-## Build and Development Lessons
-
-### Problem: Linter Errors After Refactoring
-**Symptoms**: TypeScript errors about missing methods/properties
-**Root Cause**: Method signatures changed but calls not updated
-**Solution**: Use IDE refactoring tools, check all references when changing APIs
-
-### Problem: Inconsistent Code Style
-**Symptoms**: Mix of different patterns and conventions
-**Root Cause**: Adding features without following established patterns
-**Solution**: Document patterns, use consistent code organization
-
-**Key Insight**: **Consistency is more important than perfection**
-
-## Architecture Evolution Lessons
-
-### What We Started With:
-- Complex nested directory structures
-- Multiple competing template systems
-- Scattered error handling
-- Plugin conflicts
-
-### What We Learned:
-1. **Simplicity wins** - Remove features that don't add clear value
-2. **Separation of concerns** - Each directory serves one purpose
-3. **Integration over replacement** - Work with existing plugins, don't compete
-4. **Defensive programming** - Always handle edge cases and errors
-5. **User feedback** - Make the system's behavior visible and understandable
-
-### Final Architecture Principles:
-- **Base folder containment** - All plugin content in configurable folder
-- **Sibling directory structure** - Templates, journal, reference as equals
-- **Graceful coexistence** - Detect and complement other plugins
-- **Centralized services** - Date, error handling, settings in dedicated classes
-- **Comprehensive documentation** - Document decisions and patterns for future
-
-## Key Realizations
-
-### Template Organization Logic:
-**Question**: Should templates be nested inside journal or siblings?
-**Answer**: Siblings - templates are **tools to create** content, not content themselves
-
-### Plugin Integration Strategy:
-**Question**: Should we override other plugin functionality?
-**Answer**: No - detect, complement, provide fallbacks, but never replace
-
-### Error Handling Philosophy:
-**Question**: When should users see error messages?
-**Answer**: Only for actionable errors - log everything, show only what users can fix
-
-### Directory Structure Logic:
-**Question**: How deep should directory nesting go?
-**Answer**: Keep it shallow - complex nesting makes organization harder, not easier
-
-## Development Process Insights
-
-### Effective Debugging Approach:
-1. **Reproduce the issue** consistently
-2. **Isolate the root cause** - don't fix symptoms
-3. **Understand the why** - learn from the problem
-4. **Fix comprehensively** - address root cause and related issues
-5. **Document the lesson** - prevent future similar issues
-
-### Code Review Questions:
-- Does this follow established patterns?
-- Will this conflict with other plugins?
-- Is the error handling comprehensive?
-- Are the directory structures logical?
-- Is the user experience clear and immediate?
-
-### Architecture Review Questions:
-- Does each component have a single responsibility?
-- Are dependencies clearly defined and minimal?
-- Is the code organized consistently?
-- Are edge cases handled gracefully?
-- Is the system extensible without breaking changes?
-
----
-
-**Final Wisdom**: The best architecture emerges from understanding both the technical constraints and the user's mental model. Build systems that make sense to users while being maintainable for developers.
-`;
+## Final Wisdom:
+The best architecture emerges from understanding both the technical constraints and the user's mental model. Build systems that make sense to users while being maintainable for developers.`;
       await vault.create(filePath, content);
       console.log(`Created troubleshooting lessons: ${filePath}`);
     }
   }
   /**
-   * Checks if Templater plugin is available and enabled
-   * Used only for user feedback, not for template processing
+   * Returns the full path to the journal directory, respecting baseFolder and settings
    */
-  isTemplaterAvailable() {
-    var _a, _b;
-    const templaterPlugin = (_b = (_a = this.plugin.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
-    return templaterPlugin && templaterPlugin._loaded;
+  getJournalPath() {
+    const { baseFolder } = this.plugin.settings;
+    return baseFolder ? PathUtils.joinPath(baseFolder, "journal") : "journal";
   }
   /**
    * Gets a directory path, creating it if it doesn't exist
@@ -1303,53 +1194,6 @@ addRibbonIcon('calendar-days', 'Open Today\\'s Journal', () => {
       }
     }
     return vault.getAbstractFileByPath(normalizedPath);
-  }
-  /**
-   * Gets the full path for a directory within the plugin's base folder
-   */
-  getPluginDirectoryPath(relativePath) {
-    const { baseFolder } = this.plugin.settings;
-    return baseFolder ? PathUtils.joinPath(baseFolder, relativePath) : relativePath;
-  }
-  /**
-   * Gets the journal directory path
-   */
-  getJournalPath() {
-    const { baseFolder, journalRootFolder } = this.plugin.settings;
-    return baseFolder ? PathUtils.joinPath(baseFolder, journalRootFolder) : journalRootFolder;
-  }
-  /**
-   * Applies a directory template to create structured folders
-   */
-  async applyDirectoryTemplate(basePath, template) {
-    for (const [key, value] of Object.entries(template)) {
-      const dirPath = PathUtils.joinPath(basePath, key);
-      await this.getOrCreateDirectory(dirPath);
-      if (value && typeof value === "object") {
-        await this.applyDirectoryTemplate(dirPath, value);
-      }
-    }
-  }
-  /**
-   * Validates if a given path is within allowed directories
-   */
-  isValidPath(path) {
-    const normalizedPath = (0, import_obsidian2.normalizePath)(path);
-    const { restrictedDirectories } = this.plugin.settings;
-    if (!restrictedDirectories || restrictedDirectories.length === 0) {
-      return true;
-    }
-    return !restrictedDirectories.some((dir) => {
-      const normalizedDir = (0, import_obsidian2.normalizePath)(dir);
-      return normalizedPath === normalizedDir || normalizedPath.startsWith(normalizedDir + "/");
-    });
-  }
-  /**
-   * Lists all directories in the vault
-   */
-  getAllDirectories() {
-    const { vault } = this.plugin.app;
-    return vault.getAllLoadedFiles().filter((file) => file instanceof import_obsidian2.TFolder);
   }
 };
 
@@ -2130,6 +1974,28 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
           prefix.style.opacity = "0.6";
         }
       }
+    });
+    const optionalFolders = [
+      { name: "Workspace", key: "workspace" },
+      { name: "Reference", key: "reference" }
+    ];
+    optionalFolders.forEach((folder) => {
+      new import_obsidian7.Setting(containerEl).setName(`${folder.name} Folder`).setDesc(
+        `Create a ${folder.name.toLowerCase()} folder alongside journal`
+      ).addToggle((toggle) => {
+        const enabled = this.plugin.settings.directoryStructure.includes(
+          folder.key
+        );
+        toggle.setValue(enabled).onChange(async (value) => {
+          const dirs = this.plugin.settings.directoryStructure.filter(
+            (d) => d !== folder.key
+          );
+          if (value)
+            dirs.push(folder.key);
+          this.plugin.settings.directoryStructure = dirs;
+          await this.plugin.saveSettings();
+        });
+      });
     });
     new import_obsidian7.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton(
       (button) => button.setButtonText("Rebuild").onClick(async () => {

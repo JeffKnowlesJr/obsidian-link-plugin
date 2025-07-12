@@ -31,9 +31,6 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private addCoreSettings(containerEl: HTMLElement): void {
-    // Remove Daily Notes Integration and <hr> from here
-    // Only add Base Folder, Rebuild, and journal format settings
-
     // Base Folder
     new Setting(containerEl)
       .setName('Base Folder')
@@ -62,6 +59,32 @@ export class SettingsTab extends PluginSettingTab {
           }
         }
       })
+
+    // Optional Folders (except templates)
+    const optionalFolders = [
+      { name: 'Workspace', key: 'workspace' },
+      { name: 'Reference', key: 'reference' }
+    ]
+    optionalFolders.forEach((folder) => {
+      new Setting(containerEl)
+        .setName(`${folder.name} Folder`)
+        .setDesc(
+          `Create a ${folder.name.toLowerCase()} folder alongside journal`
+        )
+        .addToggle((toggle) => {
+          const enabled = this.plugin.settings.directoryStructure.includes(
+            folder.key
+          )
+          toggle.setValue(enabled).onChange(async (value) => {
+            const dirs = this.plugin.settings.directoryStructure.filter(
+              (d: string) => d !== folder.key
+            )
+            if (value) dirs.push(folder.key)
+            this.plugin.settings.directoryStructure = dirs
+            await this.plugin.saveSettings()
+          })
+        })
+    })
 
     // Rebuild Directory Structure
     new Setting(containerEl)
