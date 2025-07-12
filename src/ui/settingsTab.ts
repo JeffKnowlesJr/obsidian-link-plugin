@@ -1,6 +1,5 @@
 import { PluginSettingTab, App, Setting } from 'obsidian'
 import LinkPlugin from '../main'
-import { DateService } from '../services/dateService'
 
 export class SettingsTab extends PluginSettingTab {
   plugin: LinkPlugin
@@ -20,12 +19,20 @@ export class SettingsTab extends PluginSettingTab {
       cls: 'setting-item-description'
     })
 
+    // Daily Notes Integration as its own section
+    containerEl.createEl('h2', { text: 'Daily Notes Integration' })
+    this.addDailyNotesIntegrationSettings(containerEl)
+
+    // Core Settings as a separate section
+    containerEl.createEl('h2', { text: '📁 Core Settings' })
     this.addCoreSettings(containerEl)
-    this.addJournalSettings(containerEl)
+
+    this.addJournalTemplateSettings(containerEl)
   }
 
   private addCoreSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '📁 Core Settings' })
+    // Remove Daily Notes Integration and <hr> from here
+    // Only add Base Folder, Rebuild, and journal format settings
 
     // Base Folder
     new Setting(containerEl)
@@ -56,35 +63,6 @@ export class SettingsTab extends PluginSettingTab {
         }
       })
 
-    // Custom Template Location
-    new Setting(containerEl)
-      .setName('Custom Template Location')
-      .setDesc(
-        'Override the default template path (e.g. "templates/Daily Notes Template.md")'
-      )
-      .addText((text) =>
-        text
-          .setPlaceholder('templates/Daily Notes Template.md')
-          .setValue(this.plugin.settings.customTemplateLocation || '')
-          .onChange(async (value) => {
-            this.plugin.settings.customTemplateLocation = value.trim()
-            await this.plugin.saveSettings()
-          })
-      )
-
-    // Info: Suggested graymatter template
-    const info = containerEl.createDiv({ cls: 'setting-item-info' })
-    info.createEl('div', {
-      text: 'Suggested daily note template (YAML frontmatter):',
-      cls: 'setting-item-description'
-    })
-    const code = info.createEl('pre')
-    code.innerText = `---\ndate: {{date}}\ntitle: {{title}}\n---\n# {{title}}\n`
-    info.createEl('div', {
-      text: 'You can copy and adapt this for your own templates. The {{date}} and {{title}} variables will be replaced automatically.',
-      cls: 'setting-item-description'
-    })
-
     // Rebuild Directory Structure
     new Setting(containerEl)
       .setName('Rebuild Journal Structure')
@@ -111,6 +89,79 @@ export class SettingsTab extends PluginSettingTab {
             )
           }
         })
+      )
+
+    // Journal Settings (without Simple Journal Mode toggle)
+    this.addJournalSettings(containerEl)
+  }
+
+  private addJournalSettings(containerEl: HTMLElement): void {
+    // Year Format (always show since Simple Journal Mode is removed)
+    new Setting(containerEl)
+      .setName('Year Folder Format')
+      .setDesc('Format for year folders (YYYY creates "2025")')
+      .addText((text) =>
+        text
+          .setPlaceholder('YYYY')
+          .setValue(this.plugin.settings.journalYearFormat)
+          .onChange(async (value) => {
+            if (value.trim()) {
+              this.plugin.settings.journalYearFormat = value.trim()
+              await this.plugin.saveSettings()
+            }
+          })
+      )
+
+    // Month Format (always show since Simple Journal Mode is removed)
+    new Setting(containerEl)
+      .setName('Month Folder Format')
+      .setDesc('Format for month folders (MM-MMMM creates "07-July")')
+      .addText((text) =>
+        text
+          .setPlaceholder('MM-MMMM')
+          .setValue(this.plugin.settings.journalMonthFormat)
+          .onChange(async (value) => {
+            if (value.trim()) {
+              this.plugin.settings.journalMonthFormat = value.trim()
+              await this.plugin.saveSettings()
+            }
+          })
+      )
+
+    // Daily Note Format
+    new Setting(containerEl)
+      .setName('Daily Note Format')
+      .setDesc('Format for daily note filenames')
+      .addText((text) =>
+        text
+          .setPlaceholder('YYYY-MM-DD dddd')
+          .setValue(this.plugin.settings.journalDateFormat)
+          .onChange(async (value) => {
+            if (value.trim()) {
+              this.plugin.settings.journalDateFormat = value.trim()
+              await this.plugin.saveSettings()
+            }
+          })
+      )
+  }
+
+  private addJournalTemplateSettings(containerEl: HTMLElement): void {
+    containerEl.createEl('h2', { text: '📝 Journal Template Settings' })
+
+    // Daily Note Template Location
+    new Setting(containerEl)
+      .setName('Daily Note Template Location')
+      .setDesc(
+        'Override the default template path (e.g. "templates/Daily Notes Template.md")'
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder('templates/Daily Notes Template.md')
+          .setValue(this.plugin.settings.customTemplateLocation || '')
+          .onChange(async (value) => {
+            this.plugin.settings.customTemplateLocation = value.trim()
+            await this.plugin.saveSettings()
+          })
       )
 
     // Setup Templates
@@ -151,219 +202,108 @@ export class SettingsTab extends PluginSettingTab {
           }
         })
       )
-
-    // Daily Notes Integration Section
-    this.addDailyNotesIntegrationSettings(containerEl)
-  }
-
-  private addJournalSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '📅 Journal Settings' })
-
-    // Single toggle: Simple OR Dynamic
-    new Setting(containerEl)
-      .setName('Simple Journal Mode')
-      .setDesc(
-        'Enable: Single journal folder | Disable: Dynamic monthly folders (2025/January/)'
-      )
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.simpleJournalMode)
-          .onChange(async (value) => {
-            this.plugin.settings.simpleJournalMode = value
-            await this.plugin.saveSettings()
-            this.display() // Refresh to show/hide format settings
-          })
-      )
-
-    // Only show format settings if dynamic mode is enabled
-    if (!this.plugin.settings.simpleJournalMode) {
-      // Year Format
-      new Setting(containerEl)
-        .setName('Year Folder Format')
-        .setDesc('Format for year folders (YYYY creates "2025")')
-        .addText((text) =>
-          text
-            .setPlaceholder('YYYY')
-            .setValue(this.plugin.settings.journalYearFormat)
-            .onChange(async (value) => {
-              if (value.trim()) {
-                this.plugin.settings.journalYearFormat = value.trim()
-                await this.plugin.saveSettings()
-              }
-            })
-        )
-
-      // Month Format
-      new Setting(containerEl)
-        .setName('Month Folder Format')
-        .setDesc('Format for month folders (MM-MMMM creates "07-July")')
-        .addText((text) =>
-          text
-            .setPlaceholder('MM-MMMM')
-            .setValue(this.plugin.settings.journalMonthFormat)
-            .onChange(async (value) => {
-              if (value.trim()) {
-                this.plugin.settings.journalMonthFormat = value.trim()
-                await this.plugin.saveSettings()
-              }
-            })
-        )
-    }
-
-    // Daily Note Format
-    new Setting(containerEl)
-      .setName('Daily Note Format')
-      .setDesc('Format for daily note filenames')
-      .addText((text) =>
-        text
-          .setPlaceholder('YYYY-MM-DD dddd')
-          .setValue(this.plugin.settings.journalDateFormat)
-          .onChange(async (value) => {
-            if (value.trim()) {
-              this.plugin.settings.journalDateFormat = value.trim()
-              await this.plugin.saveSettings()
-            }
-          })
-      )
   }
 
   /**
    * Adds Daily Notes integration settings with backup and restore functionality
    */
   private addDailyNotesIntegrationSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: 'Daily Notes Integration' })
+    containerEl.createEl('h3', { text: 'Daily Notes Integration' })
     containerEl.createEl('p', {
       text: "Control how this plugin integrates with Obsidian's Daily Notes plugin. Your original settings will be backed up automatically.",
       cls: 'setting-item-description'
     })
 
-    // Main enable/disable toggle
+    // Single toggle that handles backup/restore automatically
     new Setting(containerEl)
       .setName('Enable Daily Notes Integration')
       .setDesc(
-        'Allow this plugin to update Daily Notes plugin settings to use our folder structure'
+        'Automatically backup and apply Daily Notes plugin settings to use our folder structure'
       )
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.dailyNotesIntegration.enabled)
           .onChange(async (value) => {
-            this.plugin.settings.dailyNotesIntegration.enabled = value
-            await this.plugin.saveSettings()
-            this.display() // Refresh to show/hide controls
-          })
-      )
-
-    // Apply settings button
-    if (this.plugin.settings.dailyNotesIntegration.enabled) {
-      containerEl.createEl('hr')
-      new Setting(containerEl)
-        .setName('Apply Integration Settings')
-        .setDesc(
-          'Apply the integration to Daily Notes plugin (creates backup automatically)'
-        )
-        .addButton((button) =>
-          button.setButtonText('Apply Now').onClick(async () => {
             try {
-              await this.plugin.updateDailyNotesSettings()
-              this.display()
-              this.showStatus(
-                containerEl,
-                '✅ Daily Notes integration settings applied successfully! Your original settings have been backed up and can be restored at any time.',
-                true
-              )
+              if (value) {
+                // Enable: Create backup and apply settings
+                await this.plugin.updateDailyNotesSettings()
+                this.plugin.settings.dailyNotesIntegration.enabled = true
+                this.showStatus(
+                  containerEl,
+                  '✅ Daily Notes integration enabled! Your original settings have been backed up.',
+                  true
+                )
+              } else {
+                // Disable: Restore from backup
+                await this.plugin.restoreDailyNotesSettings()
+                this.plugin.settings.dailyNotesIntegration.enabled = false
+                this.showStatus(
+                  containerEl,
+                  '✅ Daily Notes integration disabled! Your original settings have been restored.',
+                  true
+                )
+              }
+              await this.plugin.saveSettings()
             } catch (error) {
               const errorMessage =
                 error instanceof Error ? error.message : String(error)
               this.showStatus(
                 containerEl,
-                '❌ Failed to apply integration settings. ' + errorMessage,
+                '❌ Failed to ' +
+                  (value ? 'enable' : 'disable') +
+                  ' integration. ' +
+                  errorMessage,
                 false
               )
               this.plugin.errorHandler.handleError(
                 error,
-                'Failed to apply Daily Notes integration'
+                'Failed to ' +
+                  (value ? 'enable' : 'disable') +
+                  ' Daily Notes integration'
               )
+              // Revert toggle state on error
+              toggle.setValue(!value)
             }
           })
-        )
+      )
 
-      // Show backup info if exists
-      const backup = this.plugin.settings.dailyNotesIntegration.backup
-      if (backup) {
-        containerEl.createEl('hr')
-        const backupDate = new Date(backup.timestamp).toLocaleString()
-        new Setting(containerEl)
-          .setName('📦 Backup Information')
-          .setDesc(
-            `Backup created: ${backupDate} (${backup.pluginType} plugin)`
-          )
-      }
-    }
+    // Remove <hr> from here (was: containerEl.createEl('hr'))
+    new Setting(containerEl)
+      .setName('Reapply Integration Settings')
+      .setDesc('Reapply the integration settings to Daily Notes plugin')
+      .addButton((button) =>
+        button.setButtonText('Reapply').onClick(async () => {
+          try {
+            await this.plugin.updateDailyNotesSettings()
+            this.showStatus(
+              containerEl,
+              '✅ Daily Notes integration settings reapplied successfully!',
+              true
+            )
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error)
+            this.showStatus(
+              containerEl,
+              '❌ Failed to reapply integration settings. ' + errorMessage,
+              false
+            )
+            this.plugin.errorHandler.handleError(
+              error,
+              'Failed to reapply Daily Notes integration'
+            )
+          }
+        })
+      )
 
-    // Always move danger zone to the very bottom
-    if (this.plugin.settings.dailyNotesIntegration.backup) {
-      containerEl.createEl('hr')
-      containerEl.createEl('h3', {
-        text: '⚠️ Danger Zone',
-        cls: 'danger-zone-header'
-      })
-      const dangerContainer = containerEl.createDiv({ cls: 'danger-zone' })
-      dangerContainer.createEl('p', {
-        text: '⚠️ WARNING: This will restore your original Daily Notes settings and disable all integration. This action cannot be undone.',
-        cls: 'danger-warning'
-      })
-      new Setting(dangerContainer)
-        .setName('🔄 Restore Original Settings')
-        .setDesc(
-          'Restore Daily Notes plugin to your original settings and disable integration'
-        )
-        .addButton((button) =>
-          button
-            .setButtonText('Restore & Disable')
-            .setClass('mod-warning')
-            .onClick(async () => {
-              const confirmed = confirm(
-                '⚠️ CONFIRM RESTORE\n\n' +
-                  'This will:\n' +
-                  '• Restore your original Daily Notes settings\n' +
-                  '• Disable all integration\n' +
-                  '• Delete the backup\n\n' +
-                  'This action cannot be undone. Continue?'
-              )
-              if (confirmed) {
-                try {
-                  await this.plugin.restoreDailyNotesSettings()
-                  this.display() // Refresh settings UI
-                } catch (error) {
-                  const errorMessage =
-                    error instanceof Error ? error.message : String(error)
-                  alert(
-                    '❌ Failed to restore settings.\n\nError: ' + errorMessage
-                  )
-                }
-              }
-            })
-        )
-      // Add danger zone styling
-      const style = document.createElement('style')
-      style.textContent = `
-        .danger-zone-header {
-          color: var(--text-error);
-          margin-top: 2em;
-        }
-        .danger-zone {
-          border: 1px solid var(--background-modifier-error);
-          border-radius: 6px;
-          padding: 16px;
-          background: var(--background-modifier-error-hover);
-        }
-        .danger-warning {
-          color: var(--text-error);
-          font-weight: 500;
-          margin-bottom: 16px;
-        }
-      `
-      containerEl.appendChild(style)
+    // Backup info (always visible if backup exists, but NO <hr> before it)
+    const backup = this.plugin.settings.dailyNotesIntegration.backup
+    if (backup) {
+      const backupDate = new Date(backup.timestamp).toLocaleString()
+      new Setting(containerEl)
+        .setName('📦 Backup Information')
+        .setDesc(`Backup created: ${backupDate} (${backup.pluginType} plugin)`)
     }
   }
 

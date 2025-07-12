@@ -2106,11 +2106,13 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
       text: "Simple journal management settings",
       cls: "setting-item-description"
     });
+    containerEl.createEl("h2", { text: "Daily Notes Integration" });
+    this.addDailyNotesIntegrationSettings(containerEl);
+    containerEl.createEl("h2", { text: "\u{1F4C1} Core Settings" });
     this.addCoreSettings(containerEl);
-    this.addJournalSettings(containerEl);
+    this.addJournalTemplateSettings(containerEl);
   }
   addCoreSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4C1} Core Settings" });
     new import_obsidian7.Setting(containerEl).setName("Base Folder").setDesc("Root folder for journal content (empty = vault root)").addText(
       (text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
         this.plugin.settings.baseFolder = value.trim();
@@ -2129,30 +2131,6 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       }
     });
-    new import_obsidian7.Setting(containerEl).setName("Custom Template Location").setDesc(
-      'Override the default template path (e.g. "templates/Daily Notes Template.md")'
-    ).addText(
-      (text) => text.setPlaceholder("templates/Daily Notes Template.md").setValue(this.plugin.settings.customTemplateLocation || "").onChange(async (value) => {
-        this.plugin.settings.customTemplateLocation = value.trim();
-        await this.plugin.saveSettings();
-      })
-    );
-    const info = containerEl.createDiv({ cls: "setting-item-info" });
-    info.createEl("div", {
-      text: "Suggested daily note template (YAML frontmatter):",
-      cls: "setting-item-description"
-    });
-    const code = info.createEl("pre");
-    code.innerText = `---
-date: {{date}}
-title: {{title}}
----
-# {{title}}
-`;
-    info.createEl("div", {
-      text: "You can copy and adapt this for your own templates. The {{date}} and {{title}} variables will be replaced automatically.",
-      cls: "setting-item-description"
-    });
     new import_obsidian7.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton(
       (button) => button.setButtonText("Rebuild").onClick(async () => {
         try {
@@ -2170,6 +2148,44 @@ title: {{title}}
             "Failed to rebuild journal structure"
           );
         }
+      })
+    );
+    this.addJournalSettings(containerEl);
+  }
+  addJournalSettings(containerEl) {
+    new import_obsidian7.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
+      (text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.journalYearFormat).onChange(async (value) => {
+        if (value.trim()) {
+          this.plugin.settings.journalYearFormat = value.trim();
+          await this.plugin.saveSettings();
+        }
+      })
+    );
+    new import_obsidian7.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText(
+      (text) => text.setPlaceholder("MM-MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
+        if (value.trim()) {
+          this.plugin.settings.journalMonthFormat = value.trim();
+          await this.plugin.saveSettings();
+        }
+      })
+    );
+    new import_obsidian7.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText(
+      (text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
+        if (value.trim()) {
+          this.plugin.settings.journalDateFormat = value.trim();
+          await this.plugin.saveSettings();
+        }
+      })
+    );
+  }
+  addJournalTemplateSettings(containerEl) {
+    containerEl.createEl("h2", { text: "\u{1F4DD} Journal Template Settings" });
+    new import_obsidian7.Setting(containerEl).setName("Daily Note Template Location").setDesc(
+      'Override the default template path (e.g. "templates/Daily Notes Template.md")'
+    ).addText(
+      (text) => text.setPlaceholder("templates/Daily Notes Template.md").setValue(this.plugin.settings.customTemplateLocation || "").onChange(async (value) => {
+        this.plugin.settings.customTemplateLocation = value.trim();
+        await this.plugin.saveSettings();
       })
     );
     new import_obsidian7.Setting(containerEl).setName("Setup Templates").setDesc(
@@ -2196,151 +2212,81 @@ title: {{title}}
         }
       })
     );
-    this.addDailyNotesIntegrationSettings(containerEl);
-  }
-  addJournalSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4C5} Journal Settings" });
-    new import_obsidian7.Setting(containerEl).setName("Simple Journal Mode").setDesc(
-      "Enable: Single journal folder | Disable: Dynamic monthly folders (2025/January/)"
-    ).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.simpleJournalMode).onChange(async (value) => {
-        this.plugin.settings.simpleJournalMode = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (!this.plugin.settings.simpleJournalMode) {
-      new import_obsidian7.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
-        (text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.journalYearFormat).onChange(async (value) => {
-          if (value.trim()) {
-            this.plugin.settings.journalYearFormat = value.trim();
-            await this.plugin.saveSettings();
-          }
-        })
-      );
-      new import_obsidian7.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText(
-        (text) => text.setPlaceholder("MM-MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
-          if (value.trim()) {
-            this.plugin.settings.journalMonthFormat = value.trim();
-            await this.plugin.saveSettings();
-          }
-        })
-      );
-    }
-    new import_obsidian7.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText(
-      (text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
-        if (value.trim()) {
-          this.plugin.settings.journalDateFormat = value.trim();
-          await this.plugin.saveSettings();
-        }
-      })
-    );
   }
   /**
    * Adds Daily Notes integration settings with backup and restore functionality
    */
   addDailyNotesIntegrationSettings(containerEl) {
-    containerEl.createEl("h2", { text: "Daily Notes Integration" });
+    containerEl.createEl("h3", { text: "Daily Notes Integration" });
     containerEl.createEl("p", {
       text: "Control how this plugin integrates with Obsidian's Daily Notes plugin. Your original settings will be backed up automatically.",
       cls: "setting-item-description"
     });
     new import_obsidian7.Setting(containerEl).setName("Enable Daily Notes Integration").setDesc(
-      "Allow this plugin to update Daily Notes plugin settings to use our folder structure"
+      "Automatically backup and apply Daily Notes plugin settings to use our folder structure"
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.dailyNotesIntegration.enabled).onChange(async (value) => {
-        this.plugin.settings.dailyNotesIntegration.enabled = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (this.plugin.settings.dailyNotesIntegration.enabled) {
-      containerEl.createEl("hr");
-      new import_obsidian7.Setting(containerEl).setName("Apply Integration Settings").setDesc(
-        "Apply the integration to Daily Notes plugin (creates backup automatically)"
-      ).addButton(
-        (button) => button.setButtonText("Apply Now").onClick(async () => {
-          try {
+        try {
+          if (value) {
             await this.plugin.updateDailyNotesSettings();
-            this.display();
+            this.plugin.settings.dailyNotesIntegration.enabled = true;
             this.showStatus(
               containerEl,
-              "\u2705 Daily Notes integration settings applied successfully! Your original settings have been backed up and can be restored at any time.",
+              "\u2705 Daily Notes integration enabled! Your original settings have been backed up.",
               true
             );
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+          } else {
+            await this.plugin.restoreDailyNotesSettings();
+            this.plugin.settings.dailyNotesIntegration.enabled = false;
             this.showStatus(
               containerEl,
-              "\u274C Failed to apply integration settings. " + errorMessage,
-              false
-            );
-            this.plugin.errorHandler.handleError(
-              error,
-              "Failed to apply Daily Notes integration"
+              "\u2705 Daily Notes integration disabled! Your original settings have been restored.",
+              true
             );
           }
-        })
-      );
-      const backup = this.plugin.settings.dailyNotesIntegration.backup;
-      if (backup) {
-        containerEl.createEl("hr");
-        const backupDate = new Date(backup.timestamp).toLocaleString();
-        new import_obsidian7.Setting(containerEl).setName("\u{1F4E6} Backup Information").setDesc(
-          `Backup created: ${backupDate} (${backup.pluginType} plugin)`
-        );
-      }
-    }
-    if (this.plugin.settings.dailyNotesIntegration.backup) {
-      containerEl.createEl("hr");
-      containerEl.createEl("h3", {
-        text: "\u26A0\uFE0F Danger Zone",
-        cls: "danger-zone-header"
-      });
-      const dangerContainer = containerEl.createDiv({ cls: "danger-zone" });
-      dangerContainer.createEl("p", {
-        text: "\u26A0\uFE0F WARNING: This will restore your original Daily Notes settings and disable all integration. This action cannot be undone.",
-        cls: "danger-warning"
-      });
-      new import_obsidian7.Setting(dangerContainer).setName("\u{1F504} Restore Original Settings").setDesc(
-        "Restore Daily Notes plugin to your original settings and disable integration"
-      ).addButton(
-        (button) => button.setButtonText("Restore & Disable").setClass("mod-warning").onClick(async () => {
-          const confirmed = confirm(
-            "\u26A0\uFE0F CONFIRM RESTORE\n\nThis will:\n\u2022 Restore your original Daily Notes settings\n\u2022 Disable all integration\n\u2022 Delete the backup\n\nThis action cannot be undone. Continue?"
+          await this.plugin.saveSettings();
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          this.showStatus(
+            containerEl,
+            "\u274C Failed to " + (value ? "enable" : "disable") + " integration. " + errorMessage,
+            false
           );
-          if (confirmed) {
-            try {
-              await this.plugin.restoreDailyNotesSettings();
-              this.display();
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : String(error);
-              alert(
-                "\u274C Failed to restore settings.\n\nError: " + errorMessage
-              );
-            }
-          }
-        })
-      );
-      const style = document.createElement("style");
-      style.textContent = `
-        .danger-zone-header {
-          color: var(--text-error);
-          margin-top: 2em;
+          this.plugin.errorHandler.handleError(
+            error,
+            "Failed to " + (value ? "enable" : "disable") + " Daily Notes integration"
+          );
+          toggle.setValue(!value);
         }
-        .danger-zone {
-          border: 1px solid var(--background-modifier-error);
-          border-radius: 6px;
-          padding: 16px;
-          background: var(--background-modifier-error-hover);
+      })
+    );
+    new import_obsidian7.Setting(containerEl).setName("Reapply Integration Settings").setDesc("Reapply the integration settings to Daily Notes plugin").addButton(
+      (button) => button.setButtonText("Reapply").onClick(async () => {
+        try {
+          await this.plugin.updateDailyNotesSettings();
+          this.showStatus(
+            containerEl,
+            "\u2705 Daily Notes integration settings reapplied successfully!",
+            true
+          );
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          this.showStatus(
+            containerEl,
+            "\u274C Failed to reapply integration settings. " + errorMessage,
+            false
+          );
+          this.plugin.errorHandler.handleError(
+            error,
+            "Failed to reapply Daily Notes integration"
+          );
         }
-        .danger-warning {
-          color: var(--text-error);
-          font-weight: 500;
-          margin-bottom: 16px;
-        }
-      `;
-      containerEl.appendChild(style);
+      })
+    );
+    const backup = this.plugin.settings.dailyNotesIntegration.backup;
+    if (backup) {
+      const backupDate = new Date(backup.timestamp).toLocaleString();
+      new import_obsidian7.Setting(containerEl).setName("\u{1F4E6} Backup Information").setDesc(`Backup created: ${backupDate} (${backup.pluginType} plugin)`);
     }
   }
   // Helper to show status/feedback message
