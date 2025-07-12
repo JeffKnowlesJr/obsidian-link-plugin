@@ -31,11 +31,6 @@ var import_obsidian8 = require("obsidian");
 
 // src/constants.ts
 var DEFAULT_BASE_FOLDER = "Link";
-var DEFAULT_DIRECTORIES = [
-  "journal",
-  "templates",
-  "reference"
-];
 var DEFAULT_TEMPLATES_PATH = "templates";
 var DAILY_NOTES_TEMPLATE_NAME = "Daily Notes Template.md";
 var COMMAND_IDS = {
@@ -93,7 +88,7 @@ var DirectorySettings = class {
     return {
       baseFolder: DEFAULT_BASE_FOLDER,
       // Creates all directories under 'Link/' by default
-      directoryStructure: DEFAULT_DIRECTORIES,
+      directoryStructure: ["journal"],
       restrictedDirectories: [],
       documentDirectory: "journal",
       // Simplified to journal only
@@ -549,13 +544,17 @@ var DirectoryManager = class {
       } else {
         console.log("Using vault root as base directory");
       }
-      for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
+      for (const dirName of directoryStructure || ["journal"]) {
+        if (dirName === "templates")
+          continue;
         const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
         await this.getOrCreateDirectory(dirPath);
         console.log(`Created directory: ${dirPath}`);
+        if (dirName === "reference") {
+          await this.createReferenceStructure(basePath);
+        }
       }
       await this.createJournalStructure(basePath);
-      await this.createReferenceStructure(basePath);
     } catch (error) {
       throw new Error(`Failed to rebuild directory structure: ${error}`);
     }
