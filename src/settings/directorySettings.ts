@@ -12,7 +12,7 @@ export class DirectorySettings {
   static getDefaults(): DirectorySettingsConfig {
     return {
       baseFolder: DEFAULT_BASE_FOLDER, // Creates all directories under 'Link/' by default
-      directoryStructure: DEFAULT_DIRECTORIES,
+      directoryStructure: ['journal'],
       restrictedDirectories: [],
       documentDirectory: 'journal', // Simplified to journal only
       journalRootFolder: 'journal' // Updated to match README structure

@@ -2,9 +2,7 @@
   "baseFolder": "",
   "directoryStructure": [
     "journal",
-    "templates",
-    "workspace",
-    "reference"
+    "templates"
   ],
   "restrictedDirectories": [],
   "documentDirectory": "workspace",
@@ -19,7 +17,7 @@
   "dailyNotesIntegration": {
     "enabled": true,
     "backup": {
-      "timestamp": "2025-07-12T16:42:20.918Z",
+      "timestamp": "2025-07-12T17:08:58.144Z",
       "pluginType": "core",
       "originalSettings": {
         "autorun": true,

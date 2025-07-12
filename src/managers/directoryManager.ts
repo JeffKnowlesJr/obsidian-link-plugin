@@ -35,20 +35,24 @@ export class DirectoryManager {
         console.log('Using vault root as base directory')
       }
 
-      // Create basic directory structure
-      for (const dirName of directoryStructure || DEFAULT_DIRECTORIES) {
+      // Only create folders that are toggled on (in directoryStructure)
+      for (const dirName of directoryStructure || ['journal']) {
+        // Never create templates folder here
+        if (dirName === 'templates') continue
+        // Only create reference or workspace if toggled on
         const dirPath = basePath
           ? PathUtils.joinPath(basePath, dirName)
           : dirName
         await this.getOrCreateDirectory(dirPath)
         console.log(`Created directory: ${dirPath}`)
+        // If reference is toggled on, also create reference structure
+        if (dirName === 'reference') {
+          await this.createReferenceStructure(basePath)
+        }
       }
 
-      // Create journal structure (only journal folder needed)
+      // Always create journal structure (only journal folder needed)
       await this.createJournalStructure(basePath)
-
-      // Create reference knowledge base
-      await this.createReferenceStructure(basePath)
     } catch (error) {
       throw new Error(`Failed to rebuild directory structure: ${error}`)
     }
