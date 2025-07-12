@@ -190,6 +190,7 @@ stakeholders:
     referencePath: string
   ): Promise<void> {
     const { vault } = this.plugin.app
+    // Ensure file is created in reference/linkplugin
     const filePath = PathUtils.joinPath(
       referencePath,
       'Architecture Decisions.md'
@@ -279,6 +280,7 @@ Need to provide templates without interfering with existing template systems (Te
     referencePath: string
   ): Promise<void> {
     const { vault } = this.plugin.app
+    // Ensure file is created in reference/linkplugin
     const filePath = PathUtils.joinPath(
       referencePath,
       'Development Patterns.md'
@@ -445,6 +447,7 @@ registerCommands() {
     referencePath: string
   ): Promise<void> {
     const { vault } = this.plugin.app
+    // Ensure file is created in reference/linkplugin
     const filePath = PathUtils.joinPath(referencePath, 'Integration Guide.md')
 
     if (!vault.getAbstractFileByPath(filePath)) {
@@ -640,7 +643,11 @@ Provide quick access to common features.
     referencePath: string
   ): Promise<void> {
     const { vault } = this.plugin.app
-    const filePath = PathUtils.joinPath(referencePath, 'Troubleshooting.md')
+    // Ensure file is created in reference/linkplugin
+    const filePath = PathUtils.joinPath(
+      referencePath,
+      'Troubleshooting Lessons.md'
+    )
 
     if (!vault.getAbstractFileByPath(filePath)) {
       const content = `# Troubleshooting
