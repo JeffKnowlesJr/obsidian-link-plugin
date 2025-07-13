@@ -58,14 +58,11 @@ export const DEFAULT_FILES_STRUCTURE = {
 export const OPTIONAL_DIRECTORIES = ['context', 'schema', 'Projects']
 
 export const COMMAND_IDS = {
-  CREATE_LINKED_NOTE: 'create-linked-note',
   REBUILD_DIRECTORY: 'rebuild-directory-structure',
   OPEN_TODAY_JOURNAL: 'open-today-journal',
   CREATE_TODAY_NOTE: 'create-today-note',
   CREATE_FUTURE_NOTE: 'create-future-note',
-  CREATE_MONTHLY_FOLDERS: 'create-monthly-folders',
-  EXPAND_SHORTCODE: 'expand-shortcode',
-  SHOW_LINK_SUGGESTIONS: 'show-link-suggestions'
+  CREATE_MONTHLY_FOLDERS: 'create-monthly-folders'
 } as const
 
 // Ribbon button configurations
@@ -75,21 +72,11 @@ export const RIBBON_BUTTONS = {
     title: "Open Today's Journal",
     tooltip: "Open or create today's journal entry"
   },
-  CREATE_NOTE: {
-    icon: 'file-plus',
-    title: 'Create Linked Note',
-    tooltip: 'Create a new linked note from selected text'
-  },
   MONTHLY_FOLDERS: {
     icon: 'folder-plus',
     title: 'Create Monthly Folders',
     tooltip: 'Create monthly folders for the current year'
   },
-  // SHORTCODE_HELP: {
-  //   icon: 'zap',
-  //   title: 'Shortcode Help',
-  //   tooltip: 'Show available shortcodes and examples'
-  // }, // Deprecated - moved to quarantine
   REBUILD_STRUCTURE: {
     icon: 'folder-sync',
     title: 'Rebuild Directory Structure',

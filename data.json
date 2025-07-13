@@ -13,7 +13,6 @@
   "journalMonthFormat": "MM-MMMM",
   "journalTemplate": "# {{date}}\n\n## Daily Log\n\n## Tasks\n- [ ] \n\n## Notes\n\n## Reflection\n\n---\nPrevious: {{previous}}\nNext: {{next}}\n",
   "simpleJournalMode": false,
-  "noteTemplate": "---\ntitle: {{title}}\ncreated: {{date}}\nsource: {{source}}\ntags: []\n---\n\n# {{title}}\n\n",
   "dailyNotesIntegration": {
     "enabled": true,
     "backup": {

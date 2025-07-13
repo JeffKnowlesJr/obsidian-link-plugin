@@ -12,8 +12,6 @@ This directory contains the modularized settings system for the Obsidian Link Pl
 ### Setting Categories
 - **`directorySettings.ts`** - Directory structure and base folder settings
 - **`journalSettings.ts`** - Journal date formats and templates
-- **`noteSettings.ts`** - Note creation and template settings
-- **`shortcodeSettings.ts`** - Shortcode system configuration
 - **`generalSettings.ts`** - Debug mode and other general settings
 
 ## Usage
@@ -48,16 +46,7 @@ if (!result.isValid) {
 }
 ```
 
-### Individual Category Validation
-```typescript
-import { ShortcodeSettings } from '../settings';
 
-// Validate shortcode pattern
-const isValid = ShortcodeSettings.isValidShortcodePattern('h2+ul>li*3');
-
-// Get builtin shortcodes
-const builtins = ShortcodeSettings.getBuiltinShortcodes();
-```
 
 ## Benefits
 

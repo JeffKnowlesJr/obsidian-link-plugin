@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, validateSettings } from './settings'
 import { LinkPluginSettings } from './types'
 import { DirectoryManager } from './managers/directoryManager'
 import { JournalManager } from './managers/journalManager'
-import { LinkManager } from './managers/linkManager'
 import { ErrorHandler } from './utils/errorHandler'
 import { RibbonManager } from './ui/ribbonManager'
 import { SettingsTab } from './ui/settingsTab'
@@ -14,7 +13,6 @@ export default class LinkPlugin extends Plugin {
   settings!: LinkPluginSettings
   directoryManager!: DirectoryManager
   journalManager!: JournalManager
-  linkManager!: LinkManager
   errorHandler!: ErrorHandler
   ribbonManager!: RibbonManager
 
@@ -33,20 +31,16 @@ export default class LinkPlugin extends Plugin {
       // Initialize error handler first
       this.errorHandler = new ErrorHandler(this)
 
-      // Initialize core managers (removed file sorting)
+      // Initialize core managers
       this.directoryManager = new DirectoryManager(this)
       this.journalManager = new JournalManager(this)
-      this.linkManager = new LinkManager(this)
       this.ribbonManager = new RibbonManager(this)
 
       // Add settings tab
       this.addSettingTab(new SettingsTab(this.app, this))
 
-      // Initialize ribbon (simplified)
+      // Initialize ribbon
       this.ribbonManager.initializeRibbon()
-
-      // Initialize link manager
-      this.linkManager.initialize()
 
       // Register commands (core journal commands only)
       this.registerCommands()
@@ -100,35 +94,6 @@ export default class LinkPlugin extends Plugin {
   }
 
   registerCommands() {
-    // Create linked note command
-    this.addCommand({
-      id: COMMAND_IDS.CREATE_LINKED_NOTE,
-      name: 'Create Linked Note from Selection',
-      editorCallback: (editor, view) => {
-        try {
-          const selection = editor.getSelection()
-          if (selection) {
-            // Type guard to ensure we have a MarkdownView
-            if ('previewMode' in view) {
-              this.linkManager.createLinkedNote(selection, editor, view)
-            } else {
-              this.errorHandler.handleError(
-                new Error('Invalid view type'),
-                'Please use this command in a markdown view'
-              )
-            }
-          } else {
-            this.errorHandler.handleError(
-              new Error('No text selected'),
-              'Please select text to create a linked note'
-            )
-          }
-        } catch (error) {
-          this.errorHandler.handleError(error, 'Failed to create linked note')
-        }
-      }
-    })
-
     // Rebuild directory structure command
     this.addCommand({
       id: COMMAND_IDS.REBUILD_DIRECTORY,

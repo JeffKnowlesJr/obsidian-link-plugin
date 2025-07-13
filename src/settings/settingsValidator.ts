@@ -1,7 +1,6 @@
 import { LinkPluginSettings } from '../types'
 import { DirectorySettings } from './directorySettings'
 import { JournalSettings } from './journalSettings'
-import { NoteSettings } from './noteSettings'
 import { DailyNotesSettings } from './dailyNotesSettings'
 // import { ShortcodeSettings } from './shortcodeSettings'; // Deprecated - moved to quarantine
 import { GeneralSettings } from './generalSettings'
@@ -13,18 +12,14 @@ export function validateSettings(
   const validatedSettings: LinkPluginSettings = {
     ...DirectorySettings.getDefaults(),
     ...JournalSettings.getDefaults(),
-    ...NoteSettings.getDefaults(),
     ...DailyNotesSettings.getDefaults(),
-    // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
     ...GeneralSettings.getDefaults()
   }
 
   // Validate each category of settings
   const directoryValidation = DirectorySettings.validate(settings)
   const journalValidation = JournalSettings.validate(settings)
-  const noteValidation = NoteSettings.validate(settings)
   const dailyNotesValidation = DailyNotesSettings.validate(settings)
-  // const shortcodeValidation = ShortcodeSettings.validate(settings); // Deprecated - moved to quarantine
   const generalValidation = GeneralSettings.validate(settings)
 
   // Merge validated settings
@@ -32,9 +27,7 @@ export function validateSettings(
     validatedSettings,
     directoryValidation,
     journalValidation,
-    noteValidation,
     dailyNotesValidation,
-    // shortcodeValidation, // Deprecated - moved to quarantine
     generalValidation
   )
 
@@ -62,15 +55,7 @@ export function validateSettingsWithDetails(
   const errors: string[] = []
   const warnings: string[] = []
 
-  // Validate note template if provided
-  if (settings.noteTemplate) {
-    const templateValidation = NoteSettings.validateTemplate(
-      settings.noteTemplate
-    )
-    if (!templateValidation.isValid) {
-      errors.push(...templateValidation.errors)
-    }
-  }
+
 
   // Validate journal date format if provided
   if (
@@ -79,16 +64,6 @@ export function validateSettingsWithDetails(
   ) {
     warnings.push('Invalid journal date format provided, using default')
   }
-
-  // Validate shortcode patterns if provided (deprecated - moved to quarantine)
-  // if (settings.customShortcodes) {
-  //   for (const [pattern, expansion] of Object.entries(settings.customShortcodes)) {
-  //     if (!ShortcodeSettings.isValidShortcodePattern(pattern)) {
-  //       warnings.push(`Invalid shortcode pattern: ${pattern}`);
-  //     }
-  //   }
-  // }
-
   // Basic directory structure validation
   if (settings.directoryStructure && settings.directoryStructure.length === 0) {
     warnings.push('Empty directory structure provided, using defaults')

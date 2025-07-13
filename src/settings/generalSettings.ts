@@ -1,21 +1,11 @@
 export interface GeneralSettingsConfig {
   debugMode: boolean;
-  fileSorting: {
-    enableAutoSorting: boolean;
-    sortOnFileCreate: boolean;
-    sortOnFileModify: boolean;
-  };
 }
 
 export class GeneralSettings {
   static getDefaults(): GeneralSettingsConfig {
     return {
       debugMode: false,
-      fileSorting: {
-        enableAutoSorting: false,
-        sortOnFileCreate: false,
-        sortOnFileModify: false,
-      },
     };
   }
 
