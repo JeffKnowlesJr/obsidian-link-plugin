@@ -1,3 +1,56 @@
+/**
+ * Algorithms for RibbonManager:
+ * 
+ * - constructor(plugin):
+ *   1. Store the plugin instance.
+ *   2. Initialize an empty array for ribbonButtons.
+ * 
+ * - initializeRibbon():
+ *   1. Call clearRibbon() to remove any existing ribbon buttons.
+ *   2. Add the core journal management buttons by calling addCreateFutureNoteButton() and addSettingsButton().
+ *   3. Log that the ribbon has been initialized.
+ * 
+ * - addCreateFutureNoteButton():
+ *   1. Add a ribbon icon for creating a future note.
+ *   2. On click:
+ *      a. Show a date picker modal (showDatePicker()).
+ *      b. If a date is selected, create the future daily note and open it.
+ *      c. Show a success message with the formatted date.
+ *      d. If an error occurs, handle it with the error handler.
+ *   3. Store the button in ribbonButtons.
+ * 
+ * - showDatePicker():
+ *   1. Create and display a modal with:
+ *      a. Instructions.
+ *      b. A date input (defaulting to tomorrow).
+ *      c. Cancel and Create Note buttons.
+ *      d. Keyboard shortcuts for Enter (create) and Escape (cancel).
+ *   2. Resolve with the selected date or null.
+ * 
+ * - addSettingsButton():
+ *   1. Add a ribbon icon for opening settings.
+ *   2. On click:
+ *      a. Try to open the plugin's settings tab using the Obsidian API.
+ *      b. If it fails, show a notice and handle the error.
+ *   3. Store the button in ribbonButtons.
+ * 
+ * - clearRibbon():
+ *   1. Remove all ribbon buttons from the UI.
+ *   2. Clear the ribbonButtons array.
+ * 
+ * - cleanup():
+ *   1. Call clearRibbon() to remove all buttons.
+ * 
+ * - updateButtonStates():
+ *   1. (No-op) Log that ribbon buttons were updated.
+ * 
+ * - showQuickActionsMenu():
+ *   1. Show a notice listing the core quick actions.
+ * 
+ * - showSuccess(message):
+ *   1. Show a success notice with the provided message.
+ */
+
 import { MarkdownView, Modal } from 'obsidian';
 import LinkPlugin from '../main';
 import { RIBBON_BUTTONS } from '../constants';

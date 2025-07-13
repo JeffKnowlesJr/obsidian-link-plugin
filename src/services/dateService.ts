@@ -1,9 +1,110 @@
 /**
- * DateService - Centralized date handling for the Obsidian Link Plugin
+ * Algorithms for DateService:
  * 
- * This service encapsulates all moment.js usage and provides a clean, type-safe API.
- * It handles the TypeScript issues with Obsidian's moment.js implementation by
- * using proper type assertions and providing consistent date operations.
+ * - initialize():
+ *   1. Retrieve the moment.js instance from the global window object.
+ *   2. If not available, throw an error.
+ * 
+ * - now():
+ *   1. Return the current moment instance.
+ * 
+ * - from(input):
+ *   1. Return a moment instance created from the input.
+ * 
+ * - fromFormat(input, format, strict):
+ *   1. Return a moment instance created from the input string using the given format and strictness.
+ * 
+ * - format(date, format):
+ *   1. If date is provided, create a moment instance from it; otherwise, use the current moment.
+ *   2. Return the formatted string using the specified format.
+ * 
+ * - today(format):
+ *   1. Return the current date formatted as a string.
+ * 
+ * - currentYear():
+ *   1. Return the current year as a string.
+ * 
+ * - currentMonth():
+ *   1. Return the current month name as a string.
+ * 
+ * - startOfYear(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Return the start of the year.
+ * 
+ * - endOfYear(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Return the end of the year.
+ * 
+ * - startOfMonth(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Return the start of the month.
+ * 
+ * - endOfMonth(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Return the end of the month.
+ * 
+ * - add(date, amount, unit):
+ *   1. Create a moment instance from the date.
+ *   2. Add the specified amount and unit.
+ *   3. Return the new moment instance.
+ * 
+ * - subtract(date, amount, unit):
+ *   1. Create a moment instance from the date.
+ *   2. Subtract the specified amount and unit.
+ *   3. Return the new moment instance.
+ * 
+ * - addDays(date, days):
+ *   1. Call add(date, days, 'days').
+ * 
+ * - isValid(date):
+ *   1. Create a moment instance from the date.
+ *   2. Return whether the date is valid.
+ * 
+ * - isSameOrBefore(date1, date2):
+ *   1. Create a moment instance from date1.
+ *   2. Return whether it is the same or before date2.
+ * 
+ * - extractDateFromFilename(filename, format):
+ *   1. Try to create a moment instance from the filename using the format in strict mode.
+ *   2. If valid, return the moment instance; otherwise, return null.
+ * 
+ * - getJournalPathComponents(date, yearFormat, monthFormat):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Extract year, month name, and month number.
+ *   3. Determine yearFolder and monthFolder formats, handling legacy/invalid formats.
+ *   4. Return an object with year, monthName, monthNumber, yearFolder, and monthFolder.
+ * 
+ * - getJournalFilename(date, format):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Return the formatted filename.
+ * 
+ * - previousDay(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Subtract one day and return the new moment.
+ * 
+ * - nextDay(date):
+ *   1. Create a moment instance from the date or use the current moment.
+ *   2. Add one day and return the new moment.
+ * 
+ * - dateRange(startDate, endDate, unit):
+ *   1. Create moment instances for startDate and endDate.
+ *   2. While current is same or before end, yield a clone of current and increment by one unit.
+ * 
+ * - getMonthlyFolderPath(basePath, date, yearFormat, monthFormat):
+ *   1. Get journal path components for the date.
+ *   2. Return the folder path as basePath/yearFolder/monthFolder.
+ * 
+ * - getJournalFilePath(basePath, date, format):
+ *   1. Get the monthly folder path.
+ *   2. Get the journal filename.
+ *   3. Return the full file path as monthlyPath/filename.md.
+ * 
+ * - isValidFormat(format):
+ *   1. Try to format the current moment with the given format.
+ *   2. Return true if no error, false otherwise.
+ * 
+ * - getDebugInfo():
+ *   1. Return an object with availability, version, and type of the moment instance.
  */
 
 // Type definition for Obsidian's moment instance
@@ -17,135 +118,78 @@ type ObsidianMoment = {
 export class DateService {
   private static moment: ObsidianMoment;
 
-  /**
-   * Initialize the date service with Obsidian's moment instance
-   * This should be called once when the plugin loads
-   */
   static initialize(): void {
-    // Get moment from Obsidian's global scope
     this.moment = (window as any).moment;
-    
     if (!this.moment) {
       throw new Error('Obsidian moment.js not available');
     }
   }
 
-  /**
-   * Get current date/time
-   */
   static now(): any {
     return this.moment();
   }
 
-  /**
-   * Create moment from date input
-   */
   static from(input?: Date | string | any): any {
     return this.moment(input);
   }
 
-  /**
-   * Create moment from date string with format
-   */
   static fromFormat(input: string, format: string, strict: boolean = true): any {
     return this.moment(input, format, strict);
   }
 
-  /**
-   * Format a date using the specified format
-   */
   static format(date: Date | string | any, format: string = 'YYYY-MM-DD'): string {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.format(format);
   }
 
-  /**
-   * Get today's date formatted
-   */
   static today(format: string = 'YYYY-MM-DD'): string {
     return this.moment().format(format);
   }
 
-  /**
-   * Get current year
-   */
   static currentYear(): string {
     return this.moment().format('YYYY');
   }
 
-  /**
-   * Get current month name
-   */
   static currentMonth(): string {
     return this.moment().format('MMMM');
   }
 
-  /**
-   * Get start of year for given date
-   */
   static startOfYear(date?: Date | string | any): any {
     return (date ? this.moment(date) : this.moment()).startOf('year');
   }
 
-  /**
-   * End of year for given date
-   */
   static endOfYear(date?: Date | string | any): any {
     return (date ? this.moment(date) : this.moment()).endOf('year');
   }
 
-  /**
-   * Start of month for given date
-   */
   static startOfMonth(date?: Date | string | any): any {
     return (date ? this.moment(date) : this.moment()).startOf('month');
   }
 
-  /**
-   * End of month for given date
-   */
   static endOfMonth(date?: Date | string | any): any {
     return (date ? this.moment(date) : this.moment()).endOf('month');
   }
 
-  /**
-   * Add time to a date
-   */
   static add(date: Date | string | any, amount: number, unit: string): any {
     return this.moment(date).add(amount, unit);
   }
 
-  /**
-   * Subtract time from a date
-   */
   static subtract(date: Date | string | any, amount: number, unit: string): any {
     return this.moment(date).subtract(amount, unit);
   }
 
-  /**
-   * Adds days to a date and returns a new moment object
-   */
   static addDays(date: Date | string | any, days: number): any {
     return this.add(date, days, 'days');
   }
 
-  /**
-   * Check if date is valid
-   */
   static isValid(date: any): boolean {
     return this.moment(date).isValid();
   }
 
-  /**
-   * Check if date is same or before another date
-   */
   static isSameOrBefore(date1: any, date2: any): boolean {
     return this.moment(date1).isSameOrBefore(date2);
   }
 
-  /**
-   * Extract date from filename using format
-   */
   static extractDateFromFilename(filename: string, format: string): any | null {
     try {
       const date = this.moment(filename, format, true);
@@ -155,9 +199,6 @@ export class DateService {
     }
   }
 
-  /**
-   * Get journal path components for a date with custom formats
-   */
   static getJournalPathComponents(
     date?: Date | string | any, 
     yearFormat?: string, 
@@ -173,17 +214,12 @@ export class DateService {
     const year = momentDate.format('YYYY');
     const monthName = momentDate.format('MMMM');
     const monthNumber = momentDate.format('MM');
-    
-    // FORCE correct formats - never use old y_YYYY bullshit
     const yearFolderFormat = yearFormat && yearFormat !== 'y_YYYY' ? yearFormat : 'YYYY';
     const monthFolderFormat = monthFormat || 'MM-MMMM';
-    
-    // Handle legacy formats and force them to MM-MMMM
     let cleanMonthFormat = monthFolderFormat;
     if (monthFolderFormat === 'MMmmmm' || monthFolderFormat === 'MMMMM' || monthFolderFormat === 'MMMM') {
-      cleanMonthFormat = 'MM-MMMM'; // Force to MM-MMMM format
+      cleanMonthFormat = 'MM-MMMM';
     }
-    
     return {
       year,
       monthName,
@@ -193,46 +229,30 @@ export class DateService {
     };
   }
 
-  /**
-   * Get formatted filename for journal entry
-   */
   static getJournalFilename(date?: Date | string | any, format: string = 'YYYY-MM-DD dddd'): string {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.format(format);
   }
 
-  /**
-   * Get previous day
-   */
   static previousDay(date?: Date | string | any): any {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.subtract(1, 'day');
   }
 
-  /**
-   * Get next day
-   */
   static nextDay(date?: Date | string | any): any {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.add(1, 'day');
   }
 
-  /**
-   * Create date range iterator
-   */
   static *dateRange(startDate: any, endDate: any, unit: string = 'day'): Generator<any> {
     const current = this.moment(startDate);
     const end = this.moment(endDate);
-    
     while (current.isSameOrBefore(end)) {
       yield this.moment(current);
       current.add(1, unit);
     }
   }
 
-  /**
-   * Get monthly folder path for a date with custom formats
-   */
   static getMonthlyFolderPath(
     basePath: string, 
     date?: Date | string | any, 
@@ -243,9 +263,6 @@ export class DateService {
     return `${basePath}/${components.yearFolder}/${components.monthFolder}`;
   }
 
-  /**
-   * Get full journal file path
-   */
   static getJournalFilePath(
     basePath: string, 
     date?: Date | string | any, 
@@ -256,9 +273,6 @@ export class DateService {
     return `${monthlyPath}/${filename}.md`;
   }
 
-  /**
-   * Validate date format string
-   */
   static isValidFormat(format: string): boolean {
     try {
       const testDate = this.moment();
@@ -269,9 +283,6 @@ export class DateService {
     }
   }
 
-  /**
-   * Get debug information about the moment instance
-   */
   static getDebugInfo(): { available: boolean; version?: string; type: string } {
     return {
       available: !!this.moment,

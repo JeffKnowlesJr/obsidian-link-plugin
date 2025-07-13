@@ -1,3 +1,21 @@
+/**
+ * Algorithms for settingsValidator.ts:
+ * 
+ * - validateSettings(settings):
+ *   1. Create a validatedSettings object by merging defaults from DirectorySettings, JournalSettings, DailyNotesSettings, and GeneralSettings.
+ *   2. Validate each category of settings using their respective validate() methods.
+ *   3. Merge the validated results from each category into validatedSettings.
+ *   4. If customTemplateLocation is a string, trim and assign it; otherwise, set it to undefined.
+ *   5. Return the validatedSettings object.
+ * 
+ * - validateSettingsWithDetails(settings):
+ *   1. Initialize empty errors and warnings arrays.
+ *   2. If journalDateFormat is provided and invalid, add a warning.
+ *   3. If directoryStructure is provided and empty, add a warning.
+ *   4. Call validateSettings to get the validated settings.
+ *   5. Return an object with isValid (true if no errors), errors, warnings, and validatedSettings.
+ */
+
 import { LinkPluginSettings } from '../types'
 import { DirectorySettings } from './directorySettings'
 import { JournalSettings } from './journalSettings'
@@ -54,8 +72,6 @@ export function validateSettingsWithDetails(
 ): SettingsValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
-
-
 
   // Validate journal date format if provided
   if (

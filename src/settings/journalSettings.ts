@@ -1,3 +1,30 @@
+/**
+ * Algorithms for JournalSettings:
+ * 
+ * - getDefaults():
+ *   1. Return an object with default values for each journal setting:
+ *      a. journalDateFormat: 'YYYY-MM-DD dddd'
+ *      b. journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT
+ *      c. journalYearFormat: 'YYYY'
+ *      d. journalMonthFormat: 'MM-MMMM'
+ *      e. journalTemplate: DEFAULT_TEMPLATES.JOURNAL
+ *      f. simpleJournalMode: false
+ * 
+ * - validate(settings):
+ *   1. Create an empty validated object.
+ *   2. For each property in settings:
+ *      a. If journalDateFormat is a string, copy it to validated.
+ *      b. If journalFolderFormat is a string, copy it to validated.
+ *      c. If journalTemplate is a string, copy it to validated.
+ *      d. If simpleJournalMode is a boolean, copy it to validated.
+ *   3. Return the validated object.
+ * 
+ * - isValidDateFormat(format):
+ *   1. Define a list of valid moment.js tokens.
+ *   2. Return true if any token is present in the format string.
+ *   3. If an error occurs, return false.
+ */
+
 import { DATE_FORMATS, DEFAULT_TEMPLATES } from '../constants';
 
 export interface JournalSettingsConfig {
@@ -6,7 +33,7 @@ export interface JournalSettingsConfig {
   journalYearFormat: string;
   journalMonthFormat: string;
   journalTemplate: string;
-  simpleJournalMode: boolean; // Single setting: true = simple, false = dynamic monthly folders
+  simpleJournalMode: boolean;
 }
 
 export class JournalSettings {
@@ -15,9 +42,9 @@ export class JournalSettings {
       journalDateFormat: 'YYYY-MM-DD dddd',
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalYearFormat: 'YYYY',
-      journalMonthFormat: 'MM-MMMM', // Changed to MM-MMMM for "07-July" format
+      journalMonthFormat: 'MM-MMMM',
       journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
-      simpleJournalMode: false, // Default to dynamic monthly folders
+      simpleJournalMode: false,
     };
   }
 
@@ -45,11 +72,10 @@ export class JournalSettings {
 
   static isValidDateFormat(format: string): boolean {
     try {
-      // Basic validation - check if format contains valid moment.js tokens
       const validTokens = ['YYYY', 'MM', 'DD', 'dddd', 'MMM', 'MMMM'];
       return validTokens.some(token => format.includes(token));
     } catch {
       return false;
     }
   }
-} 
+}

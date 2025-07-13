@@ -1,3 +1,87 @@
+/**
+ * Algorithms for JournalManager:
+ * 
+ * - createOrOpenJournalEntry(date):
+ *   1. Get the vault and journalDateFormat from plugin.
+ *   2. Ensure the monthly folder for the date exists (ensureMonthlyFolderExists).
+ *   3. Get the monthly folder path and file name for the date.
+ *   4. Build the file path.
+ *   5. If the file exists, return it.
+ *   6. Otherwise, create the file (empty content) and return it.
+ * 
+ * - ensureMonthlyFolderExists(date):
+ *   1. Get the monthly folder path for the date.
+ *   2. Format the month name for logging.
+ *   3. Check if the folder exists.
+ *   4. If not, create the folder and log creation.
+ *   5. If it exists, log that it already exists.
+ * 
+ * - getMonthlyFolderPath(date):
+ *   1. Get the journal base path from directoryManager.
+ *   2. If simpleJournalMode is enabled, return the base path.
+ *   3. Otherwise, use DateService to get the year/month folder path.
+ * 
+ * - createTodayNote():
+ *   1. Get today's date.
+ *   2. Call createOrOpenJournalEntry for today.
+ * 
+ * - createFutureDailyNote(date):
+ *   1. Convert input to a date.
+ *   2. Log the target date.
+ *   3. Create or open the journal entry for the date.
+ *   4. Log the created folder structure.
+ *   5. Return the file.
+ * 
+ * - generateJournalContent(date):
+ *   1. Get journalTemplate and journalDateFormat from settings.
+ *   2. Compute previous and next day.
+ *   3. Format previous/next links, current date, and title.
+ *   4. If a template is set, replace variables and return.
+ *   5. Otherwise, return the default template string.
+ * 
+ * - openTodayJournal():
+ *   1. Get today's date.
+ *   2. Create or open the journal entry for today.
+ *   3. Open the file in a new workspace leaf.
+ * 
+ * - checkAndCreateCurrentMonthFolder():
+ *   1. Get the current date.
+ *   2. Ensure the current month's folder exists.
+ *   3. If near the end of the month (<=2 days), pre-create next month's folder.
+ * 
+ * - createMonthlyFoldersForRange(startDate, endDate):
+ *   1. Set current to the start of the month for startDate.
+ *   2. Set end to the end of the month for endDate.
+ *   3. While current <= end:
+ *      a. Ensure the monthly folder exists for current.
+ *      b. Increment current by 1 month.
+ * 
+ * - openJournalForDate(date):
+ *   1. Convert input to a date.
+ *   2. Create or open the journal entry for the date.
+ *   3. Open the file in a new workspace leaf.
+ * 
+ * - updateJournalLinks(file):
+ *   1. Get vault and journalDateFormat from plugin.
+ *   2. Extract the date from the file name.
+ *   3. If no date, return.
+ *   4. Read the file content.
+ *   5. Compute previous and next day.
+ *   6. Format previous and next file names.
+ *   7. Replace previous/next frontmatter links in the content.
+ *   8. If content changed, modify the file.
+ * 
+ * - getJournalEntries(startDate, endDate):
+ *   1. Get vault and journalDateFormat from plugin.
+ *   2. Initialize entries array.
+ *   3. Set current to startDate.
+ *   4. While current <= endDate:
+ *      a. Get the file path for current.
+ *      b. If the file exists, push its info to entries.
+ *      c. Increment current by 1 day.
+ *   5. Return entries.
+ */
+
 import { TFile, normalizePath } from 'obsidian';
 import LinkPlugin from '../main';
 import { DateService } from '../services/dateService';

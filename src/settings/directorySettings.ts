@@ -19,6 +19,18 @@ export class DirectorySettings {
     }
   }
 
+  /**
+   * This function validates and sanitizes a partial DirectorySettingsConfig object.
+   * 
+   * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
+   * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
+   * - For array properties (`directoryStructure`, `restrictedDirectories`), it checks if they are arrays and copies them if so.
+   * - For string properties (`documentDirectory`, `journalRootFolder`), it checks if they are strings and copies them if so.
+   * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
+   * 
+   * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
+   * malformed or unexpected input from causing issues in the application.
+   */
   static validate(
     settings: Partial<DirectorySettingsConfig>
   ): Partial<DirectorySettingsConfig> {

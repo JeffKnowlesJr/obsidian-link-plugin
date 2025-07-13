@@ -1,3 +1,23 @@
+/**
+ * Algorithm for GeneralSettings:
+ * 
+ * - getDefaults():
+ *   Returns the default general settings object, with debugMode set to false.
+ * 
+ * - validate(settings):
+ *   1. Create an empty validated object.
+ *   2. If the input settings object has a debugMode property of type boolean,
+ *      copy it to the validated object.
+ *   3. Return the validated object, which only includes valid properties.
+ * 
+ * - getDebugInfo():
+ *   Returns an object containing:
+ *     - The current timestamp (ISO string)
+ *     - The user's browser userAgent
+ *     - The user's platform
+ *     - The user's language
+ */
+
 export interface GeneralSettingsConfig {
   debugMode: boolean;
 }

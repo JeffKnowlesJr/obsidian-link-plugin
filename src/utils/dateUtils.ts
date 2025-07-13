@@ -3,6 +3,33 @@ import { DateService } from '../services/dateService';
 /**
  * DateUtils - Legacy compatibility wrapper for DateService
  * @deprecated Use DateService directly for new code
+ *
+ * Algorithms:
+ * - extractDateFromFilename(filename, format):
+ *     1. Call DateService.extractDateFromFilename with filename and format.
+ *     2. Return the result.
+ *
+ * - formatDate(date, format):
+ *     1. Call DateService.format with date and format.
+ *     2. Return the formatted string.
+ *
+ * - getJournalPath(date, baseFolder, journalFolder, dateFormat):
+ *     1. Concatenate baseFolder and journalFolder to form basePath.
+ *     2. Call DateService.getJournalFilePath with basePath, date, and dateFormat.
+ *     3. Return the resulting path.
+ *
+ * - getCurrentMonth():
+ *     1. Call DateService.currentMonth.
+ *     2. Return the result.
+ *
+ * - getCurrentYear():
+ *     1. Call DateService.currentYear.
+ *     2. Return the result.
+ *
+ * - getMonthlyFolderName(date):
+ *     1. Call DateService.getJournalPathComponents with date.
+ *     2. Extract yearFolder and monthFolder from the result.
+ *     3. Return the string "yearFolder/monthFolder".
  */
 export class DateUtils {
   /**

@@ -1,3 +1,46 @@
+/**
+ * Algorithms for constants:
+ *
+ * - DEFAULT_BASE_FOLDER:
+ *     1. Set a string value to use as the root folder for the plugin to avoid collision with existing vault folders.
+ *
+ * - DEFAULT_DIRECTORIES:
+ *     1. Define an array of core directories (e.g., 'journal') for the minimal journal structure.
+ *
+ * - DEFAULT_TEMPLATES_PATH & DAILY_NOTES_TEMPLATE_NAME:
+ *     1. Set the path and filename for storing and referencing note templates.
+ *
+ * - DEFAULT_JOURNAL_STRUCTURE:
+ *     1. Define a nested object representing the folder structure for journals, including years, months, and archive years.
+ *
+ * - DEFAULT_REFERENCE_STRUCTURE:
+ *     1. Define a simple object for a 'reference' folder for reference notes.
+ *
+ * - DEFAULT_FILES_STRUCTURE:
+ *     1. Define a nested object for a 'files' folder with subfolders for different file types.
+ *
+ * - OPTIONAL_DIRECTORIES:
+ *     1. List additional optional directories that can be included in the vault structure.
+ *
+ * - COMMAND_IDS:
+ *     1. Map command names to unique string IDs for registering plugin commands.
+ *
+ * - RIBBON_BUTTONS:
+ *     1. Define configuration objects for each ribbon button, including icon, title, and tooltip.
+ *
+ * - DATE_FORMATS:
+ *     1. Define string patterns for formatting dates in journals, ISO, and folder names.
+ *
+ * - ERROR_MESSAGES:
+ *     1. Map error types to user-friendly error messages for display.
+ *
+ * - DEFAULT_TEMPLATES:
+ *     1. Provide default template strings for journal and note creation, using placeholders for dynamic values.
+ *
+ * - REGEX_PATTERNS:
+ *     1. Define regular expressions for matching wiki links, shortcodes, date filenames, and invalid filename characters.
+ */
+
 // Default base folder to prevent collision with existing vault structure
 export const DEFAULT_BASE_FOLDER = 'Link'
 
@@ -94,17 +137,6 @@ export const DATE_FORMATS = {
   ISO_DATE: 'YYYY-MM-DD',
   FOLDER_FORMAT: 'YYYY/MM'
 } as const
-
-// Deprecated - moved to quarantine
-// export const SHORTCODE_PATTERNS = {
-//   ELEMENT: /^[a-zA-Z0-9_-]+$/,
-//   MULTIPLIER: /^[a-zA-Z0-9_-]+\*\d+$/,
-//   CHILD: />/,
-//   SIBLING: /\+/,
-//   CONTENT: /\{.*\}/,
-//   ATTRIBUTE: /\[.*\]/,
-//   GROUP: /\(.*\)/
-// } as const;
 
 export const ERROR_MESSAGES = {
   INVALID_PATH: 'Invalid file path provided',

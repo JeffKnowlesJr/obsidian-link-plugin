@@ -1,3 +1,39 @@
+/**
+ * Algorithms for SettingsTab:
+ *
+ * - display():
+ *   1. Clear the settings container.
+ *   2. Add a header and description.
+ *   3. Add the Daily Notes Integration section by calling addDailyNotesIntegrationSettings.
+ *   4. Add the Core Settings section by calling addCoreSettings.
+ *   5. Add the Journal Template Settings section by calling addJournalTemplateSettings.
+ *
+ * - addCoreSettings(containerEl):
+ *   1. Add a setting for the base folder, with a text input and a "/" prefix.
+ *   2. For each optional folder (Workspace, Reference), add a toggle to include/exclude it in the directory structure.
+ *   3. Add a button to rebuild the journal directory structure, showing an alert on success or error.
+ *   4. Add journal settings (year/month/daily note formats) by calling addJournalSettings.
+ *
+ * - addJournalSettings(containerEl):
+ *   1. Add a text input for year folder format.
+ *   2. Add a text input for month folder format.
+ *   3. Add a text input for daily note filename format.
+ *
+ * - addJournalTemplateSettings(containerEl):
+ *   1. Add a header for template settings.
+ *   2. Add a text input for the daily note template location.
+ *   3. Add a button to set up templates, showing an alert on success or error, and checking for the Templater plugin.
+ *
+ * - addDailyNotesIntegrationSettings(containerEl):
+ *   1. Add a header and description for Daily Notes integration.
+ *   2. Add a toggle to enable/disable integration, which backs up or restores settings and shows status.
+ *   3. Add a button to reapply integration settings, showing status on success or error.
+ *   4. If a backup exists, display backup information.
+ *
+ * - showStatus(containerEl, message, success):
+ *   1. Create a div to display a status message, styled according to success or error.
+ */
+
 import { PluginSettingTab, App, Setting } from 'obsidian'
 import LinkPlugin from '../main'
 

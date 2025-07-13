@@ -10,6 +10,54 @@ import { PathUtils } from '../utils/pathUtils'
 import { DirectoryTemplate } from '../types'
 import { DateService } from '../services/dateService'
 
+/**
+ * Algorithm for DirectoryManager:
+ * 
+ * - rebuildDirectoryStructure():
+ *   1. Retrieve the vault and settings from the plugin.
+ *   2. Normalize the baseFolder path; if not set, use the vault root.
+ *   3. If basePath is not empty, create the base directory.
+ *   4. For each directory in directoryStructure (except 'templates'):
+ *      a. Join the basePath and directory name.
+ *      b. Create the directory if it doesn't exist.
+ *   5. Always call createJournalStructure(basePath).
+ *   6. Catch and throw errors if any step fails.
+ * 
+ * - createJournalStructure(basePath):
+ *   1. Join basePath and 'journal' to get journalPath.
+ *   2. Create the journal directory.
+ *   3. If simpleJournalMode is false:
+ *      a. Get the current date.
+ *      b. Format the year and month.
+ *      c. Create year and month subdirectories under journalPath.
+ * 
+ * - setupTemplates():
+ *   1. Get baseFolder from settings.
+ *   2. Join baseFolder and DEFAULT_TEMPLATES_PATH to get templatesPath.
+ *   3. Create the templates directory.
+ *   4. Join templatesPath and DAILY_NOTES_TEMPLATE_NAME to get templateFilePath.
+ *   5. If the template file does not exist:
+ *      a. Get the template content.
+ *      b. Create the template file.
+ *   6. Otherwise, do nothing.
+ * 
+ * - getDailyNotesTemplateContent():
+ *   1. Return a static string containing the daily notes template with Templater syntax.
+ * 
+ * - getJournalPath():
+ *   1. Get baseFolder from settings.
+ *   2. Return the joined path of baseFolder and 'journal', or just 'journal' if baseFolder is empty.
+ * 
+ * - getOrCreateDirectory(path):
+ *   1. Normalize the input path.
+ *   2. If the folder exists and is a TFolder, return it.
+ *   3. Otherwise, split the path and iterate through each part:
+ *      a. Build up the current path.
+ *      b. If the folder does not exist, create it.
+ *      c. If the path exists but is not a folder, throw an error.
+ *   4. Return the created or found TFolder.
+ */
+
 export class DirectoryManager {
   plugin: LinkPlugin
 
@@ -45,10 +93,7 @@ export class DirectoryManager {
           : dirName
         await this.getOrCreateDirectory(dirPath)
         console.log(`Created directory: ${dirPath}`)
-        // If reference is toggled on, also create reference structure
-        if (dirName === 'reference') {
-          await this.createReferenceStructure(basePath)
-        }
+
       }
 
       // Always create journal structure (only journal folder needed)
@@ -157,568 +202,6 @@ stakeholders:
 	- [ ] Review [July Log](Yearly%20Log.md#July) 🗓️
 
 ---`
-  }
-
-  /**
-   * Creates reference directory structure and knowledge base documentation
-   */
-  async createReferenceStructure(basePath: string): Promise<void> {
-    // Create reference/linkplugin subfolder for all reference files
-    const referencePath = basePath
-      ? PathUtils.joinPath(basePath, 'reference', 'linkplugin')
-      : 'reference/linkplugin'
-
-    // Create main reference directory
-    await this.getOrCreateDirectory(referencePath)
-    console.log(`Created reference directory: ${referencePath}`)
-
-    // Create architecture documentation
-    await this.createArchitectureDocumentation(referencePath)
-
-    // Create patterns documentation
-    await this.createPatternsDocumentation(referencePath)
-
-    // Create integration guides
-    await this.createIntegrationDocumentation(referencePath)
-
-    // Create troubleshooting lessons
-    await this.createTroubleshootingLessons(referencePath)
-
-    console.log('Reference knowledge base created')
-  }
-
-  /**
-   * Creates architecture documentation explaining key design decisions
-   */
-  private async createArchitectureDocumentation(
-    referencePath: string
-  ): Promise<void> {
-    const { vault } = this.plugin.app
-    // Ensure file is created in reference/linkplugin
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      'Architecture Decisions.md'
-    )
-
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Architecture Decisions
-
-## Directory Structure Logic
-
-### Core Principle: Siblings vs Nested
-**Decision**: Templates, Journal, and Reference are siblings under Link/
-**Reasoning**: 
-- Templates are **tools to create** content, not content themselves
-- Each serves different purposes and should be logically separated
-- Prevents deep nesting that makes navigation difficult
-- Follows standard file organization principles
-
-### Structure:
-\`\`\`
-Link/
-├── journal/           # Time-based content
-│   └── YYYY/MM-Month/ # Organized by date
-├── templates/         # Content creation tools
-│   └── *.md          # Template files
-└── reference/         # Knowledge base & documentation
-    └── *.md          # Reference materials
-\`\`\`
-
-## Collision Avoidance Strategy
-
-### Problem
-Plugin needs to create directories without conflicting with existing vault structure.
-
-### Solution: Base Folder Approach
-- All plugin content contained within configurable base folder (default: "Link")
-- User can change base folder to avoid conflicts
-- Plugin never creates directories at vault root level
-
-### Benefits
-- ✅ No conflicts with existing user structure
-- ✅ Easy to relocate entire plugin structure
-- ✅ Clear separation of plugin vs user content
-- ✅ Easy to backup/sync plugin content separately
-
-## Template System Design
-
-### Problem
-Need to provide templates without interfering with existing template systems (Templater).
-
-### Solution: Coexistence Pattern
-1. **No Interference**: Always provide raw template with original syntax
-2. **Detection Only**: Check for Templater presence for user feedback only
-3. **No Overrides**: Never replace or modify Templater functionality
-4. **Standard Location**: Place templates in predictable, discoverable location
-
-### Benefits  
-- ✅ Works with or without Templater
-- ✅ No plugin conflicts
-- ✅ User can modify templates freely
-- ✅ Templater handles its own syntax processing
-
-## Error Handling Philosophy
-
-### Principle: Graceful Degradation
-- Plugin should work even if some features fail
-- Non-critical features fail silently with logging
-- Critical features show user-friendly error messages
-- Always provide fallback functionality
-
-### Implementation
-- Try-catch blocks around all major operations
-- Detailed logging for debugging
-- User notifications for actionable errors only
-- Fallback behaviors when integrations fail
-`
-
-      await vault.create(filePath, content)
-      console.log(`Created architecture documentation: ${filePath}`)
-    }
-  }
-
-  /**
-   * Creates patterns documentation for common plugin development patterns
-   */
-  private async createPatternsDocumentation(
-    referencePath: string
-  ): Promise<void> {
-    const { vault } = this.plugin.app
-    // Ensure file is created in reference/linkplugin
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      'Development Patterns.md'
-    )
-
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Development Patterns
-
-## Directory Management Pattern
-
-### Pattern: Defensive Directory Creation
-\`\`\`typescript
-async getOrCreateDirectory(path: string): Promise<TFolder> {
-  const existingFolder = vault.getAbstractFileByPath(path);
-  if (existingFolder instanceof TFolder) {
-    return existingFolder; // Already exists
-  }
-  
-  // Create parent directories recursively
-  const pathParts = path.split('/');
-  for (const part of pathParts) {
-    // Incremental path building and validation
-  }
-  
-  return vault.getAbstractFileByPath(path) as TFolder;
-}
-\`\`\`
-
-**Why This Works:**
-- Handles existing directories gracefully
-- Creates parent directories as needed
-- Validates each step of path creation
-- Returns consistent TFolder interface
-
-## Settings Management Pattern
-
-### Pattern: Layered Configuration
-1. **Default Settings**: Hard-coded fallbacks
-2. **User Settings**: Persisted overrides  
-3. **Runtime Settings**: Temporary modifications
-
-### Implementation Strategy
-\`\`\`typescript
-class SettingsManager {
-  defaults = DEFAULT_SETTINGS;
-  user = loadUserSettings();
-  
-  get(key: string) {
-    return this.user[key] ?? this.defaults[key];
-  }
-}
-\`\`\`
-
-**Benefits:**
-- Always has working configuration
-- User can override any setting
-- Runtime changes don't affect persistence
-- Easy to reset to defaults
-
-## Plugin Integration Pattern
-
-### Pattern: Detection and Graceful Coexistence
-
-**Problem**: Need to work with other plugins without conflicts
-
-**Solution**: 
-1. **Detect**: Check if other plugin exists and is enabled
-2. **Respect**: Don't override other plugin functionality
-3. **Complement**: Provide value alongside, not instead of
-4. **Fallback**: Work independently if other plugin not available
-
-### Example: Templater Integration
-\`\`\`typescript
-private isTemplaterAvailable(): boolean {
-  const templaterPlugin = this.app.plugins?.plugins?.['templater-obsidian'];
-  return templaterPlugin && templaterPlugin._loaded;
-}
-
-private getTemplateContent(): string {
-  // Always return raw template - let Templater handle processing
-  return rawTemplateWithTemplaterSyntax;
-}
-\`\`\`
-
-**Key Principles:**
-- ✅ Check availability for user feedback only
-- ✅ Never modify other plugin's functionality  
-- ✅ Provide complementary, not competing features
-- ✅ Maintain functionality without dependencies
-
-## Error Boundaries Pattern
-
-### Pattern: Contextual Error Handling
-\`\`\`typescript
-class ErrorHandler {
-  handleError(error: Error, context: string, userFacing = false) {
-    console.error(\`[\${context}]\`, error);
-    
-    if (userFacing) {
-      this.showNotice(\`\${context}: \${error.message}\`);
-    }
-    
-    // Log to file for debugging
-    this.logError(context, error);
-  }
-}
-\`\`\`
-
-**Benefits:**
-- Contextual information for debugging
-- User sees only actionable errors
-- Complete error history preserved
-- Consistent error handling across plugin
-
-## Date Service Pattern
-
-### Pattern: Centralized Date Logic
-Instead of using Date() directly throughout codebase:
-
-\`\`\`typescript
-class DateService {
-  static now() { return moment(); }
-  static format(date, format) { return moment(date).format(format); }
-  static add(date, amount, unit) { return moment(date).add(amount, unit); }
-}
-\`\`\`
-
-**Benefits:**
-- Consistent date handling
-- Easy to mock for testing
-- Single place to change date library
-- Handles timezone/locale consistently
-
-## Command Registration Pattern
-
-### Pattern: Centralized Command Management
-\`\`\`typescript
-registerCommands() {
-  const commands = [
-    { id: 'create-note', name: 'Create Note', handler: this.createNote },
-    { id: 'open-journal', name: 'Open Journal', handler: this.openJournal }
-  ];
-  
-  commands.forEach(cmd => this.addCommand(cmd));
-}
-\`\`\`
-
-**Benefits:**
-- Easy to see all available commands
-- Consistent command structure
-- Easy to add/remove commands
-- Centralized command logic
-`
-
-      await vault.create(filePath, content)
-      console.log(`Created patterns documentation: ${filePath}`)
-    }
-  }
-
-  /**
-   * Creates integration documentation for working with Obsidian ecosystem
-   */
-  private async createIntegrationDocumentation(
-    referencePath: string
-  ): Promise<void> {
-    const { vault } = this.plugin.app
-    // Ensure file is created in reference/linkplugin
-    const filePath = PathUtils.joinPath(referencePath, 'Integration Guide.md')
-
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Integration Guide
-
-## Working with Obsidian Ecosystem
-
-### Core Principle: Be a Good Citizen
-- Complement existing functionality, don't replace it
-- Follow Obsidian's conventions and patterns
-- Integrate with popular community plugins
-- Provide value without causing conflicts
-
-## Daily Notes Integration
-
-### Challenge
-Update Obsidian's Daily Notes plugin to use our folder structure.
-
-### Solution: Settings Synchronization
-\`\`\`typescript
-async updateDailyNotesSettings(): Promise<void> {
-  // Try core plugin first
-  const corePlugin = this.app.internalPlugins?.plugins?.['daily-notes'];
-  if (corePlugin?.enabled) {
-    corePlugin.instance.options.folder = ourFolderPath;
-    return;
-  }
-  
-  // Fallback to community plugin
-  const communityPlugin = this.app.plugins?.plugins?.['daily-notes'];
-  if (communityPlugin) {
-    communityPlugin.settings.folder = ourFolderPath;
-    await communityPlugin.saveSettings();
-  }
-}
-\`\`\`
-
-**Key Insights:**
-- Core plugins accessed via \`internalPlugins\`
-- Community plugins via \`plugins.plugins\`
-- Always check if plugin exists and is enabled
-- Settings structures may differ between core/community versions
-
-## Templater Integration
-
-### Challenge
-Provide templates without breaking Templater functionality.
-
-### Solution: Raw Template Strategy
-1. **Always provide raw template** with Templater syntax
-2. **Never process Templater syntax** ourselves
-3. **Let Templater handle its own processing**
-4. **Detect Templater only for user feedback**
-
-### Anti-Pattern (Don't Do This)
-\`\`\`typescript
-// ❌ BAD: Processing Templater syntax ourselves
-if (this.isTemplaterAvailable()) {
-  return rawTemplate;
-} else {
-  return this.processTemplaterSyntax(rawTemplate); // DON'T DO THIS
-}
-\`\`\`
-
-### Correct Pattern
-\`\`\`typescript  
-// ✅ GOOD: Always return raw template
-private getTemplateContent(): string {
-  return rawTemplateWithTemplaterSyntax; // Let Templater handle it
-}
-\`\`\`
-
-**Why This Works:**
-- No conflicts with Templater processing
-- Template works with or without Templater
-- User can modify template syntax freely
-- Templater maintains full control of its features
-
-## File System Integration
-
-### Challenge
-Create files and folders without conflicts.
-
-### Solution: Vault API + Path Normalization
-\`\`\`typescript
-// Always normalize paths
-const normalizedPath = normalizePath(userPath);
-
-// Check if exists before creating
-const existing = vault.getAbstractFileByPath(normalizedPath);
-if (!existing) {
-  await vault.create(normalizedPath, content);
-}
-
-// Handle both files and folders
-if (existing instanceof TFolder) {
-  // It's a folder
-} else if (existing instanceof TFile) {
-  // It's a file
-}
-\`\`\`
-
-**Best Practices:**
-- Always use \`normalizePath()\` for cross-platform compatibility
-- Check existence before creating
-- Use appropriate Vault API methods
-- Handle edge cases (file vs folder conflicts)
-
-## Settings Integration
-
-### Challenge
-Provide settings UI that integrates with Obsidian's settings.
-
-### Solution: PluginSettingTab Extension
-\`\`\`typescript
-export class SettingsTab extends PluginSettingTab {
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    
-    // Group related settings
-    this.addGeneralSettings(containerEl);
-    this.addJournalSettings(containerEl);
-    this.addAdvancedSettings(containerEl);
-  }
-  
-  private addGeneralSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: 'General Settings' });
-    
-    new Setting(containerEl)
-      .setName('Setting Name')
-      .setDesc('Clear description of what this does')
-      .addText(text => text
-        .setValue(this.plugin.settings.value)
-        .onChange(async (value) => {
-          this.plugin.settings.value = value;
-          await this.plugin.saveSettings();
-        }));
-  }
-}
-\`\`\`
-
-**UI Best Practices:**
-- Group related settings with headers
-- Provide clear names and descriptions
-- Auto-save changes immediately
-- Use appropriate input types
-- Provide validation feedback
-
-## Command Palette Integration
-
-### Challenge
-Make plugin features discoverable and accessible.
-
-### Solution: Comprehensive Command Registration
-\`\`\`typescript
-registerCommands() {
-  this.addCommand({
-    id: 'action-id',
-    name: 'User-Friendly Action Name',
-    icon: 'calendar', // Lucide icon name
-    callback: () => this.performAction(),
-    hotkeys: [{ modifiers: ['Mod'], key: 'j' }] // Optional
-  });
-}
-\`\`\`
-
-**Command Design Principles:**
-- Use clear, action-oriented names
-- Provide appropriate icons
-- Consider default hotkeys for common actions
-- Group related commands with similar naming
-- Make commands context-aware when possible
-
-## Ribbon Integration
-
-### Challenge
-Provide quick access to common features.
-
-### Solution: Contextual Ribbon Buttons
-\`\`\`
-`
-
-      await vault.create(filePath, content)
-      console.log(`Created integration documentation: ${filePath}`)
-    }
-  }
-
-  /**
-   * Creates troubleshooting lessons for common issues and best practices
-   */
-  private async createTroubleshootingLessons(
-    referencePath: string
-  ): Promise<void> {
-    const { vault } = this.plugin.app
-    // Ensure file is created in reference/linkplugin
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      'Troubleshooting Lessons.md'
-    )
-
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Troubleshooting
-
-## Common Issues
-
-### 1. Plugin Not Loading
-\`\`\`
-1. Ensure Obsidian is fully closed.
-2. Navigate to your Obsidian vault.
-3. Delete the \`Link\` folder from your vault.
-4. Re-open Obsidian.
-\`\`\`
-
-### 2. Directory Structure Not Created
-\`\`\`
-1. Check if \`Link\` folder exists in your vault.
-2. If it doesn't, try reinstalling the plugin.
-3. If it does, check your \`Link\` settings in Obsidian's settings.
-\`\`\`
-
-### 3. Daily Notes Not Updating
-\`\`\`
-1. Ensure \`Link\` is enabled in Daily Notes settings.
-2. Check if \`Link\` folder is correctly set as the daily notes folder.
-3. If it's not, try changing the folder in Daily Notes settings.
-\`\`\`
-
-### 4. Templates Not Working
-\`\`\`
-1. Ensure \`Link\` is enabled in Templater settings.
-2. Check if \`Link\` folder is correctly set as the templates folder.
-3. If it's not, try changing the folder in Templater settings.
-\`\`\`
-
-## Best Practices
-
-### 1. Regular Updates
-\`\`\`
-1. Keep your Obsidian vault updated.
-2. Keep the \`Link\` plugin updated.
-\`\`\`
-
-### 2. Backup
-\`\`\`
-1. Always backup your Obsidian vault.
-2. Backup the \`Link\` folder.
-\`\`\`
-
-### 3. Error Handling
-\`\`\`
-1. Always check the \`Link\` plugin logs for errors.
-2. If you encounter an error, try reinstalling the plugin.
-\`\`\`
-
-### 4. Performance
-\`\`\`
-1. Disable unnecessary features if performance is an issue.
-2. Keep your Obsidian settings optimized.
-\`\`\`
-
-## Final Wisdom:
-The best architecture emerges from understanding both the technical constraints and the user's mental model. Build systems that make sense to users while being maintainable for developers.`
-
-      await vault.create(filePath, content)
-      console.log(`Created troubleshooting lessons: ${filePath}`)
-    }
   }
 
   /**

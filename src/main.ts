@@ -9,6 +9,48 @@ import { SettingsTab } from './ui/settingsTab'
 import { DateService } from './services/dateService'
 import { COMMAND_IDS } from './constants'
 
+/**
+ * Algorithms used in this plugin:
+ * 
+ * 1. Initialization Sequence (onload):
+ *    - Sequentially initializes services, managers, settings, UI, and event handlers.
+ *    - Ensures correct order: DateService → Settings → ErrorHandler → Managers → UI → Commands → Events → Directory Structure → Journal Folders → Daily Notes Integration → Date Monitoring.
+ * 
+ * 2. Settings Validation and Persistence:
+ *    - Loads settings from disk, validates and merges with defaults.
+ *    - Saves settings and updates UI state accordingly.
+ * 
+ * 3. Command Registration:
+ *    - Registers a set of commands, each with a callback.
+ *    - Each command encapsulates a specific journal management action (e.g., create note, open journal, rebuild structure).
+ *    - Error handling is wrapped around each command.
+ * 
+ * 4. Event Handling:
+ *    - Listens for file creation and modification events.
+ *    - On creation, checks if the file is a journal file and updates links.
+ *    - On modification, logs debug info if enabled.
+ * 
+ * 5. Date Input Modal (promptForDate):
+ *    - Presents a modal dialog for date input.
+ *    - Handles user input, keyboard shortcuts, and resolves with the selected date or null.
+ * 
+ * 6. Date Change Monitoring:
+ *    - Periodically (hourly) checks if the month has changed.
+ *    - If so, creates the new monthly folder, updates Daily Notes settings, and notifies the user.
+ * 
+ * 7. Daily Notes Plugin Integration:
+ *    - Detects and updates settings for either the core or community Daily Notes plugin.
+ *    - Backs up original settings before overwriting.
+ *    - Restores settings from backup if requested.
+ * 
+ * 8. Backup/Restore Algorithm:
+ *    - On first integration, saves a backup of the current Daily Notes settings.
+ *    - On restore, applies the backup and disables integration.
+ * 
+ * 9. Cleanup (onunload):
+ *    - Cleans up managers and UI elements on plugin unload.
+ */
+
 export default class LinkPlugin extends Plugin {
   settings!: LinkPluginSettings
   directoryManager!: DirectoryManager
@@ -17,55 +59,30 @@ export default class LinkPlugin extends Plugin {
   ribbonManager!: RibbonManager
 
   async onload() {
+    // Algorithm 1: Initialization Sequence
     console.log(
       'Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...'
     )
 
     try {
-      // Initialize DateService first
       DateService.initialize()
-
-      // Load settings
       await this.loadSettings()
-
-      // Initialize error handler first
       this.errorHandler = new ErrorHandler(this)
-
-      // Initialize core managers
       this.directoryManager = new DirectoryManager(this)
       this.journalManager = new JournalManager(this)
       this.ribbonManager = new RibbonManager(this)
-
-      // Add settings tab
       this.addSettingTab(new SettingsTab(this.app, this))
-
-      // Initialize ribbon
       this.ribbonManager.initializeRibbon()
-
-      // Register commands (core journal commands only)
       this.registerCommands()
-
-      // Register event handlers (journal focused)
       this.registerEventHandlers()
-
-      // Initialize directory structure
       await this.directoryManager.rebuildDirectoryStructure()
-
-      // Ensure current month folder exists - CORE FEATURE
       await this.journalManager.checkAndCreateCurrentMonthFolder()
-
-      // Update Obsidian's Daily Notes plugin to use our folder structure
       await this.updateDailyNotesSettings()
-
-      // Start automatic date change monitoring
       this.startDateChangeMonitoring()
-
-      // Verify date handling is working correctly
       const debugInfo = DateService.getDebugInfo()
       console.log('DateService initialized:', debugInfo)
       console.log('Today:', DateService.today())
       console.log('Current month:', DateService.currentMonth())
-
       this.errorHandler.showNotice(
         'Obsidian Link Journal loaded - Pure journal management ready!'
       )
@@ -81,19 +98,22 @@ export default class LinkPlugin extends Plugin {
   }
 
   async loadSettings() {
+    // Algorithm 2: Settings Validation and Persistence (load)
     const loadedData = await this.loadData()
     this.settings = validateSettings(loadedData || {})
   }
 
   async saveSettings() {
+    // Algorithm 2: Settings Validation and Persistence (save)
     await this.saveData(this.settings)
-    // Update ribbon button states when settings change
     if (this.ribbonManager) {
       this.ribbonManager.updateButtonStates()
     }
   }
 
   registerCommands() {
+    // Algorithm 3: Command Registration
+
     // Rebuild directory structure command
     this.addCommand({
       id: COMMAND_IDS.REBUILD_DIRECTORY,
@@ -144,7 +164,6 @@ export default class LinkPlugin extends Plugin {
       name: 'Create Future Daily Note',
       callback: async () => {
         try {
-          // Prompt user for date
           const dateInput = await this.promptForDate()
           if (dateInput) {
             const file = await this.journalManager.createFutureDailyNote(
@@ -171,15 +190,12 @@ export default class LinkPlugin extends Plugin {
       name: 'Create Monthly Folders for Current Year',
       callback: async () => {
         try {
-          // Use DateService for consistent date handling
           const startOfYear = DateService.startOfYear()
           const endOfYear = DateService.endOfYear()
-
           await this.journalManager.createMonthlyFoldersForRange(
             startOfYear,
             endOfYear
           )
-
           this.errorHandler.showNotice(
             'Monthly folders created for current year'
           )
@@ -207,10 +223,11 @@ export default class LinkPlugin extends Plugin {
   }
 
   registerEventHandlers() {
-    // CORE FEATURE: Listen for journal file creation to update links
+    // Algorithm 4: Event Handling
+
+    // Listen for journal file creation to update links
     this.registerEvent(
       this.app.vault.on('create', (file) => {
-        // Type guard to ensure we have a TFile (has stat, basename, extension properties)
         if (
           'stat' in file &&
           'basename' in file &&
@@ -233,13 +250,12 @@ export default class LinkPlugin extends Plugin {
         }
       })
     )
-
-    // REMOVED: File sorting event handlers - functionality moved to quarantine
-    // Focus on core journal management only
+    // File sorting event handlers removed (focus on core journal management)
   }
 
   /**
-   * Prompt user for a date input
+   * Algorithm 5: Date Input Modal
+   * Presents a modal dialog for date input, handles user input and keyboard shortcuts.
    */
   private async promptForDate(): Promise<string | null> {
     return new Promise((resolve) => {
@@ -248,13 +264,11 @@ export default class LinkPlugin extends Plugin {
 
       const { contentEl } = modal
 
-      // Add description
       contentEl.createEl('p', {
         text: 'Select a date to create a daily note. This will automatically create the required monthly folders.',
         cls: 'modal-description'
       })
 
-      // Create input container with proper spacing
       const inputContainer = contentEl.createDiv({
         cls: 'date-input-container'
       })
@@ -265,7 +279,6 @@ export default class LinkPlugin extends Plugin {
         cls: 'date-input'
       })
 
-      // Add spacing after input to prevent overlap
       contentEl.createDiv({ cls: 'date-picker-spacer' })
 
       const buttonContainer = contentEl.createDiv({
@@ -281,7 +294,6 @@ export default class LinkPlugin extends Plugin {
         text: 'Cancel'
       })
 
-      // Add custom styles to prevent overlap
       const style = document.createElement('style')
       style.textContent = `
         .date-input-container {
@@ -314,7 +326,6 @@ export default class LinkPlugin extends Plugin {
       `
       contentEl.appendChild(style)
 
-      // Focus with slight delay to prevent initial overlap
       setTimeout(() => input.focus(), 100)
 
       createButton.onclick = () => {
@@ -343,30 +354,23 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
-   * Start monitoring for date changes to automatically create new monthly folders
+   * Algorithm 6: Date Change Monitoring
+   * Periodically checks if the month has changed and creates new monthly folders as needed.
    */
   private startDateChangeMonitoring(): void {
     let lastCheckedMonth = DateService.format(DateService.now(), 'YYYY-MM')
 
-    // Check every hour for date changes
     this.registerInterval(
       window.setInterval(async () => {
         try {
           const currentMonth = DateService.format(DateService.now(), 'YYYY-MM')
-
-          // If month changed, ensure new month folder exists
           if (currentMonth !== lastCheckedMonth) {
             console.log(
               `Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`
             )
             await this.journalManager.checkAndCreateCurrentMonthFolder()
-
-            // Update Daily Notes plugin settings for new month
             await this.updateDailyNotesSettings()
-
             lastCheckedMonth = currentMonth
-
-            // Show notification about new month
             const monthName = DateService.format(DateService.now(), 'MMMM YYYY')
             this.errorHandler.showNotice(
               `📅 New month detected: ${monthName} folder created`
@@ -375,7 +379,7 @@ export default class LinkPlugin extends Plugin {
         } catch (error) {
           console.error('Error in date change monitoring:', error)
         }
-      }, 60 * 60 * 1000) // Check every hour
+      }, 60 * 60 * 1000)
     )
 
     console.log(
@@ -384,17 +388,15 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
-   * Update Obsidian's Daily Notes plugin settings to use our folder structure
-   * Only updates if integration is enabled and specific controls are enabled
+   * Algorithm 7: Daily Notes Plugin Integration
+   * Updates Obsidian's Daily Notes plugin settings to use our folder structure.
    */
   async updateDailyNotesSettings(): Promise<void> {
-    // Skip if integration is disabled
     if (!this.settings.dailyNotesIntegration.enabled) {
       return
     }
 
     try {
-      // Get the daily notes core plugin
       const dailyNotesPlugin = (this.app as any).internalPlugins?.plugins?.[
         'daily-notes'
       ]
@@ -402,7 +404,6 @@ export default class LinkPlugin extends Plugin {
       if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
         await this.updateCorePluginSettings(dailyNotesPlugin)
       } else {
-        // Try community plugin approach
         const communityDailyNotes = (this.app as any).plugins?.plugins?.[
           'daily-notes'
         ]
@@ -419,17 +420,16 @@ export default class LinkPlugin extends Plugin {
         'Daily Notes integration skipped:',
         error instanceof Error ? error.message : String(error)
       )
-      // Don't show error to user - this is optional functionality
     }
   }
 
   /**
-   * Updates core Daily Notes plugin settings with backup
+   * Algorithm 7: Daily Notes Plugin Integration (Core)
+   * Updates core Daily Notes plugin settings with backup.
    */
   private async updateCorePluginSettings(dailyNotesPlugin: any): Promise<void> {
     const dailyNotesSettings = dailyNotesPlugin.instance.options
 
-    // Create backup if it doesn't exist
     if (!this.settings.dailyNotesIntegration.backup) {
       await this.createDailyNotesBackup('core', dailyNotesSettings)
     }
@@ -438,7 +438,6 @@ export default class LinkPlugin extends Plugin {
     const monthlyFolderPath =
       this.journalManager.getMonthlyFolderPath(currentDate)
 
-    // Always update all settings
     dailyNotesSettings.folder = monthlyFolderPath
     dailyNotesSettings.format = this.settings.journalDateFormat
     const templatesPath = this.settings.customTemplateLocation
@@ -453,12 +452,12 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
-   * Updates community Daily Notes plugin settings with backup
+   * Algorithm 7: Daily Notes Plugin Integration (Community)
+   * Updates community Daily Notes plugin settings with backup.
    */
   private async updateCommunityPluginSettings(
     communityDailyNotes: any
   ): Promise<void> {
-    // Create backup if it doesn't exist
     if (!this.settings.dailyNotesIntegration.backup) {
       await this.createDailyNotesBackup(
         'community',
@@ -470,7 +469,6 @@ export default class LinkPlugin extends Plugin {
     const monthlyFolderPath =
       this.journalManager.getMonthlyFolderPath(currentDate)
 
-    // Always update all settings
     communityDailyNotes.settings.folder = monthlyFolderPath
     communityDailyNotes.settings.format = this.settings.journalDateFormat
     const templatesPath = this.settings.customTemplateLocation
@@ -486,7 +484,8 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
-   * Creates a backup of current Daily Notes settings
+   * Algorithm 8: Backup/Restore Algorithm (Backup)
+   * Creates a backup of current Daily Notes settings.
    */
   private async createDailyNotesBackup(
     pluginType: 'core' | 'community',
@@ -503,7 +502,8 @@ export default class LinkPlugin extends Plugin {
   }
 
   /**
-   * Restores Daily Notes settings from backup
+   * Algorithm 8: Backup/Restore Algorithm (Restore)
+   * Restores Daily Notes settings from backup.
    */
   async restoreDailyNotesSettings(): Promise<void> {
     const backup = this.settings.dailyNotesIntegration.backup
@@ -535,7 +535,6 @@ export default class LinkPlugin extends Plugin {
         }
       }
 
-      // Clear the backup and disable integration
       this.settings.dailyNotesIntegration.enabled = false
       this.settings.dailyNotesIntegration.backup = null
 
@@ -551,15 +550,17 @@ export default class LinkPlugin extends Plugin {
     }
   }
 
+  /**
+   * Algorithm 9: Cleanup
+   * Cleans up managers and UI elements on plugin unload.
+   */
   onunload() {
     console.log('Obsidian Link Journal unloaded')
 
-    // Clean up link manager
     if (this.linkManager) {
       this.linkManager.cleanup()
     }
 
-    // Clean up ribbon buttons
     if (this.ribbonManager) {
       this.ribbonManager.cleanup()
     }

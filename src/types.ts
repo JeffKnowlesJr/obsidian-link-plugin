@@ -1,3 +1,18 @@
+/**
+ * Algorithms defined by these types:
+ *
+ * 1. Settings Management:
+ *    - LinkPluginSettings defines the structure for all plugin settings, including directory, journal, daily notes integration, and debug options.
+ *    - DailyNotesBackup provides a schema for backing up and restoring Daily Notes plugin settings.
+ *
+ * 2. Directory and Journal Structure:
+ *    - DirectoryTemplate enables recursive directory structure definitions for dynamic folder creation.
+ *    - JournalEntry represents a single journal file, including navigation to previous/next entries.
+ *
+ * 3. Error Handling:
+ *    - ErrorLog standardizes error reporting with context and stack trace.
+ */
+
 export interface LinkPluginSettings {
   // Directory structure settings
   baseFolder: string // Root folder for all plugin-created directories
@@ -14,15 +29,11 @@ export interface LinkPluginSettings {
   journalTemplate: string
   simpleJournalMode: boolean // Single setting: true = simple, false = dynamic
 
-
-
   // Daily Notes Integration Settings
   dailyNotesIntegration: {
     enabled: boolean
     backup: DailyNotesBackup | null
   }
-
-
 
   // Other settings
   debugMode: boolean
@@ -53,8 +64,6 @@ export interface JournalEntry {
   previous?: string
   next?: string
 }
-
-
 
 export interface ErrorLog {
   timestamp: string
