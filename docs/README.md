@@ -1,99 +1,88 @@
-# Obsidian Link Plugin v1.0.0
+# Obsidian Link Plugin Documentation
 
-A focused Obsidian plugin for **intelligent daily note organization** with automatic monthly folder management and seamless Daily Notes integration. Future notes creation as well. No clutter, just the core functionality that matters.
+Welcome to the comprehensive documentation for the Obsidian Link Plugin. This documentation is organized to help you understand the plugin's architecture, components, and usage.
 
-## ✨ Core Features
+## 📚 Documentation Overview
 
-### 🎯 Smart Daily Note Management
+### For Users
+- **[Main README](../README.md)** - Quick start guide and user documentation
+- **[User Guide](USER_GUIDE.md)** - Detailed usage instructions and configuration
 
-- **Automatic Monthly Folders**: Creates `2025/July/` folders automatically.
-- **Reliable Date Detection**: Ensures notes for any day, including the 1st of the month, are placed in the correct monthly folder.
-- **Customizable Structure**: Configure year (`YYYY`) and month (`MMMM`) folder formats.
-- **Future Note Creation**: Plan ahead with future daily notes
+### For Developers
+- **[Architecture Overview](ARCHITECTURE.md)** - High-level system design and algorithms
+- **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Detailed component analysis
+- **[Development Guide](DEVELOPMENT.md)** - Setup, testing, and contribution guidelines
 
-### 🔗 Daily Notes Integration
+### For Documentation Maintainers
+- **[Documentation Summary](DOCUMENTATION_SUMMARY.md)** - Overview of documentation structure and maintenance guidelines
 
-- **Seamless Integration**: Works alongside Obsidian's Daily Notes plugin without conflicts
-- **Automatic Backup**: Backs up your original Daily Notes settings before making any changes
-- **Granular Control**: Choose which settings to manage (folder location, date format, template)
-- **Safe Restore**: One-click restore to your original by disabling the plugin
-- **Template Support**: Integrated with Templater plugin for dynamic date navigation
+## 🎯 Quick Navigation
 
-## 📁 Folder Structure (Simple & Working)
+### Getting Started
+- **New to the plugin?** → [Main README](../README.md)
+- **Need help with configuration?** → [User Guide](USER_GUIDE.md)
+- **Want to understand the code?** → [Architecture Overview](ARCHITECTURE.md)
 
-The plugin creates this organized structure:
+### Development
+- **Understanding components?** → [Component Documentation](COMPONENT_DOCUMENTATION.md)
+- **Setting up development?** → [Development Guide](DEVELOPMENT.md)
+- **Contributing code?** → [Development Guide](DEVELOPMENT.md)
+
+## 📋 Documentation Structure
 
 ```
-Link/
-├── journal/
-│   ├── 2025/                    # Year folders
-│   │   ├── July/                # Month folders
-│   │   ├── August/
-│   │   └── ...
-│   └── [your daily notes]
-├── templates/
-│   └── Daily Notes Template.md  # Created with Templater compatibility
-└── reference/
-    └── linkplugin/             # All reference files are generated inside this subfolder
-        ├── Architecture Decisions.md
-        ├── Development Patterns.md
-        ├── Integration Guide.md
-        ├── Troubleshooting Lessons.md
-        └── ... (other subfolders/files as needed)
+docs/
+├── README.md                    # This file - Documentation index
+├── USER_GUIDE.md               # User-focused documentation
+├── ARCHITECTURE.md             # System architecture and algorithms
+├── COMPONENT_DOCUMENTATION.md  # Detailed component analysis
+└── DEVELOPMENT.md              # Development setup and guidelines
 ```
 
-**Key Benefits:**
+## 🔗 Cross-References
 
-- **Reliable Organization**: Your notes are always placed in the correct year and month folders.
-- **No Conflicts**: Everything contained within configurable base folder (default: "Link")
-- **Clean Organization**: Sibling directories for different purposes
-- **Reference Subfolders**: All reference files are organized inside a `linkplugin` subfolder, and the reference folder can contain additional subfolders for further organization
-- **Self-Documenting**: Built-in reference documentation explains all design decisions
+### User Documentation
+- [Main README](../README.md) ← User-facing documentation with features and installation
+- [User Guide](USER_GUIDE.md) ← Detailed usage instructions and troubleshooting
 
-## 🛠️ Installation
+### Technical Documentation
+- [Architecture Overview](ARCHITECTURE.md) ← System design, algorithms, and data flow
+- [Component Documentation](COMPONENT_DOCUMENTATION.md) ← Detailed component analysis
+- [Development Guide](DEVELOPMENT.md) ← Setup, testing, and contribution guidelines
 
-1. Open Obsidian Settings → Community Plugins
-2. Disable Safe Mode if enabled
-3. Browse and search for "Link Plugin"
-4. Install and enable the plugin
+## 📖 Reading Paths
 
-## 📖 Quick Start
+### For End Users
+1. **[Main README](../README.md)** - Understand what the plugin does
+2. **[User Guide](USER_GUIDE.md)** - Learn how to use it effectively
 
-### Basic Usage (All You Need)
+### For Developers
+1. **[Architecture Overview](ARCHITECTURE.md)** - Understand the system design
+2. **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Dive into specific components
+3. **[Development Guide](DEVELOPMENT.md)** - Set up development environment
 
-1. **Create Today's Note**: Click the "📝" ribbon button
-2. **Configure Monthly Structure**: Use Settings to set folder formats
-3. **That's It**: The plugin handles the rest automatically
+### For Contributors
+1. **[Development Guide](DEVELOPMENT.md)** - Setup and contribution guidelines
+2. **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Understand existing code
+3. **[Architecture Overview](ARCHITECTURE.md)** - Understand design decisions
 
-### Settings That Matter
+## 🎨 Documentation Style
 
-- **Daily Note Format**: `YYYY-MM-DD dddd` creates "2025-07-01 Tuesday"
-- **Year Format**: `YYYY` creates "2025"
-- **Month Format**: `MMMM` creates "July"
-- **Daily Notes Integration**: Control how the plugin integrates with the Daily Notes plugin.
-- **Template Setup**: One-click template creation with Templater compatibility
+All documentation follows these principles:
+- **Clear navigation** with cross-references
+- **Progressive disclosure** from overview to details
+- **Code examples** for practical understanding
+- **Consistent formatting** across all files
+- **User-focused** language and explanations
 
-## ⚙️ Configuration
+## 📝 Documentation Maintenance
 
-Access settings via the ribbon button:
-
-### Journal Settings
-
-- **Year Folder Format**: Configure year folder naming (default: `YYYY`)
-- **Month Folder Format**: Configure month folder naming (default: `MMMM`)
-- **Daily Note Format**: Customize daily note naming (default: `YYYY-MM-DD dddd`)
-
-### Daily Notes Integration Settings
-
-- **Enable Integration**: Toggle integration with the Daily Notes plugin.
-- **Granular Controls**: Individual checkboxes for folder, format, and template control.
-- **Quick Controls**: Enable/disable all controls at once.
-- **Backup & Restore**: Automatic backup with a one-click restore in the danger zone.
-
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE) for details.
+When updating documentation:
+1. Update the relevant section in the appropriate file
+2. Ensure cross-references remain accurate
+3. Update this index if adding new documentation files
+4. Test all links to ensure they work correctly
 
 ---
 
-_The Obsidian Link Plugin does one thing really well: intelligent daily note organization with seamless Daily Notes integration. You get a clean, focused tool for journal management that works alongside your existing workflow._
+**Need help?** Check the [User Guide](USER_GUIDE.md) for troubleshooting or the [Development Guide](DEVELOPMENT.md) for technical questions. 
