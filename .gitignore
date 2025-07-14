@@ -26,3 +26,5 @@ dist/
 build/
 coverage/
 quarantine/
+
+data.json

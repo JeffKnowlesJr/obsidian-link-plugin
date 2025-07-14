@@ -924,6 +924,7 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
       (text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
         this.plugin.settings.baseFolder = value.trim();
         await this.plugin.saveSettings();
+        this.display();
       })
     ).then((setting) => {
       const textComponent = setting.components[0];
@@ -1158,7 +1159,12 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
   }
   async loadSettings() {
     const loadedData = await this.loadData();
-    this.settings = validateSettings(loadedData || {});
+    if (!loadedData || Object.keys(loadedData).length === 0) {
+      this.settings = { ...DEFAULT_SETTINGS };
+      await this.saveSettings();
+    } else {
+      this.settings = validateSettings({ ...DEFAULT_SETTINGS, ...loadedData });
+    }
   }
   async saveSettings() {
     await this.saveData(this.settings);
