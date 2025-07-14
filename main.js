@@ -546,8 +546,16 @@ var JournalManager = class {
     const filePath = (0, import_obsidian3.normalizePath)(`${monthlyFolderPath}/${fileName}.md`);
     let file = vault.getAbstractFileByPath(filePath);
     if (!file) {
-      file = await vault.create(filePath, "");
-      DebugUtils.log(`Created daily note: ${filePath}`);
+      const templateContent = this.getTemplateContentForDate(date);
+      file = await vault.create(filePath, templateContent);
+      DebugUtils.log(`Created daily note with template: ${filePath}`);
+    } else {
+      const content = await vault.read(file);
+      if (!content.trim()) {
+        const templateContent = this.getTemplateContentForDate(date);
+        await vault.modify(file, templateContent);
+        DebugUtils.log(`Populated existing empty note with template: ${filePath}`);
+      }
     }
     return file;
   }
@@ -594,6 +602,7 @@ var JournalManager = class {
   /**
    * Creates a daily note for a future date
    * Automatically creates monthly folders as needed
+   * Uses the daily note template and modifies previous/next dates for the target date
    */
   async createFutureDailyNote(date) {
     const targetDate = DateService.from(date);
@@ -602,6 +611,21 @@ var JournalManager = class {
     const monthlyPath = this.getMonthlyFolderPath(targetDate);
     DebugUtils.log(`Future note created in: ${monthlyPath}`);
     return file;
+  }
+  /**
+   * Gets the template content modified for a specific date
+   * Replaces the current moment references with the target date
+   */
+  getTemplateContentForDate(targetDate) {
+    const { journalDateFormat } = this.plugin.settings;
+    const baseTemplate = DirectoryManager.getDailyNotesTemplateContent();
+    const previousDate = DateService.previousDay(targetDate);
+    const nextDate = DateService.nextDay(targetDate);
+    const previousFormatted = DateService.format(previousDate, journalDateFormat);
+    const nextFormatted = DateService.format(nextDate, journalDateFormat);
+    const targetFormatted = DateService.format(targetDate, journalDateFormat);
+    const modifiedTemplate = baseTemplate.replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", -1\) %>/g, previousFormatted).replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", 1\) %>/g, nextFormatted).replace(/<% tp\.date\.now\("MM-DD dddd"\) %>/g, DateService.format(targetDate, "MM-DD dddd"));
+    return modifiedTemplate;
   }
   /**
    * Opens the journal entry for today

@@ -1,4 +1,4 @@
-# Obsidian Link Plugin v1.0.0
+npm # Obsidian Link Plugin v1.0.0
 
 A focused Obsidian plugin for **intelligent daily note organization** with automatic monthly folder management and seamless Daily Notes integration. Future notes creation as well. No clutter, just the core functionality that matters.
 

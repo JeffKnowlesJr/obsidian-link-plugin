@@ -52,7 +52,7 @@ The Obsidian Link Plugin is designed with a clean, modular architecture that sep
             │           │
             │• Error    │
             │• Path     │
-            │• Date     │
+            │• Debug    │
             └───────────┘
 ```
 
@@ -73,7 +73,6 @@ The main plugin class orchestrates the entire application lifecycle using severa
 
 #### Initialization Sequence Algorithm
 ```typescript
-// Algorithm 1: Initialization Sequence
 async onload() {
   // 1. Initialize DateService first
   DateService.initialize()
@@ -113,7 +112,6 @@ async onload() {
 
 #### Settings Management Algorithm
 ```typescript
-// Algorithm 2: Settings Validation and Persistence
 async loadSettings() {
   const loadedData = await this.loadData()
   this.settings = validateSettings(loadedData || {})
@@ -129,7 +127,6 @@ async saveSettings() {
 
 #### Command Registration Algorithm
 ```typescript
-// Algorithm 3: Command Registration
 registerCommands() {
   // Each command encapsulates a specific journal management action
   // Error handling is wrapped around each command
@@ -150,7 +147,6 @@ registerCommands() {
 
 #### Event Handling Algorithm
 ```typescript
-// Algorithm 4: Event Handling
 registerEventHandlers() {
   // Listen for file creation and modification events
   this.registerEvent(
@@ -164,62 +160,12 @@ registerEventHandlers() {
 }
 ```
 
-#### Date Change Monitoring Algorithm
-```typescript
-// Algorithm 5: Date Change Monitoring
-private startDateChangeMonitoring(): void {
-  let lastCheckedMonth = DateService.format(DateService.now(), 'YYYY-MM')
-  
-  // Check every hour for date changes
-  this.registerInterval(
-    window.setInterval(async () => {
-      const currentMonth = DateService.format(DateService.now(), 'YYYY-MM')
-      
-      // If month changed, create new monthly folder
-      if (currentMonth !== lastCheckedMonth) {
-        await this.journalManager.checkAndCreateCurrentMonthFolder()
-        await this.updateDailyNotesSettings()
-        lastCheckedMonth = currentMonth
-      }
-    }, 60 * 60 * 1000) // Check every hour
-  )
-}
-```
-
-#### Daily Notes Integration Algorithm
-```typescript
-// Algorithm 6: Daily Notes Plugin Integration
-async updateDailyNotesSettings(): Promise<void> {
-  // Skip if integration is disabled
-  if (!this.settings.dailyNotesIntegration.enabled) {
-    return
-  }
-  
-  try {
-    // Try core plugin first
-    const dailyNotesPlugin = this.app.internalPlugins?.plugins?.['daily-notes']
-    if (dailyNotesPlugin && dailyNotesPlugin.enabled) {
-      await this.updateCorePluginSettings(dailyNotesPlugin)
-    } else {
-      // Fallback to community plugin
-      const communityDailyNotes = this.app.plugins?.plugins?.['daily-notes']
-      if (communityDailyNotes) {
-        await this.updateCommunityPluginSettings(communityDailyNotes)
-      }
-    }
-  } catch (error) {
-    console.log('Daily Notes integration skipped:', error)
-  }
-}
-```
-
 ### 2. Type System (`types.ts`)
 
 The type system defines the data structures used throughout the application:
 
 #### Settings Management Algorithm
 ```typescript
-// Algorithm 1: Settings Management
 export interface LinkPluginSettings {
   // Directory structure settings
   baseFolder: string // Root folder for all plugin-created directories
@@ -250,7 +196,6 @@ export interface LinkPluginSettings {
 
 #### Directory and Journal Structure Algorithm
 ```typescript
-// Algorithm 2: Directory and Journal Structure
 export interface DirectoryTemplate {
   [key: string]: DirectoryTemplate | null
 }
@@ -266,7 +211,6 @@ export interface JournalEntry {
 
 #### Error Handling Algorithm
 ```typescript
-// Algorithm 3: Error Handling
 export interface ErrorLog {
   timestamp: string
   context: string
@@ -281,7 +225,6 @@ The constants system provides centralized configuration and patterns:
 
 #### Default Configuration Algorithm
 ```typescript
-// Algorithm: Default Configuration
 export const DEFAULT_BASE_FOLDER = 'Link'
 export const DEFAULT_DIRECTORIES = ['journal']
 export const DEFAULT_TEMPLATES_PATH = 'templates'
@@ -290,7 +233,6 @@ export const DAILY_NOTES_TEMPLATE_NAME = 'Daily Notes Template.md'
 
 #### Command and UI Configuration Algorithm
 ```typescript
-// Algorithm: Command and UI Configuration
 export const COMMAND_IDS = {
   REBUILD_DIRECTORY: 'rebuild-directory-structure',
   OPEN_TODAY_JOURNAL: 'open-today-journal',
@@ -298,20 +240,10 @@ export const COMMAND_IDS = {
   CREATE_FUTURE_NOTE: 'create-future-note',
   CREATE_MONTHLY_FOLDERS: 'create-monthly-folders'
 } as const
-
-export const RIBBON_BUTTONS = {
-  TODAY_JOURNAL: {
-    icon: 'calendar-days',
-    title: "Open Today's Journal",
-    tooltip: "Open or create today's journal entry"
-  },
-  // ... additional buttons
-} as const
 ```
 
 #### Template and Pattern Configuration Algorithm
 ```typescript
-// Algorithm: Template and Pattern Configuration
 export const DEFAULT_TEMPLATES = {
   JOURNAL: `# {{date}}
 ## Daily Log
@@ -322,20 +254,11 @@ export const DEFAULT_TEMPLATES = {
 ---
 Previous: {{previous}}
 Next: {{next}}
-`,
-  NOTE: `---
-title: {{title}}
-created: {{date}}
-source: {{source}}
-tags: []
----
-# {{title}}
 `
 } as const
 
 export const REGEX_PATTERNS = {
   WIKI_LINK: /\[\[(.*?)\]\]/g,
-  SHORTCODE: /[\w>+*{}\[\]()]+$/,
   DATE_FILENAME: /\d{4}-\d{2}-\d{2}/,
   INVALID_FILENAME_CHARS: /[\\/:*?"<>|]/g
 } as const
@@ -347,21 +270,18 @@ The settings system provides modular configuration management:
 
 #### Settings Validation Algorithm
 ```typescript
-// Algorithm 1: Settings Validation
 // validateSettings: Checks if a settings object matches the expected schema and types
 // validateSettingsWithDetails: Returns detailed validation results, including errors and warnings
 ```
 
 #### Modular Settings Structure Algorithm
 ```typescript
-// Algorithm 2: Modular Settings Structure
 // Each settings domain (Directory, Journal, Note, General) is defined in its own module
 // These modules can be imported individually for advanced usage or testing
 ```
 
 #### Default Settings Export Algorithm
 ```typescript
-// Algorithm 3: Default Settings Export
 // DEFAULT_SETTINGS provides a baseline configuration for initializing the plugin
 // or resetting user settings
 ```
@@ -374,7 +294,6 @@ Handles directory structure creation and management:
 
 #### Directory Structure Algorithm
 ```typescript
-// Algorithm: Directory Structure Creation
 async rebuildDirectoryStructure(): Promise<void> {
   // 1. Create base folder if specified
   const basePath = baseFolder ? normalizePath(baseFolder) : ''
@@ -395,7 +314,6 @@ async rebuildDirectoryStructure(): Promise<void> {
 
 #### Journal Structure Algorithm
 ```typescript
-// Algorithm: Journal Structure Creation
 async createJournalStructure(basePath: string): Promise<void> {
   const journalPath = PathUtils.joinPath(basePath, 'journal')
   await this.getOrCreateDirectory(journalPath)
@@ -417,7 +335,6 @@ async createJournalStructure(basePath: string): Promise<void> {
 
 #### Template Setup Algorithm
 ```typescript
-// Algorithm: Template Setup
 async setupTemplates(): Promise<void> {
   const templatesPath = baseFolder
     ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH)
@@ -427,7 +344,7 @@ async setupTemplates(): Promise<void> {
   
   const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME)
   if (!vault.getAbstractFileByPath(templateFilePath)) {
-    const templateContent = await this.getDailyNotesTemplateContent()
+    const templateContent = DirectoryManager.getDailyNotesTemplateContent()
     await vault.create(templateFilePath, templateContent)
   }
 }
@@ -439,7 +356,6 @@ Handles journal entry creation and management:
 
 #### Journal Entry Creation Algorithm
 ```typescript
-// Algorithm: Journal Entry Creation
 async createOrOpenJournalEntry(date: any): Promise<TFile> {
   // 1. Create monthly folder structure
   await this.ensureMonthlyFolderExists(date)
@@ -461,10 +377,10 @@ async createOrOpenJournalEntry(date: any): Promise<TFile> {
 
 #### Monthly Folder Management Algorithm
 ```typescript
-// Algorithm: Monthly Folder Management
 async ensureMonthlyFolderExists(date: any): Promise<void> {
   const monthlyFolderPath = this.getMonthlyFolderPath(date)
-  const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath)
+  const folder = this.plugin.app.vault.getFolderByPath(monthlyFolderPath)
+  const folderExists = folder !== null
   
   if (!folderExists) {
     await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath)
@@ -496,7 +412,6 @@ Provides centralized date handling functionality:
 
 #### Date Initialization Algorithm
 ```typescript
-// Algorithm: Date Service Initialization
 static initialize(): void {
   // Initialize moment.js with proper locale and timezone settings
   // Set up date formatting patterns
@@ -506,7 +421,6 @@ static initialize(): void {
 
 #### Date Formatting Algorithm
 ```typescript
-// Algorithm: Date Formatting
 static format(date: any, format: string): string {
   return moment(date).format(format)
 }
@@ -518,7 +432,6 @@ static getJournalFilename(date: any, format: string): string {
 
 #### Date Navigation Algorithm
 ```typescript
-// Algorithm: Date Navigation
 static previousDay(date: any): any {
   return moment(date).subtract(1, 'day')
 }
@@ -540,15 +453,13 @@ Provides centralized error handling:
 
 #### Error Handling Algorithm
 ```typescript
-// Algorithm: Error Handling
 handleError(error: Error, context: string, userFacing = false): void {
-  console.error(`[${context}]`, error)
+  DebugUtils.error(`[${context}]`, error)
   
   if (userFacing) {
     this.showNotice(`${context}: ${error.message}`)
   }
   
-  // Log to file for debugging
   this.logError(context, error)
 }
 ```
@@ -559,7 +470,6 @@ Provides path manipulation utilities:
 
 #### Path Manipulation Algorithm
 ```typescript
-// Algorithm: Path Manipulation
 static joinPath(...parts: string[]): string {
   return parts.filter(part => part).join('/')
 }
@@ -569,19 +479,20 @@ static normalizePath(path: string): string {
 }
 ```
 
-### DateUtils (`utils/dateUtils.ts`)
+### DebugUtils (`utils/debugUtils.ts`)
 
-Provides additional date utility functions:
+Provides conditional logging based on debug mode settings:
 
-#### Date Utility Algorithm
+#### Debug Logging Algorithm
 ```typescript
-// Algorithm: Date Utilities
-static getJournalPath(date: Date | any, baseFolder: string, journalFolder: string, dateFormat: string): string {
-  // Generate journal file path based on date and configuration
+static log(message: string, ...args: any[]): void {
+  if (this.isDebugEnabled()) {
+    console.log(`[Link Plugin] ${message}`, ...args)
+  }
 }
 
-static extractDateFromFilename(filename: string, format: string): any {
-  // Extract date from filename using specified format
+static error(message: string, error?: any): void {
+  console.error(`[Link Plugin] ${message}`, error)
 }
 ```
 
@@ -593,7 +504,6 @@ Provides the settings user interface:
 
 #### Settings UI Algorithm
 ```typescript
-// Algorithm: Settings UI
 display(): void {
   // 1. Clear container
   containerEl.empty()
@@ -615,26 +525,11 @@ Manages ribbon button functionality:
 
 #### Ribbon Management Algorithm
 ```typescript
-// Algorithm: Ribbon Management
 initializeRibbon(): void {
   this.clearRibbon()
   this.addCreateFutureNoteButton()
   this.addSettingsButton()
-}
-
-private addCreateFutureNoteButton(): void {
-  const button = this.plugin.addRibbonIcon(
-    'calendar-plus',
-    'Create Future Note - Select date to create note',
-    async () => {
-      const selectedDate = await this.showDatePicker()
-      if (selectedDate) {
-        const file = await this.plugin.journalManager.createFutureDailyNote(selectedDate)
-        const leaf = this.plugin.app.workspace.getLeaf()
-        await leaf.openFile(file)
-      }
-    }
-  )
+  DebugUtils.log('Ribbon initialized - Core journal functionality enabled')
 }
 ```
 
@@ -685,7 +580,8 @@ async createOrOpenJournalEntry(date: any): Promise<TFile> {
 ```typescript
 async ensureMonthlyFolderExists(date: any): Promise<void> {
   const monthlyFolderPath = this.getMonthlyFolderPath(date)
-  const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath)
+  const folder = this.plugin.app.vault.getFolderByPath(monthlyFolderPath)
+  const folderExists = folder !== null
   
   if (!folderExists) {
     await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath)
@@ -789,7 +685,7 @@ public getMonthlyFolderPath(date: any): string {
 2. **Caching**: Cache frequently accessed data
 3. **Efficient Algorithms**: Use optimized algorithms for date processing
 4. **Minimal File Operations**: Batch file operations when possible
-5. **Memory Management**: Proper cleanup of resources
+5. **Memory Management**: Clean up resources properly
 
 ### Resource Usage
 1. **CPU**: Minimal processing overhead
@@ -808,5 +704,5 @@ public getMonthlyFolderPath(date: any): string {
 The Obsidian Link Plugin is a well-architected application that provides intelligent daily note organization with automatic monthly folder management and seamless Daily Notes integration. The modular design, comprehensive error handling, and user-friendly interface make it a robust solution for journal management in Obsidian.
 
 For detailed component analysis, see [Component Documentation](COMPONENT_DOCUMENTATION.md).
-For user-focused documentation, see [User Guide](USER_GUIDE.md).
-For development setup, see [Development Guide](DEVELOPMENT.md). 
+For application-level documentation, see [Application Documentation](APPLICATION_DOCUMENTATION.md).
+For user guidance, see [User Guide](USER_GUIDE.md). 

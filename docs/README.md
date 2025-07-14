@@ -1,6 +1,6 @@
 # Obsidian Link Plugin Documentation
 
-Welcome to the comprehensive documentation for the Obsidian Link Plugin. This documentation is organized to help you understand the plugin's architecture, components, and usage.
+Welcome to the comprehensive documentation for the Obsidian Link Plugin. This documentation is organized to help you understand the plugin's architecture, components, and usage with minimal duplication.
 
 ## 📚 Documentation Overview
 
@@ -11,6 +11,7 @@ Welcome to the comprehensive documentation for the Obsidian Link Plugin. This do
 ### For Developers
 - **[Architecture Overview](ARCHITECTURE.md)** - High-level system design and algorithms
 - **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Detailed component analysis
+- **[Application Documentation](APPLICATION_DOCUMENTATION.md)** - Application-level algorithms and integration
 - **[Development Guide](DEVELOPMENT.md)** - Setup, testing, and contribution guidelines
 
 ### For Documentation Maintainers
@@ -27,6 +28,7 @@ Welcome to the comprehensive documentation for the Obsidian Link Plugin. This do
 - **Understanding components?** → [Component Documentation](COMPONENT_DOCUMENTATION.md)
 - **Setting up development?** → [Development Guide](DEVELOPMENT.md)
 - **Contributing code?** → [Development Guide](DEVELOPMENT.md)
+- **Understanding application flow?** → [Application Documentation](APPLICATION_DOCUMENTATION.md)
 
 ## 📋 Documentation Structure
 
@@ -36,7 +38,9 @@ docs/
 ├── USER_GUIDE.md               # User-focused documentation
 ├── ARCHITECTURE.md             # System architecture and algorithms
 ├── COMPONENT_DOCUMENTATION.md  # Detailed component analysis
-└── DEVELOPMENT.md              # Development setup and guidelines
+├── APPLICATION_DOCUMENTATION.md # Application-level documentation
+├── DEVELOPMENT.md              # Development setup and guidelines
+└── DOCUMENTATION_SUMMARY.md   # Documentation structure overview
 ```
 
 ## 🔗 Cross-References
@@ -48,6 +52,7 @@ docs/
 ### Technical Documentation
 - [Architecture Overview](ARCHITECTURE.md) ← System design, algorithms, and data flow
 - [Component Documentation](COMPONENT_DOCUMENTATION.md) ← Detailed component analysis
+- [Application Documentation](APPLICATION_DOCUMENTATION.md) ← Application-level algorithms and integration
 - [Development Guide](DEVELOPMENT.md) ← Setup, testing, and contribution guidelines
 
 ## 📖 Reading Paths
@@ -59,7 +64,8 @@ docs/
 ### For Developers
 1. **[Architecture Overview](ARCHITECTURE.md)** - Understand the system design
 2. **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Dive into specific components
-3. **[Development Guide](DEVELOPMENT.md)** - Set up development environment
+3. **[Application Documentation](APPLICATION_DOCUMENTATION.md)** - Understand application flow
+4. **[Development Guide](DEVELOPMENT.md)** - Set up development environment
 
 ### For Contributors
 1. **[Development Guide](DEVELOPMENT.md)** - Setup and contribution guidelines
@@ -74,6 +80,7 @@ All documentation follows these principles:
 - **Code examples** for practical understanding
 - **Consistent formatting** across all files
 - **User-focused** language and explanations
+- **Minimal duplication** across files
 
 ## 📝 Documentation Maintenance
 
@@ -82,6 +89,7 @@ When updating documentation:
 2. Ensure cross-references remain accurate
 3. Update this index if adding new documentation files
 4. Test all links to ensure they work correctly
+5. Avoid duplication by referencing existing content
 
 ---
 

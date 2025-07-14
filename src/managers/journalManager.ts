@@ -81,6 +81,7 @@ import { DateService } from '../services/dateService';
 import { DateUtils } from '../utils/dateUtils';
 import { JournalEntry } from '../types';
 import { DebugUtils } from '../utils/debugUtils';
+import { DirectoryManager } from '../managers/directoryManager';
 
 export class JournalManager {
   plugin: LinkPlugin;
@@ -109,10 +110,18 @@ export class JournalManager {
     let file = vault.getAbstractFileByPath(filePath) as TFile;
 
     if (!file) {
-      // Create the file using Obsidian's default daily note template (empty content)
-      // Let Obsidian's Daily Notes plugin handle the template
-      file = await vault.create(filePath, '');
-      DebugUtils.log(`Created daily note: ${filePath}`);
+      // Create the file with template content
+      const templateContent = this.getTemplateContentForDate(date);
+      file = await vault.create(filePath, templateContent);
+      DebugUtils.log(`Created daily note with template: ${filePath}`);
+    } else {
+      // Check if existing file is empty and populate it
+      const content = await vault.read(file);
+      if (!content.trim()) {
+        const templateContent = this.getTemplateContentForDate(date);
+        await vault.modify(file, templateContent);
+        DebugUtils.log(`Populated existing empty note with template: ${filePath}`);
+      }
     }
 
     return file;
@@ -171,6 +180,7 @@ export class JournalManager {
   /**
    * Creates a daily note for a future date
    * Automatically creates monthly folders as needed
+   * Uses the daily note template and modifies previous/next dates for the target date
    */
   async createFutureDailyNote(date: Date | string): Promise<TFile> {
     const targetDate = DateService.from(date);
@@ -178,6 +188,7 @@ export class JournalManager {
     DebugUtils.log(`Creating future daily note for: ${DateService.format(targetDate, 'YYYY-MM-DD')}`);
     
     // This will automatically create the monthly folder if it doesn't exist
+    // and populate with template content for the target date
     const file = await this.createOrOpenJournalEntry(targetDate);
     
     // Log the created folder structure for verification
@@ -185,6 +196,34 @@ export class JournalManager {
     DebugUtils.log(`Future note created in: ${monthlyPath}`);
     
     return file;
+  }
+
+  /**
+   * Gets the template content modified for a specific date
+   * Replaces the current moment references with the target date
+   */
+  private getTemplateContentForDate(targetDate: any): string {
+    const { journalDateFormat } = this.plugin.settings;
+    
+    // Get the base template content
+    const baseTemplate = DirectoryManager.getDailyNotesTemplateContent();
+    
+    // Calculate previous and next dates relative to the target date
+    const previousDate = DateService.previousDay(targetDate);
+    const nextDate = DateService.nextDay(targetDate);
+    
+    // Format the dates using the configured format
+    const previousFormatted = DateService.format(previousDate, journalDateFormat);
+    const nextFormatted = DateService.format(nextDate, journalDateFormat);
+    const targetFormatted = DateService.format(targetDate, journalDateFormat);
+    
+    // Replace the Templater syntax with actual date values
+    const modifiedTemplate = baseTemplate
+      .replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", -1\) %>/g, previousFormatted)
+      .replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", 1\) %>/g, nextFormatted)
+      .replace(/<% tp\.date\.now\("MM-DD dddd"\) %>/g, DateService.format(targetDate, 'MM-DD dddd'));
+    
+    return modifiedTemplate;
   }
 
   /**
