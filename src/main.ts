@@ -75,18 +75,27 @@ export default class LinkPlugin extends Plugin {
       this.ribbonManager.initializeRibbon()
       this.registerCommands()
       this.registerEventHandlers()
-      await this.directoryManager.rebuildDirectoryStructure()
-      await this.journalManager.checkAndCreateCurrentMonthFolder()
-      await this.updateDailyNotesSettings()
-      this.startDateChangeMonitoring()
-      const debugInfo = DateService.getDebugInfo()
-      DebugUtils.log('DateService initialized:', debugInfo)
-      DebugUtils.log('Today:', DateService.today())
-      DebugUtils.log('Current month:', DateService.currentMonth())
-      this.errorHandler.showNotice(
-        'Obsidian Link Journal loaded - Pure journal management ready!'
-      )
-      DebugUtils.log('Obsidian Link Journal loaded successfully - Core journal functionality enabled')
+      
+      // Only perform directory structure and integration operations if plugin is enabled
+      if (this.settings.enabled) {
+        await this.directoryManager.rebuildDirectoryStructure()
+        await this.journalManager.checkAndCreateCurrentMonthFolder()
+        await this.updateDailyNotesSettings()
+        this.startDateChangeMonitoring()
+        const debugInfo = DateService.getDebugInfo()
+        DebugUtils.log('DateService initialized:', debugInfo)
+        DebugUtils.log('Today:', DateService.today())
+        DebugUtils.log('Current month:', DateService.currentMonth())
+        this.errorHandler.showNotice(
+          'Obsidian Link Journal loaded - Pure journal management ready!'
+        )
+        DebugUtils.log('Obsidian Link Journal loaded successfully - Core journal functionality enabled')
+      } else {
+        DebugUtils.log('Obsidian Link Journal loaded - Plugin disabled, no operations performed')
+        this.errorHandler.showNotice(
+          'Obsidian Link Journal loaded - Plugin is disabled. Enable it in settings to start using journal management features.'
+        )
+      }
     } catch (error) {
       DebugUtils.error('Failed to load Link Plugin:', error)
       if (this.errorHandler) {
@@ -367,6 +376,11 @@ export default class LinkPlugin extends Plugin {
     this.registerInterval(
       window.setInterval(async () => {
         try {
+          // Only perform date monitoring if plugin is enabled
+          if (!this.settings.enabled) {
+            return
+          }
+          
           const currentMonth = DateService.format(DateService.now(), 'YYYY-MM')
           if (currentMonth !== lastCheckedMonth) {
             DebugUtils.log(

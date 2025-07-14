@@ -55,6 +55,12 @@ export class SettingsTab extends PluginSettingTab {
       cls: 'setting-item-description'
     })
 
+    // Plugin Enable/Disable section
+    new Setting(containerEl)
+      .setName('Plugin Status')
+      .setHeading();
+    this.addPluginStatusSettings(containerEl)
+
     // Daily Notes Integration section
     new Setting(containerEl)
       .setName('Daily Notes Integration')

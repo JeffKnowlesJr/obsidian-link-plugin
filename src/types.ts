@@ -14,6 +14,9 @@
  */
 
 export interface LinkPluginSettings {
+  // Plugin enable/disable setting
+  enabled: boolean
+
   // Directory structure settings
   baseFolder: string // Root folder for all plugin-created directories
   directoryStructure: string[]

@@ -19,18 +19,25 @@
  */
 
 export interface GeneralSettingsConfig {
+  enabled: boolean;
   debugMode: boolean;
 }
 
 export class GeneralSettings {
   static getDefaults(): GeneralSettingsConfig {
     return {
+      enabled: false,
       debugMode: false,
     };
   }
 
   static validate(settings: Partial<GeneralSettingsConfig>): Partial<GeneralSettingsConfig> {
     const validated: Partial<GeneralSettingsConfig> = {};
+
+    // Validate enabled setting
+    if (typeof settings.enabled === 'boolean') {
+      validated.enabled = settings.enabled;
+    }
 
     // Validate debug mode setting
     if (typeof settings.debugMode === 'boolean') {
