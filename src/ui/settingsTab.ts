@@ -87,6 +87,7 @@ export class SettingsTab extends PluginSettingTab {
             // Allow empty string for root
             this.plugin.settings.baseFolder = value.trim()
             await this.plugin.saveSettings()
+            this.display() // Refresh the UI to reflect the new value
           })
       )
       .then((setting) => {
