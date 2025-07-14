@@ -26,7 +26,6 @@ export interface LinkPluginSettings {
   journalFolderFormat: string
   journalYearFormat: string
   journalMonthFormat: string
-  journalTemplate: string
   simpleJournalMode: boolean // Single setting: true = simple, false = dynamic
 
   // Daily Notes Integration Settings

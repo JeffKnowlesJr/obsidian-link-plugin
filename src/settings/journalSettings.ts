@@ -6,17 +6,15 @@
  *      a. journalDateFormat: 'YYYY-MM-DD dddd'
  *      b. journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT
  *      c. journalYearFormat: 'YYYY'
- *      d. journalMonthFormat: 'MM-MMMM'
- *      e. journalTemplate: DEFAULT_TEMPLATES.JOURNAL
- *      f. simpleJournalMode: false
+ *      d. journalMonthFormat: 'MM MMMM'
+ *      e. simpleJournalMode: false
  * 
  * - validate(settings):
  *   1. Create an empty validated object.
  *   2. For each property in settings:
  *      a. If journalDateFormat is a string, copy it to validated.
  *      b. If journalFolderFormat is a string, copy it to validated.
- *      c. If journalTemplate is a string, copy it to validated.
- *      d. If simpleJournalMode is a boolean, copy it to validated.
+ *      c. If simpleJournalMode is a boolean, copy it to validated.
  *   3. Return the validated object.
  * 
  * - isValidDateFormat(format):
@@ -25,14 +23,13 @@
  *   3. If an error occurs, return false.
  */
 
-import { DATE_FORMATS, DEFAULT_TEMPLATES } from '../constants';
+import { DATE_FORMATS } from '../constants';
 
 export interface JournalSettingsConfig {
   journalDateFormat: string;
   journalFolderFormat: string;
   journalYearFormat: string;
   journalMonthFormat: string;
-  journalTemplate: string;
   simpleJournalMode: boolean;
 }
 
@@ -43,7 +40,6 @@ export class JournalSettings {
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalYearFormat: 'YYYY',
       journalMonthFormat: 'MM MMMM',
-      journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
       simpleJournalMode: false,
     };
   }
@@ -57,10 +53,6 @@ export class JournalSettings {
 
     if (settings.journalFolderFormat && typeof settings.journalFolderFormat === 'string') {
       validated.journalFolderFormat = settings.journalFolderFormat;
-    }
-
-    if (settings.journalTemplate && typeof settings.journalTemplate === 'string') {
-      validated.journalTemplate = settings.journalTemplate;
     }
 
     if (typeof settings.simpleJournalMode === 'boolean') {

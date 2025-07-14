@@ -215,10 +215,10 @@ export class DateService {
     const monthName = momentDate.format('MMMM');
     const monthNumber = momentDate.format('MM');
     const yearFolderFormat = yearFormat && yearFormat !== 'y_YYYY' ? yearFormat : 'YYYY';
-    const monthFolderFormat = monthFormat || 'MM-MMMM';
+    const monthFolderFormat = monthFormat || 'MM MMMM';
     let cleanMonthFormat = monthFolderFormat;
     if (monthFolderFormat === 'MMmmmm' || monthFolderFormat === 'MMMMM' || monthFolderFormat === 'MMMM') {
-      cleanMonthFormat = 'MM-MMMM';
+      cleanMonthFormat = 'MM MMMM';
     }
     return {
       year,

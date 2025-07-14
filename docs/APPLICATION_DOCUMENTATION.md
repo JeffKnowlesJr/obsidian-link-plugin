@@ -393,7 +393,7 @@ async createJournalStructure(basePath: string): Promise<void> {
   if (!this.plugin.settings.simpleJournalMode) {
     const currentDate = DateService.now()
     const currentYear = DateService.format(currentDate, 'YYYY')
-    const currentMonth = DateService.format(currentDate, 'MM-MMMM')
+    const currentMonth = DateService.format(currentDate, 'MM MMMM')
     
     const currentYearPath = PathUtils.joinPath(journalPath, currentYear)
     const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth)

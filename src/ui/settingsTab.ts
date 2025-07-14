@@ -174,10 +174,10 @@ export class SettingsTab extends PluginSettingTab {
     // Month Format (always show since Simple Journal Mode is removed)
     new Setting(containerEl)
       .setName('Month Folder Format')
-      .setDesc('Format for month folders (MM-MMMM creates "07-July")')
+      .setDesc('Format for month folders (MM MMMM creates "07-July")')
       .addText((text) =>
         text
-          .setPlaceholder('MM-MMMM')
+          .setPlaceholder('MM MMMM')
           .setValue(this.plugin.settings.journalMonthFormat)
           .onChange(async (value) => {
             if (value.trim()) {

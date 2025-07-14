@@ -118,7 +118,7 @@ export class DirectoryManager {
       // Create CURRENT YEAR/MONTH structure using proper format
       const currentDate = DateService.now()
       const currentYear = DateService.format(currentDate, 'YYYY')
-      const currentMonth = DateService.format(currentDate, 'MM-MMMM')
+      const currentMonth = DateService.format(currentDate, 'MM MMMM')
 
       // Create current year/month folder
       const currentYearPath = PathUtils.joinPath(journalPath, currentYear)
@@ -156,7 +156,7 @@ export class DirectoryManager {
       const { vault } = this.plugin.app
 
       if (!vault.getAbstractFileByPath(templateFilePath)) {
-        const templateContent = await this.getDailyNotesTemplateContent()
+        const templateContent = DirectoryManager.getDailyNotesTemplateContent()
         await vault.create(templateFilePath, templateContent)
         console.log(`Created template file: ${templateFilePath}`)
       } else {
@@ -171,9 +171,7 @@ export class DirectoryManager {
    * Gets the daily notes template content from the plugin assets
    * Always returns the raw template with Templater syntax to avoid conflicts
    */
-  private async getDailyNotesTemplateContent(): Promise<string> {
-    // Always return raw template with Templater syntax
-    // Let Templater handle its own templating - don't interfere
+  public static getDailyNotesTemplateContent(): string {
     return `---
 previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
 next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
@@ -193,7 +191,7 @@ resources: []
   - [ ] Self Care🛀🧴
   - [ ] Make Breakfast 🍽✨
 	- [ ] Pet Care 🐕🚶🏻‍♂️
-	- [ ] Get Focused 🖥️
+	- [ ] Get Focused 🖥️💊
   - [ ] Check [Calendar](https://calendar.google.com) 📆
 	- [ ] Check [Mail](https://mail.google.com) ✉️ 
   - [ ] Review [[Yearly List]] ✅

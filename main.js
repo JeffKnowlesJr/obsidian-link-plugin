@@ -45,32 +45,6 @@ var DATE_FORMATS = {
   ISO_DATE: "YYYY-MM-DD",
   FOLDER_FORMAT: "YYYY/MM"
 };
-var DEFAULT_TEMPLATES = {
-  JOURNAL: `# {{date}}
-
-## Daily Log
-
-## Tasks
-- [ ] 
-
-## Notes
-
-## Reflection
-
----
-Previous: {{previous}}
-Next: {{next}}
-`,
-  NOTE: `---
-title: {{title}}
-created: {{date}}
-source: {{source}}
-tags: []
----
-
-# {{title}}
-`
-};
 
 // src/settings/directorySettings.ts
 var DirectorySettings = class {
@@ -132,7 +106,6 @@ var JournalSettings = class {
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalYearFormat: "YYYY",
       journalMonthFormat: "MM MMMM",
-      journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
       simpleJournalMode: false
     };
   }
@@ -143,9 +116,6 @@ var JournalSettings = class {
     }
     if (settings.journalFolderFormat && typeof settings.journalFolderFormat === "string") {
       validated.journalFolderFormat = settings.journalFolderFormat;
-    }
-    if (settings.journalTemplate && typeof settings.journalTemplate === "string") {
-      validated.journalTemplate = settings.journalTemplate;
     }
     if (typeof settings.simpleJournalMode === "boolean") {
       validated.simpleJournalMode = settings.simpleJournalMode;
@@ -332,10 +302,10 @@ var DateService = class {
     const monthName = momentDate.format("MMMM");
     const monthNumber = momentDate.format("MM");
     const yearFolderFormat = yearFormat && yearFormat !== "y_YYYY" ? yearFormat : "YYYY";
-    const monthFolderFormat = monthFormat || "MM-MMMM";
+    const monthFolderFormat = monthFormat || "MM MMMM";
     let cleanMonthFormat = monthFolderFormat;
     if (monthFolderFormat === "MMmmmm" || monthFolderFormat === "MMMMM" || monthFolderFormat === "MMMM") {
-      cleanMonthFormat = "MM-MMMM";
+      cleanMonthFormat = "MM MMMM";
     }
     return {
       year,
@@ -435,7 +405,7 @@ var DirectoryManager = class {
     if (!this.plugin.settings.simpleJournalMode) {
       const currentDate = DateService.now();
       const currentYear = DateService.format(currentDate, "YYYY");
-      const currentMonth = DateService.format(currentDate, "MM-MMMM");
+      const currentMonth = DateService.format(currentDate, "MM MMMM");
       const currentYearPath = PathUtils.joinPath(journalPath, currentYear);
       const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth);
       await this.getOrCreateDirectory(currentYearPath);
@@ -460,7 +430,7 @@ var DirectoryManager = class {
       );
       const { vault } = this.plugin.app;
       if (!vault.getAbstractFileByPath(templateFilePath)) {
-        const templateContent = await this.getDailyNotesTemplateContent();
+        const templateContent = DirectoryManager.getDailyNotesTemplateContent();
         await vault.create(templateFilePath, templateContent);
         console.log(`Created template file: ${templateFilePath}`);
       } else {
@@ -474,14 +444,14 @@ var DirectoryManager = class {
    * Gets the daily notes template content from the plugin assets
    * Always returns the raw template with Templater syntax to avoid conflicts
    */
-  async getDailyNotesTemplateContent() {
+  static getDailyNotesTemplateContent() {
     return `---
 previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
 next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
 tags:
   - \u2600\uFE0F
+  - <% tp.date.now("MM-DD dddd") %>
 resources: []
-stakeholders:
 ---
 ---
 ## Log
@@ -489,17 +459,15 @@ stakeholders:
 ### Routine Checklist
 
 - [ ] Open Daily Note
-- [ ] **Daily Checks**
+- [ ] **Morning Checks**
 	- [ ] Bed and Clothes \u{1F6CF}\uFE0F\u{1F9FA}
-		- [ ] Self Care\u{1F6C0}\u{1F9F4}
-	- [ ] Clean Kitchen
-		- [ ] Make Breakfast \u{1F37D}\u2728
+  - [ ] Self Care\u{1F6C0}\u{1F9F4}
+  - [ ] Make Breakfast \u{1F37D}\u2728
 	- [ ] Pet Care \u{1F415}\u{1F6B6}\u{1F3FB}\u200D\u2642\uFE0F
-		- [ ] Wear Watch \u231A\uFE0F
 	- [ ] Get Focused \u{1F5A5}\uFE0F\u{1F48A}
-		- [ ] Put [Calendar](https://calendar.google.com) \u{1F4C6}
+  - [ ] Check [Calendar](https://calendar.google.com) \u{1F4C6}
 	- [ ] Check [Mail](https://mail.google.com) \u2709\uFE0F 
-		- [ ] Reviews [[Yearly List]] \u2705
+  - [ ] Review [[Yearly List]] \u2705
 	- [ ] Review [July Log](Yearly%20Log.md#July) \u{1F5D3}\uFE0F
 
 ---`;
@@ -613,43 +581,6 @@ var JournalManager = class {
     const monthlyPath = this.getMonthlyFolderPath(targetDate);
     console.log(`Future note created in: ${monthlyPath}`);
     return file;
-  }
-  /**
-   * Generate content for a journal entry
-   */
-  async generateJournalContent(date) {
-    const { journalTemplate, journalDateFormat } = this.plugin.settings;
-    const previousDay = DateService.previousDay(date);
-    const nextDay = DateService.nextDay(date);
-    const previousLink = `[[${DateService.format(previousDay, journalDateFormat)}]]`;
-    const nextLink = `[[${DateService.format(nextDay, journalDateFormat)}]]`;
-    const currentDate = DateService.format(date, "YYYY-MM-DD");
-    const title = DateService.format(date, journalDateFormat);
-    if (journalTemplate) {
-      return journalTemplate.replace(/{{date}}/g, currentDate).replace(/{{title}}/g, title).replace(/{{previous}}/g, previousLink).replace(/{{next}}/g, nextLink);
-    }
-    return `---
-date: ${currentDate}
-previous: ${previousLink}
-next: ${nextLink}
-tags:
-  - journal
----
-
-# ${title}
-
-## Daily Log
-
-## Tasks
-- [ ] 
-
-## Notes
-
-## Reflection
-
----
-Previous: ${previousLink} | Next: ${nextLink}
-`;
   }
   /**
    * Opens the journal entry for today
@@ -1014,8 +945,8 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
         }
       })
     );
-    new import_obsidian6.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText(
-      (text) => text.setPlaceholder("MM-MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
+    new import_obsidian6.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM MMMM creates "07-July")').addText(
+      (text) => text.setPlaceholder("MM MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
         if (value.trim()) {
           this.plugin.settings.journalMonthFormat = value.trim();
           await this.plugin.saveSettings();

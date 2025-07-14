@@ -32,13 +32,6 @@
  *   4. Log the created folder structure.
  *   5. Return the file.
  * 
- * - generateJournalContent(date):
- *   1. Get journalTemplate and journalDateFormat from settings.
- *   2. Compute previous and next day.
- *   3. Format previous/next links, current date, and title.
- *   4. If a template is set, replace variables and return.
- *   5. Otherwise, return the default template string.
- * 
  * - openTodayJournal():
  *   1. Get today's date.
  *   2. Create or open the journal entry for today.
@@ -190,53 +183,6 @@ export class JournalManager {
     console.log(`Future note created in: ${monthlyPath}`);
     
     return file;
-  }
-
-  /**
-   * Generate content for a journal entry
-   */
-  private async generateJournalContent(date: any): Promise<string> {
-    const { journalTemplate, journalDateFormat } = this.plugin.settings;
-    const previousDay = DateService.previousDay(date);
-    const nextDay = DateService.nextDay(date);
-
-    const previousLink = `[[${DateService.format(previousDay, journalDateFormat)}]]`;
-    const nextLink = `[[${DateService.format(nextDay, journalDateFormat)}]]`;
-    const currentDate = DateService.format(date, 'YYYY-MM-DD');
-    const title = DateService.format(date, journalDateFormat);
-
-    if (journalTemplate) {
-      // Replace template variables
-      return journalTemplate
-        .replace(/{{date}}/g, currentDate)
-        .replace(/{{title}}/g, title)
-        .replace(/{{previous}}/g, previousLink)
-        .replace(/{{next}}/g, nextLink);
-    }
-
-    // Default template
-    return `---
-date: ${currentDate}
-previous: ${previousLink}
-next: ${nextLink}
-tags:
-  - journal
----
-
-# ${title}
-
-## Daily Log
-
-## Tasks
-- [ ] 
-
-## Notes
-
-## Reflection
-
----
-Previous: ${previousLink} | Next: ${nextLink}
-`;
   }
 
   /**

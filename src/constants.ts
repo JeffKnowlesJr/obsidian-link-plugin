@@ -34,9 +34,6 @@
  * - ERROR_MESSAGES:
  *     1. Map error types to user-friendly error messages for display.
  *
- * - DEFAULT_TEMPLATES:
- *     1. Provide default template strings for journal and note creation, using placeholders for dynamic values.
- *
  * - REGEX_PATTERNS:
  *     1. Define regular expressions for matching wiki links, shortcodes, date filenames, and invalid filename characters.
  */
@@ -141,33 +138,6 @@ export const ERROR_MESSAGES = {
   SHORTCODE_PARSE_ERROR: 'Failed to parse shortcode',
   JOURNAL_CREATE_ERROR: 'Failed to create journal entry'
 } as const
-
-export const DEFAULT_TEMPLATES = {
-  JOURNAL: `# {{date}}
-
-## Daily Log
-
-## Tasks
-- [ ] 
-
-## Notes
-
-## Reflection
-
----
-Previous: {{previous}}
-Next: {{next}}
-`,
-  NOTE: `---
-title: {{title}}
-created: {{date}}
-source: {{source}}
-tags: []
----
-
-# {{title}}
-`
-} as const;
 
 export const REGEX_PATTERNS = {
   WIKI_LINK: /\[\[(.*?)\]\]/g,
