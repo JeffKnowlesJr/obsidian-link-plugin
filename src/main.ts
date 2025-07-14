@@ -98,7 +98,8 @@ export default class LinkPlugin extends Plugin {
   async loadSettings() {
     // Algorithm 2: Settings Validation and Persistence (load)
     const loadedData = await this.loadData()
-    this.settings = validateSettings(loadedData || {})
+    // Use DEFAULT_SETTINGS as a fallback for missing values
+    this.settings = validateSettings({ ...DEFAULT_SETTINGS, ...loadedData })
   }
 
   async saveSettings() {
