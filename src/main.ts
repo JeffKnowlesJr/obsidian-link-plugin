@@ -557,10 +557,6 @@ export default class LinkPlugin extends Plugin {
   onunload() {
     console.log('Obsidian Link Journal unloaded')
 
-    if (this.linkManager) {
-      this.linkManager.cleanup()
-    }
-
     if (this.ribbonManager) {
       this.ribbonManager.cleanup()
     }

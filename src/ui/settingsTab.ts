@@ -275,7 +275,6 @@ export class SettingsTab extends PluginSettingTab {
 
     // Single toggle that handles backup/restore automatically
     new Setting(containerEl)
-      .setName('Enable Daily Notes Integration')
       .setDesc(
         'Automatically backup and apply Daily Notes plugin settings to use our folder structure'
       )
@@ -288,20 +287,22 @@ export class SettingsTab extends PluginSettingTab {
                 // Enable: Create backup and apply settings
                 await this.plugin.updateDailyNotesSettings()
                 this.plugin.settings.dailyNotesIntegration.enabled = true
-                this.showStatus(
-                  containerEl,
-                  '✅ Daily Notes integration enabled! Your original settings have been backed up.',
-                  true
-                )
+                // this.showStatus(
+                //   containerEl,
+                //   '✅ Daily Notes integration enabled! Your original settings have been backed up.',
+                //   true
+                // )
+                this.plugin.errorHandler.showSuccess('✅ Daily Notes integration enabled! Your original settings have been backed up.')
               } else {
                 // Disable: Restore from backup
                 await this.plugin.restoreDailyNotesSettings()
                 this.plugin.settings.dailyNotesIntegration.enabled = false
-                this.showStatus(
-                  containerEl,
-                  '✅ Daily Notes integration disabled! Your original settings have been restored.',
-                  true
-                )
+                // this.showStatus(
+                //   containerEl,
+                //   '✅ Daily Notes integration disabled! Your original settings have been restored.',
+                //   true
+                // )
+                this.plugin.errorHandler.showSuccess('✅ Daily Notes integration disabled! Your original settings have been restored.')
               }
               await this.plugin.saveSettings()
             } catch (error) {
@@ -335,11 +336,12 @@ export class SettingsTab extends PluginSettingTab {
         button.setButtonText('Reapply').onClick(async () => {
           try {
             await this.plugin.updateDailyNotesSettings()
-            this.showStatus(
-              containerEl,
-              '✅ Daily Notes integration settings reapplied successfully!',
-              true
-            )
+            // this.showStatus(
+            //   containerEl,
+            //   '✅ Daily Notes integration settings reapplied successfully!',
+            //   true
+            // )
+            this.plugin.errorHandler.showSuccess('✅ Daily Notes integration settings reapplied successfully!')
           } catch (error) {
             const errorMessage =
               error instanceof Error ? error.message : String(error)

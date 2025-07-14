@@ -10,7 +10,7 @@
   "journalDateFormat": "YYYY-MM-DD dddd",
   "journalFolderFormat": "YYYY/MM",
   "journalYearFormat": "YYYY",
-  "journalMonthFormat": "MM-MMMM",
+  "journalMonthFormat": "MM MMMM",
   "journalTemplate": "# {{date}}\n\n## Daily Log\n\n## Tasks\n- [ ] \n\n## Notes\n\n## Reflection\n\n---\nPrevious: {{previous}}\nNext: {{next}}\n",
   "simpleJournalMode": false,
   "dailyNotesIntegration": {

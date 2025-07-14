@@ -31,10 +31,6 @@ export {
   type JournalSettingsConfig
 } from './settings/journalSettings';
 
-export {
-  NoteSettings,
-  type NoteSettingsConfig
-} from './settings/noteSettings';
 
 export {
   GeneralSettings,

@@ -42,7 +42,7 @@ export class JournalSettings {
       journalDateFormat: 'YYYY-MM-DD dddd',
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalYearFormat: 'YYYY',
-      journalMonthFormat: 'MM-MMMM',
+      journalMonthFormat: 'MM MMMM',
       journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
       simpleJournalMode: false,
     };

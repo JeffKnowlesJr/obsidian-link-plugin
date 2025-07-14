@@ -27,21 +27,18 @@ __export(main_exports, {
   default: () => LinkPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian8 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/constants.ts
 var DEFAULT_BASE_FOLDER = "Link";
 var DEFAULT_TEMPLATES_PATH = "templates";
 var DAILY_NOTES_TEMPLATE_NAME = "Daily Notes Template.md";
 var COMMAND_IDS = {
-  CREATE_LINKED_NOTE: "create-linked-note",
   REBUILD_DIRECTORY: "rebuild-directory-structure",
   OPEN_TODAY_JOURNAL: "open-today-journal",
   CREATE_TODAY_NOTE: "create-today-note",
   CREATE_FUTURE_NOTE: "create-future-note",
-  CREATE_MONTHLY_FOLDERS: "create-monthly-folders",
-  EXPAND_SHORTCODE: "expand-shortcode",
-  SHOW_LINK_SUGGESTIONS: "show-link-suggestions"
+  CREATE_MONTHLY_FOLDERS: "create-monthly-folders"
 };
 var DATE_FORMATS = {
   DEFAULT_JOURNAL: "YYYY-MM-DD dddd",
@@ -72,14 +69,7 @@ tags: []
 ---
 
 # {{title}}
-
 `
-};
-var REGEX_PATTERNS = {
-  WIKI_LINK: /\[\[(.*?)\]\]/g,
-  SHORTCODE: /[\w>+*{}\[\]()]+$/,
-  DATE_FILENAME: /\d{4}-\d{2}-\d{2}/,
-  INVALID_FILENAME_CHARS: /[\\/:*?"<>|]/g
 };
 
 // src/settings/directorySettings.ts
@@ -96,6 +86,18 @@ var DirectorySettings = class {
       // Updated to match README structure
     };
   }
+  /**
+   * This function validates and sanitizes a partial DirectorySettingsConfig object.
+   * 
+   * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
+   * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
+   * - For array properties (`directoryStructure`, `restrictedDirectories`), it checks if they are arrays and copies them if so.
+   * - For string properties (`documentDirectory`, `journalRootFolder`), it checks if they are strings and copies them if so.
+   * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
+   * 
+   * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
+   * malformed or unexpected input from causing issues in the application.
+   */
   static validate(settings) {
     const validated = {};
     if (settings.baseFolder !== void 0 && typeof settings.baseFolder === "string") {
@@ -129,11 +131,9 @@ var JournalSettings = class {
       journalDateFormat: "YYYY-MM-DD dddd",
       journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
       journalYearFormat: "YYYY",
-      journalMonthFormat: "MM-MMMM",
-      // Changed to MM-MMMM for "07-July" format
+      journalMonthFormat: "MM MMMM",
       journalTemplate: DEFAULT_TEMPLATES.JOURNAL,
       simpleJournalMode: false
-      // Default to dynamic monthly folders
     };
   }
   static validate(settings) {
@@ -159,43 +159,6 @@ var JournalSettings = class {
     } catch (e) {
       return false;
     }
-  }
-};
-
-// src/settings/noteSettings.ts
-var NoteSettings = class {
-  static getDefaults() {
-    return {
-      noteTemplate: DEFAULT_TEMPLATES.NOTE
-    };
-  }
-  static validate(settings) {
-    const validated = {};
-    if (settings.noteTemplate && typeof settings.noteTemplate === "string") {
-      validated.noteTemplate = settings.noteTemplate;
-    }
-    return validated;
-  }
-  static validateTemplate(template) {
-    const errors = [];
-    const requiredVars = ["{{title}}"];
-    const missingVars = requiredVars.filter((varName) => !template.includes(varName));
-    if (missingVars.length > 0) {
-      errors.push(`Missing required template variables: ${missingVars.join(", ")}`);
-    }
-    const templateVarPattern = /\{\{[^}]*\}\}/g;
-    const matches = template.match(templateVarPattern);
-    if (matches) {
-      matches.forEach((match) => {
-        if (!match.endsWith("}}")) {
-          errors.push(`Malformed template variable: ${match}`);
-        }
-      });
-    }
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
   }
 };
 
@@ -228,12 +191,7 @@ var DailyNotesSettings = class {
 var GeneralSettings = class {
   static getDefaults() {
     return {
-      debugMode: false,
-      fileSorting: {
-        enableAutoSorting: false,
-        sortOnFileCreate: false,
-        sortOnFileModify: false
-      }
+      debugMode: false
     };
   }
   static validate(settings) {
@@ -258,23 +216,18 @@ function validateSettings(settings) {
   const validatedSettings = {
     ...DirectorySettings.getDefaults(),
     ...JournalSettings.getDefaults(),
-    ...NoteSettings.getDefaults(),
     ...DailyNotesSettings.getDefaults(),
-    // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
     ...GeneralSettings.getDefaults()
   };
   const directoryValidation = DirectorySettings.validate(settings);
   const journalValidation = JournalSettings.validate(settings);
-  const noteValidation = NoteSettings.validate(settings);
   const dailyNotesValidation = DailyNotesSettings.validate(settings);
   const generalValidation = GeneralSettings.validate(settings);
   Object.assign(
     validatedSettings,
     directoryValidation,
     journalValidation,
-    noteValidation,
     dailyNotesValidation,
-    // shortcodeValidation, // Deprecated - moved to quarantine
     generalValidation
   );
   if (typeof settings.customTemplateLocation === "string") {
@@ -289,9 +242,7 @@ function validateSettings(settings) {
 var DEFAULT_SETTINGS = {
   ...DirectorySettings.getDefaults(),
   ...JournalSettings.getDefaults(),
-  ...NoteSettings.getDefaults(),
   ...DailyNotesSettings.getDefaults(),
-  // ...ShortcodeSettings.getDefaults(), // Deprecated - moved to quarantine
   ...GeneralSettings.getDefaults(),
   customTemplateLocation: void 0
 };
@@ -312,116 +263,61 @@ var PathUtils = class {
 
 // src/services/dateService.ts
 var DateService = class {
-  /**
-   * Initialize the date service with Obsidian's moment instance
-   * This should be called once when the plugin loads
-   */
   static initialize() {
     this.moment = window.moment;
     if (!this.moment) {
       throw new Error("Obsidian moment.js not available");
     }
   }
-  /**
-   * Get current date/time
-   */
   static now() {
     return this.moment();
   }
-  /**
-   * Create moment from date input
-   */
   static from(input) {
     return this.moment(input);
   }
-  /**
-   * Create moment from date string with format
-   */
   static fromFormat(input, format, strict = true) {
     return this.moment(input, format, strict);
   }
-  /**
-   * Format a date using the specified format
-   */
   static format(date, format = "YYYY-MM-DD") {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.format(format);
   }
-  /**
-   * Get today's date formatted
-   */
   static today(format = "YYYY-MM-DD") {
     return this.moment().format(format);
   }
-  /**
-   * Get current year
-   */
   static currentYear() {
     return this.moment().format("YYYY");
   }
-  /**
-   * Get current month name
-   */
   static currentMonth() {
     return this.moment().format("MMMM");
   }
-  /**
-   * Get start of year for given date
-   */
   static startOfYear(date) {
     return (date ? this.moment(date) : this.moment()).startOf("year");
   }
-  /**
-   * End of year for given date
-   */
   static endOfYear(date) {
     return (date ? this.moment(date) : this.moment()).endOf("year");
   }
-  /**
-   * Start of month for given date
-   */
   static startOfMonth(date) {
     return (date ? this.moment(date) : this.moment()).startOf("month");
   }
-  /**
-   * End of month for given date
-   */
   static endOfMonth(date) {
     return (date ? this.moment(date) : this.moment()).endOf("month");
   }
-  /**
-   * Add time to a date
-   */
   static add(date, amount, unit) {
     return this.moment(date).add(amount, unit);
   }
-  /**
-   * Subtract time from a date
-   */
   static subtract(date, amount, unit) {
     return this.moment(date).subtract(amount, unit);
   }
-  /**
-   * Adds days to a date and returns a new moment object
-   */
   static addDays(date, days) {
     return this.add(date, days, "days");
   }
-  /**
-   * Check if date is valid
-   */
   static isValid(date) {
     return this.moment(date).isValid();
   }
-  /**
-   * Check if date is same or before another date
-   */
   static isSameOrBefore(date1, date2) {
     return this.moment(date1).isSameOrBefore(date2);
   }
-  /**
-   * Extract date from filename using format
-   */
   static extractDateFromFilename(filename, format) {
     try {
       const date = this.moment(filename, format, true);
@@ -430,9 +326,6 @@ var DateService = class {
       return null;
     }
   }
-  /**
-   * Get journal path components for a date with custom formats
-   */
   static getJournalPathComponents(date, yearFormat, monthFormat) {
     const momentDate = date ? this.moment(date) : this.moment();
     const year = momentDate.format("YYYY");
@@ -452,30 +345,18 @@ var DateService = class {
       monthFolder: momentDate.format(cleanMonthFormat)
     };
   }
-  /**
-   * Get formatted filename for journal entry
-   */
   static getJournalFilename(date, format = "YYYY-MM-DD dddd") {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.format(format);
   }
-  /**
-   * Get previous day
-   */
   static previousDay(date) {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.subtract(1, "day");
   }
-  /**
-   * Get next day
-   */
   static nextDay(date) {
     const momentDate = date ? this.moment(date) : this.moment();
     return momentDate.add(1, "day");
   }
-  /**
-   * Create date range iterator
-   */
   static *dateRange(startDate, endDate, unit = "day") {
     const current = this.moment(startDate);
     const end = this.moment(endDate);
@@ -484,24 +365,15 @@ var DateService = class {
       current.add(1, unit);
     }
   }
-  /**
-   * Get monthly folder path for a date with custom formats
-   */
   static getMonthlyFolderPath(basePath, date, yearFormat, monthFormat) {
     const components = this.getJournalPathComponents(date, yearFormat, monthFormat);
     return `${basePath}/${components.yearFolder}/${components.monthFolder}`;
   }
-  /**
-   * Get full journal file path
-   */
   static getJournalFilePath(basePath, date, format = "YYYY-MM-DD dddd") {
     const monthlyPath = this.getMonthlyFolderPath(basePath, date);
     const filename = this.getJournalFilename(date, format);
     return `${monthlyPath}/${filename}.md`;
   }
-  /**
-   * Validate date format string
-   */
   static isValidFormat(format) {
     try {
       const testDate = this.moment();
@@ -511,9 +383,6 @@ var DateService = class {
       return false;
     }
   }
-  /**
-   * Get debug information about the moment instance
-   */
   static getDebugInfo() {
     var _a;
     return {
@@ -550,9 +419,6 @@ var DirectoryManager = class {
         const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
         await this.getOrCreateDirectory(dirPath);
         console.log(`Created directory: ${dirPath}`);
-        if (dirName === "reference") {
-          await this.createReferenceStructure(basePath);
-        }
       }
       await this.createJournalStructure(basePath);
     } catch (error) {
@@ -637,529 +503,6 @@ stakeholders:
 	- [ ] Review [July Log](Yearly%20Log.md#July) \u{1F5D3}\uFE0F
 
 ---`;
-  }
-  /**
-   * Creates reference directory structure and knowledge base documentation
-   */
-  async createReferenceStructure(basePath) {
-    const referencePath = basePath ? PathUtils.joinPath(basePath, "reference", "linkplugin") : "reference/linkplugin";
-    await this.getOrCreateDirectory(referencePath);
-    console.log(`Created reference directory: ${referencePath}`);
-    await this.createArchitectureDocumentation(referencePath);
-    await this.createPatternsDocumentation(referencePath);
-    await this.createIntegrationDocumentation(referencePath);
-    await this.createTroubleshootingLessons(referencePath);
-    console.log("Reference knowledge base created");
-  }
-  /**
-   * Creates architecture documentation explaining key design decisions
-   */
-  async createArchitectureDocumentation(referencePath) {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      "Architecture Decisions.md"
-    );
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Architecture Decisions
-
-## Directory Structure Logic
-
-### Core Principle: Siblings vs Nested
-**Decision**: Templates, Journal, and Reference are siblings under Link/
-**Reasoning**: 
-- Templates are **tools to create** content, not content themselves
-- Each serves different purposes and should be logically separated
-- Prevents deep nesting that makes navigation difficult
-- Follows standard file organization principles
-
-### Structure:
-\`\`\`
-Link/
-\u251C\u2500\u2500 journal/           # Time-based content
-\u2502   \u2514\u2500\u2500 YYYY/MM-Month/ # Organized by date
-\u251C\u2500\u2500 templates/         # Content creation tools
-\u2502   \u2514\u2500\u2500 *.md          # Template files
-\u2514\u2500\u2500 reference/         # Knowledge base & documentation
-    \u2514\u2500\u2500 *.md          # Reference materials
-\`\`\`
-
-## Collision Avoidance Strategy
-
-### Problem
-Plugin needs to create directories without conflicting with existing vault structure.
-
-### Solution: Base Folder Approach
-- All plugin content contained within configurable base folder (default: "Link")
-- User can change base folder to avoid conflicts
-- Plugin never creates directories at vault root level
-
-### Benefits
-- \u2705 No conflicts with existing user structure
-- \u2705 Easy to relocate entire plugin structure
-- \u2705 Clear separation of plugin vs user content
-- \u2705 Easy to backup/sync plugin content separately
-
-## Template System Design
-
-### Problem
-Need to provide templates without interfering with existing template systems (Templater).
-
-### Solution: Coexistence Pattern
-1. **No Interference**: Always provide raw template with original syntax
-2. **Detection Only**: Check for Templater presence for user feedback only
-3. **No Overrides**: Never replace or modify Templater functionality
-4. **Standard Location**: Place templates in predictable, discoverable location
-
-### Benefits  
-- \u2705 Works with or without Templater
-- \u2705 No plugin conflicts
-- \u2705 User can modify templates freely
-- \u2705 Templater handles its own syntax processing
-
-## Error Handling Philosophy
-
-### Principle: Graceful Degradation
-- Plugin should work even if some features fail
-- Non-critical features fail silently with logging
-- Critical features show user-friendly error messages
-- Always provide fallback functionality
-
-### Implementation
-- Try-catch blocks around all major operations
-- Detailed logging for debugging
-- User notifications for actionable errors only
-- Fallback behaviors when integrations fail
-`;
-      await vault.create(filePath, content);
-      console.log(`Created architecture documentation: ${filePath}`);
-    }
-  }
-  /**
-   * Creates patterns documentation for common plugin development patterns
-   */
-  async createPatternsDocumentation(referencePath) {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      "Development Patterns.md"
-    );
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Development Patterns
-
-## Directory Management Pattern
-
-### Pattern: Defensive Directory Creation
-\`\`\`typescript
-async getOrCreateDirectory(path: string): Promise<TFolder> {
-  const existingFolder = vault.getAbstractFileByPath(path);
-  if (existingFolder instanceof TFolder) {
-    return existingFolder; // Already exists
-  }
-  
-  // Create parent directories recursively
-  const pathParts = path.split('/');
-  for (const part of pathParts) {
-    // Incremental path building and validation
-  }
-  
-  return vault.getAbstractFileByPath(path) as TFolder;
-}
-\`\`\`
-
-**Why This Works:**
-- Handles existing directories gracefully
-- Creates parent directories as needed
-- Validates each step of path creation
-- Returns consistent TFolder interface
-
-## Settings Management Pattern
-
-### Pattern: Layered Configuration
-1. **Default Settings**: Hard-coded fallbacks
-2. **User Settings**: Persisted overrides  
-3. **Runtime Settings**: Temporary modifications
-
-### Implementation Strategy
-\`\`\`typescript
-class SettingsManager {
-  defaults = DEFAULT_SETTINGS;
-  user = loadUserSettings();
-  
-  get(key: string) {
-    return this.user[key] ?? this.defaults[key];
-  }
-}
-\`\`\`
-
-**Benefits:**
-- Always has working configuration
-- User can override any setting
-- Runtime changes don't affect persistence
-- Easy to reset to defaults
-
-## Plugin Integration Pattern
-
-### Pattern: Detection and Graceful Coexistence
-
-**Problem**: Need to work with other plugins without conflicts
-
-**Solution**: 
-1. **Detect**: Check if other plugin exists and is enabled
-2. **Respect**: Don't override other plugin functionality
-3. **Complement**: Provide value alongside, not instead of
-4. **Fallback**: Work independently if other plugin not available
-
-### Example: Templater Integration
-\`\`\`typescript
-private isTemplaterAvailable(): boolean {
-  const templaterPlugin = this.app.plugins?.plugins?.['templater-obsidian'];
-  return templaterPlugin && templaterPlugin._loaded;
-}
-
-private getTemplateContent(): string {
-  // Always return raw template - let Templater handle processing
-  return rawTemplateWithTemplaterSyntax;
-}
-\`\`\`
-
-**Key Principles:**
-- \u2705 Check availability for user feedback only
-- \u2705 Never modify other plugin's functionality  
-- \u2705 Provide complementary, not competing features
-- \u2705 Maintain functionality without dependencies
-
-## Error Boundaries Pattern
-
-### Pattern: Contextual Error Handling
-\`\`\`typescript
-class ErrorHandler {
-  handleError(error: Error, context: string, userFacing = false) {
-    console.error(\`[\${context}]\`, error);
-    
-    if (userFacing) {
-      this.showNotice(\`\${context}: \${error.message}\`);
-    }
-    
-    // Log to file for debugging
-    this.logError(context, error);
-  }
-}
-\`\`\`
-
-**Benefits:**
-- Contextual information for debugging
-- User sees only actionable errors
-- Complete error history preserved
-- Consistent error handling across plugin
-
-## Date Service Pattern
-
-### Pattern: Centralized Date Logic
-Instead of using Date() directly throughout codebase:
-
-\`\`\`typescript
-class DateService {
-  static now() { return moment(); }
-  static format(date, format) { return moment(date).format(format); }
-  static add(date, amount, unit) { return moment(date).add(amount, unit); }
-}
-\`\`\`
-
-**Benefits:**
-- Consistent date handling
-- Easy to mock for testing
-- Single place to change date library
-- Handles timezone/locale consistently
-
-## Command Registration Pattern
-
-### Pattern: Centralized Command Management
-\`\`\`typescript
-registerCommands() {
-  const commands = [
-    { id: 'create-note', name: 'Create Note', handler: this.createNote },
-    { id: 'open-journal', name: 'Open Journal', handler: this.openJournal }
-  ];
-  
-  commands.forEach(cmd => this.addCommand(cmd));
-}
-\`\`\`
-
-**Benefits:**
-- Easy to see all available commands
-- Consistent command structure
-- Easy to add/remove commands
-- Centralized command logic
-`;
-      await vault.create(filePath, content);
-      console.log(`Created patterns documentation: ${filePath}`);
-    }
-  }
-  /**
-   * Creates integration documentation for working with Obsidian ecosystem
-   */
-  async createIntegrationDocumentation(referencePath) {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(referencePath, "Integration Guide.md");
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Integration Guide
-
-## Working with Obsidian Ecosystem
-
-### Core Principle: Be a Good Citizen
-- Complement existing functionality, don't replace it
-- Follow Obsidian's conventions and patterns
-- Integrate with popular community plugins
-- Provide value without causing conflicts
-
-## Daily Notes Integration
-
-### Challenge
-Update Obsidian's Daily Notes plugin to use our folder structure.
-
-### Solution: Settings Synchronization
-\`\`\`typescript
-async updateDailyNotesSettings(): Promise<void> {
-  // Try core plugin first
-  const corePlugin = this.app.internalPlugins?.plugins?.['daily-notes'];
-  if (corePlugin?.enabled) {
-    corePlugin.instance.options.folder = ourFolderPath;
-    return;
-  }
-  
-  // Fallback to community plugin
-  const communityPlugin = this.app.plugins?.plugins?.['daily-notes'];
-  if (communityPlugin) {
-    communityPlugin.settings.folder = ourFolderPath;
-    await communityPlugin.saveSettings();
-  }
-}
-\`\`\`
-
-**Key Insights:**
-- Core plugins accessed via \`internalPlugins\`
-- Community plugins via \`plugins.plugins\`
-- Always check if plugin exists and is enabled
-- Settings structures may differ between core/community versions
-
-## Templater Integration
-
-### Challenge
-Provide templates without breaking Templater functionality.
-
-### Solution: Raw Template Strategy
-1. **Always provide raw template** with Templater syntax
-2. **Never process Templater syntax** ourselves
-3. **Let Templater handle its own processing**
-4. **Detect Templater only for user feedback**
-
-### Anti-Pattern (Don't Do This)
-\`\`\`typescript
-// \u274C BAD: Processing Templater syntax ourselves
-if (this.isTemplaterAvailable()) {
-  return rawTemplate;
-} else {
-  return this.processTemplaterSyntax(rawTemplate); // DON'T DO THIS
-}
-\`\`\`
-
-### Correct Pattern
-\`\`\`typescript  
-// \u2705 GOOD: Always return raw template
-private getTemplateContent(): string {
-  return rawTemplateWithTemplaterSyntax; // Let Templater handle it
-}
-\`\`\`
-
-**Why This Works:**
-- No conflicts with Templater processing
-- Template works with or without Templater
-- User can modify template syntax freely
-- Templater maintains full control of its features
-
-## File System Integration
-
-### Challenge
-Create files and folders without conflicts.
-
-### Solution: Vault API + Path Normalization
-\`\`\`typescript
-// Always normalize paths
-const normalizedPath = normalizePath(userPath);
-
-// Check if exists before creating
-const existing = vault.getAbstractFileByPath(normalizedPath);
-if (!existing) {
-  await vault.create(normalizedPath, content);
-}
-
-// Handle both files and folders
-if (existing instanceof TFolder) {
-  // It's a folder
-} else if (existing instanceof TFile) {
-  // It's a file
-}
-\`\`\`
-
-**Best Practices:**
-- Always use \`normalizePath()\` for cross-platform compatibility
-- Check existence before creating
-- Use appropriate Vault API methods
-- Handle edge cases (file vs folder conflicts)
-
-## Settings Integration
-
-### Challenge
-Provide settings UI that integrates with Obsidian's settings.
-
-### Solution: PluginSettingTab Extension
-\`\`\`typescript
-export class SettingsTab extends PluginSettingTab {
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    
-    // Group related settings
-    this.addGeneralSettings(containerEl);
-    this.addJournalSettings(containerEl);
-    this.addAdvancedSettings(containerEl);
-  }
-  
-  private addGeneralSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: 'General Settings' });
-    
-    new Setting(containerEl)
-      .setName('Setting Name')
-      .setDesc('Clear description of what this does')
-      .addText(text => text
-        .setValue(this.plugin.settings.value)
-        .onChange(async (value) => {
-          this.plugin.settings.value = value;
-          await this.plugin.saveSettings();
-        }));
-  }
-}
-\`\`\`
-
-**UI Best Practices:**
-- Group related settings with headers
-- Provide clear names and descriptions
-- Auto-save changes immediately
-- Use appropriate input types
-- Provide validation feedback
-
-## Command Palette Integration
-
-### Challenge
-Make plugin features discoverable and accessible.
-
-### Solution: Comprehensive Command Registration
-\`\`\`typescript
-registerCommands() {
-  this.addCommand({
-    id: 'action-id',
-    name: 'User-Friendly Action Name',
-    icon: 'calendar', // Lucide icon name
-    callback: () => this.performAction(),
-    hotkeys: [{ modifiers: ['Mod'], key: 'j' }] // Optional
-  });
-}
-\`\`\`
-
-**Command Design Principles:**
-- Use clear, action-oriented names
-- Provide appropriate icons
-- Consider default hotkeys for common actions
-- Group related commands with similar naming
-- Make commands context-aware when possible
-
-## Ribbon Integration
-
-### Challenge
-Provide quick access to common features.
-
-### Solution: Contextual Ribbon Buttons
-\`\`\`
-`;
-      await vault.create(filePath, content);
-      console.log(`Created integration documentation: ${filePath}`);
-    }
-  }
-  /**
-   * Creates troubleshooting lessons for common issues and best practices
-   */
-  async createTroubleshootingLessons(referencePath) {
-    const { vault } = this.plugin.app;
-    const filePath = PathUtils.joinPath(
-      referencePath,
-      "Troubleshooting Lessons.md"
-    );
-    if (!vault.getAbstractFileByPath(filePath)) {
-      const content = `# Troubleshooting
-
-## Common Issues
-
-### 1. Plugin Not Loading
-\`\`\`
-1. Ensure Obsidian is fully closed.
-2. Navigate to your Obsidian vault.
-3. Delete the \`Link\` folder from your vault.
-4. Re-open Obsidian.
-\`\`\`
-
-### 2. Directory Structure Not Created
-\`\`\`
-1. Check if \`Link\` folder exists in your vault.
-2. If it doesn't, try reinstalling the plugin.
-3. If it does, check your \`Link\` settings in Obsidian's settings.
-\`\`\`
-
-### 3. Daily Notes Not Updating
-\`\`\`
-1. Ensure \`Link\` is enabled in Daily Notes settings.
-2. Check if \`Link\` folder is correctly set as the daily notes folder.
-3. If it's not, try changing the folder in Daily Notes settings.
-\`\`\`
-
-### 4. Templates Not Working
-\`\`\`
-1. Ensure \`Link\` is enabled in Templater settings.
-2. Check if \`Link\` folder is correctly set as the templates folder.
-3. If it's not, try changing the folder in Templater settings.
-\`\`\`
-
-## Best Practices
-
-### 1. Regular Updates
-\`\`\`
-1. Keep your Obsidian vault updated.
-2. Keep the \`Link\` plugin updated.
-\`\`\`
-
-### 2. Backup
-\`\`\`
-1. Always backup your Obsidian vault.
-2. Backup the \`Link\` folder.
-\`\`\`
-
-### 3. Error Handling
-\`\`\`
-1. Always check the \`Link\` plugin logs for errors.
-2. If you encounter an error, try reinstalling the plugin.
-\`\`\`
-
-### 4. Performance
-\`\`\`
-1. Disable unnecessary features if performance is an issue.
-2. Keep your Obsidian settings optimized.
-\`\`\`
-
-## Final Wisdom:
-The best architecture emerges from understanding both the technical constraints and the user's mental model. Build systems that make sense to users while being maintainable for developers.`;
-      await vault.create(filePath, content);
-      console.log(`Created troubleshooting lessons: ${filePath}`);
-    }
   }
   /**
    * Returns the full path to the journal directory, respecting baseFolder and settings
@@ -1402,363 +745,8 @@ Previous: ${previousLink} | Next: ${nextLink}
   }
 };
 
-// src/managers/linkManager.ts
-var import_obsidian4 = require("obsidian");
-var CustomLinkSuggest = class extends import_obsidian4.EditorSuggest {
-  constructor(plugin) {
-    super(plugin.app);
-    this.plugin = plugin;
-  }
-  onTrigger(cursor, editor) {
-    const line = editor.getLine(cursor.line);
-    const beforeCursor = line.substring(0, cursor.ch);
-    const match = beforeCursor.match(/\[\[([^\]]*?)$/);
-    if (match) {
-      return {
-        start: { line: cursor.line, ch: cursor.ch - match[1].length },
-        end: cursor,
-        query: match[1]
-      };
-    }
-    return null;
-  }
-  async getSuggestions(context) {
-    const query = context.query.toLowerCase();
-    const suggestions = [];
-    const files = this.app.vault.getMarkdownFiles();
-    for (const file of files) {
-      if (file.path.toLowerCase().includes(query) || file.basename.toLowerCase().includes(query)) {
-        suggestions.push({
-          path: file.path,
-          displayText: file.path,
-          isCreate: false
-        });
-      }
-    }
-    if (query.length > 0 && !suggestions.some((s) => s.path.toLowerCase() === query.toLowerCase() + ".md")) {
-      const baseFolder = this.plugin.settings.baseFolder || "LinkPlugin";
-      if (query.includes("/") || query.startsWith(baseFolder.toLowerCase())) {
-        suggestions.unshift({
-          path: query.endsWith(".md") ? query : query + ".md",
-          displayText: `Create note: ${query}`,
-          isCreate: true
-        });
-      }
-    }
-    return suggestions.slice(0, 10);
-  }
-  renderSuggestion(suggestion, el) {
-    el.createEl("div", {
-      text: suggestion.displayText,
-      cls: suggestion.isCreate ? "link-suggest-create" : "link-suggest-existing"
-    });
-    if (suggestion.isCreate) {
-      el.addClass("mod-complex");
-      const icon = el.createEl("div", { cls: "suggestion-flair" });
-      icon.createEl("span", { text: "+ Create", cls: "suggestion-note" });
-    }
-  }
-  selectSuggestion(suggestion) {
-    var _a;
-    if (suggestion.isCreate) {
-      this.createFileFromPath(suggestion.path);
-    }
-    const linkText = `[[${suggestion.path.replace(".md", "")}]]`;
-    (_a = this.context) == null ? void 0 : _a.editor.replaceRange(linkText, this.context.start, this.context.end);
-  }
-  async createFileFromPath(path) {
-    const { vault } = this.app;
-    const normalizedPath = (0, import_obsidian4.normalizePath)(path);
-    const dirPath = normalizedPath.substring(0, normalizedPath.lastIndexOf("/"));
-    if (dirPath) {
-      await this.plugin.directoryManager.getOrCreateDirectory(dirPath);
-    }
-    const existingFile = vault.getAbstractFileByPath(normalizedPath);
-    if (!existingFile) {
-      const fileName = normalizedPath.substring(normalizedPath.lastIndexOf("/") + 1).replace(".md", "");
-      const content = this.generateNoteContent(fileName);
-      await vault.create(normalizedPath, content);
-    }
-  }
-  generateNoteContent(title) {
-    const { noteTemplate } = this.plugin.settings;
-    const currentDate = new Date().toISOString().split("T")[0];
-    if (noteTemplate) {
-      return noteTemplate.replace(/{{title}}/g, title).replace(/{{date}}/g, currentDate).replace(/{{source}}/g, "");
-    }
-    return `---
-title: ${title}
-created: ${currentDate}
-tags: []
----
-
-# ${title}
-
-`;
-  }
-};
-var LinkManager = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.linkSuggest = new CustomLinkSuggest(plugin);
-  }
-  /**
-   * Initialize the link suggestion system
-   */
-  initialize() {
-    if (this.plugin.settings.fileSorting.sortOnFileCreate) {
-      this.plugin.registerEditorSuggest(this.linkSuggest);
-    }
-  }
-  /**
-   * Cleanup the link suggestion system
-   */
-  cleanup() {
-  }
-  /**
-   * Create a new note from selected text and link to it
-   */
-  async createLinkedNote(selection, editor, view) {
-    const { vault } = this.plugin.app;
-    const currentFile = view.file;
-    if (!currentFile) {
-      throw new Error("No active file found");
-    }
-    const fileName = this.sanitizeFileName(selection);
-    const directoryPath = this.determineTargetDirectory(fileName);
-    const filePath = (0, import_obsidian4.normalizePath)(`${directoryPath}/${fileName}.md`);
-    let file = vault.getAbstractFileByPath(filePath);
-    if (!file) {
-      await this.plugin.directoryManager.getOrCreateDirectory(directoryPath);
-      const content = this.generateNoteContent(selection, currentFile);
-      file = await vault.create(filePath, content);
-    }
-    const linkText = this.generateLinkText(fileName, directoryPath, currentFile);
-    editor.replaceSelection(linkText);
-    const leaf = this.plugin.app.workspace.activeLeaf;
-    if (leaf) {
-      await leaf.openFile(file);
-    }
-  }
-  /**
-   * Determine the appropriate directory for a new note
-   */
-  determineTargetDirectory(title) {
-    const { documentDirectory } = this.plugin.settings;
-    const keywords = title.toLowerCase();
-    if (keywords.includes("project") || keywords.includes("work")) {
-      return "Journal";
-    }
-    return documentDirectory || "Documents";
-  }
-  /**
-   * Generate content for a new linked note
-   */
-  generateNoteContent(title, sourceFile) {
-    const { noteTemplate } = this.plugin.settings;
-    const currentDate = new Date().toISOString().split("T")[0];
-    if (noteTemplate) {
-      return noteTemplate.replace(/{{title}}/g, title).replace(/{{date}}/g, currentDate).replace(/{{source}}/g, `[[${sourceFile.basename}]]`);
-    }
-    return `---
-title: ${title}
-created: ${currentDate}
-source: [[${sourceFile.basename}]]
-tags: []
----
-
-# ${title}
-
-`;
-  }
-  /**
-   * Generate appropriate link text based on directory structure
-        * Supports directory-relative links like [[/journal/nesting]]
-   */
-  generateLinkText(fileName, targetDirectory, currentFile) {
-    var _a;
-    const currentFileDir = ((_a = currentFile.parent) == null ? void 0 : _a.path) || "";
-    const baseFolder = this.plugin.settings.baseFolder || "LinkPlugin";
-    if (targetDirectory !== currentFileDir) {
-      if (targetDirectory.startsWith(baseFolder)) {
-        const relativePath = targetDirectory.replace(baseFolder + "/", "");
-        return `[[/${relativePath}/${fileName}]]`;
-      } else {
-        return `[[/${targetDirectory}/${fileName}]]`;
-      }
-    }
-    return `[[${fileName}]]`;
-  }
-  /**
-   * Sanitize a string for use as a filename
-   */
-  sanitizeFileName(input) {
-    return input.replace(REGEX_PATTERNS.INVALID_FILENAME_CHARS, "").replace(/\s+/g, " ").trim().substring(0, 100);
-  }
-  /**
-   * Find all links in a file
-   */
-  async findLinksInFile(file) {
-    const { vault } = this.plugin.app;
-    const content = await vault.read(file);
-    const links = [];
-    let match;
-    while ((match = REGEX_PATTERNS.WIKI_LINK.exec(content)) !== null) {
-      links.push(match[1]);
-    }
-    return links;
-  }
-  /**
-   * Find all backlinks to a file
-   */
-  async findBacklinks(file) {
-    const { vault } = this.plugin.app;
-    const files = vault.getMarkdownFiles();
-    const backlinks = [];
-    for (const potentialSource of files) {
-      if (potentialSource.path === file.path)
-        continue;
-      const links = await this.findLinksInFile(potentialSource);
-      if (links.includes(file.basename)) {
-        backlinks.push(potentialSource);
-      }
-    }
-    return backlinks;
-  }
-  /**
-   * Find broken links in the vault
-   */
-  async findBrokenLinks() {
-    const { vault } = this.plugin.app;
-    const files = vault.getMarkdownFiles();
-    const brokenLinksData = [];
-    for (const file of files) {
-      const links = await this.findLinksInFile(file);
-      const brokenLinks = [];
-      for (const link of links) {
-        const linkedFile = vault.getAbstractFileByPath(`${link}.md`) || vault.getAbstractFileByPath(link);
-        if (!linkedFile) {
-          brokenLinks.push(link);
-        }
-      }
-      if (brokenLinks.length > 0) {
-        brokenLinksData.push({ file, brokenLinks });
-      }
-    }
-    return brokenLinksData;
-  }
-  /**
-   * Find orphaned notes (notes with no backlinks)
-   */
-  async findOrphanedNotes() {
-    const { vault } = this.plugin.app;
-    const files = vault.getMarkdownFiles();
-    const orphanedNotes = [];
-    for (const file of files) {
-      const backlinks = await this.findBacklinks(file);
-      if (backlinks.length === 0) {
-        orphanedNotes.push(file);
-      }
-    }
-    return orphanedNotes;
-  }
-  /**
-   * Generate link suggestions based on content similarity
-   */
-  async generateLinkSuggestions(file, limit = 5) {
-    const { vault } = this.plugin.app;
-    const files = vault.getMarkdownFiles();
-    const suggestions = [];
-    const currentContent = await vault.read(file);
-    const currentWords = this.extractWords(currentContent);
-    for (const otherFile of files) {
-      if (otherFile.path === file.path)
-        continue;
-      const otherContent = await vault.read(otherFile);
-      const otherWords = this.extractWords(otherContent);
-      const relevance = this.calculateRelevance(currentWords, otherWords);
-      if (relevance > 0.1) {
-        suggestions.push({
-          title: otherFile.basename,
-          path: otherFile.path,
-          relevance,
-          type: "existing"
-        });
-      }
-    }
-    return suggestions.sort((a, b) => b.relevance - a.relevance).slice(0, limit);
-  }
-  /**
-   * Extract meaningful words from content
-   */
-  extractWords(content) {
-    const words = /* @__PURE__ */ new Set();
-    const text = content.replace(/[#*`\[\]()]/g, "").toLowerCase().split(/\s+/);
-    for (const word of text) {
-      if (word.length > 3 && !this.isStopWord(word)) {
-        words.add(word);
-      }
-    }
-    return words;
-  }
-  /**
-   * Calculate relevance between two sets of words
-   */
-  calculateRelevance(words1, words2) {
-    const intersection = new Set([...words1].filter((word) => words2.has(word)));
-    const union = /* @__PURE__ */ new Set([...words1, ...words2]);
-    return intersection.size / union.size;
-  }
-  /**
-   * Check if a word is a stop word
-   */
-  isStopWord(word) {
-    const stopWords = /* @__PURE__ */ new Set([
-      "the",
-      "a",
-      "an",
-      "and",
-      "or",
-      "but",
-      "in",
-      "on",
-      "at",
-      "to",
-      "for",
-      "of",
-      "with",
-      "by",
-      "is",
-      "are",
-      "was",
-      "were",
-      "be",
-      "been",
-      "have",
-      "has",
-      "had",
-      "do",
-      "does",
-      "did",
-      "will",
-      "would",
-      "could",
-      "should",
-      "may",
-      "might",
-      "must",
-      "can",
-      "this",
-      "that",
-      "these",
-      "those"
-    ]);
-    return stopWords.has(word);
-  }
-};
-
 // src/utils/errorHandler.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian4 = require("obsidian");
 var ErrorHandler = class {
   constructor(plugin) {
     this.plugin = plugin;
@@ -1766,21 +754,21 @@ var ErrorHandler = class {
   handleError(error, context) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`${context}: ${message}`);
-    new import_obsidian5.Notice(`${context}: ${message}`);
+    new import_obsidian4.Notice(`${context}: ${message}`);
   }
   showNotice(message, duration) {
-    new import_obsidian5.Notice(message, duration);
+    new import_obsidian4.Notice(message, duration);
   }
   showSuccess(message) {
-    new import_obsidian5.Notice(message, 3e3);
+    new import_obsidian4.Notice(message, 3e3);
   }
   showWarning(message) {
-    new import_obsidian5.Notice(`\u26A0\uFE0F ${message}`, 5e3);
+    new import_obsidian4.Notice(`\u26A0\uFE0F ${message}`, 5e3);
   }
 };
 
 // src/ui/ribbonManager.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 var RibbonManager = class {
   constructor(plugin) {
     this.ribbonButtons = [];
@@ -1824,7 +812,7 @@ var RibbonManager = class {
    */
   async showDatePicker() {
     return new Promise((resolve) => {
-      const modal = new import_obsidian6.Modal(this.plugin.app);
+      const modal = new import_obsidian5.Modal(this.plugin.app);
       modal.setTitle("Create Future Daily Note");
       const { contentEl } = modal;
       const instructions = contentEl.createEl("p");
@@ -1935,8 +923,8 @@ var RibbonManager = class {
 };
 
 // src/ui/settingsTab.ts
-var import_obsidian7 = require("obsidian");
-var SettingsTab = class extends import_obsidian7.PluginSettingTab {
+var import_obsidian6 = require("obsidian");
+var SettingsTab = class extends import_obsidian6.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -1956,7 +944,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
     this.addJournalTemplateSettings(containerEl);
   }
   addCoreSettings(containerEl) {
-    new import_obsidian7.Setting(containerEl).setName("Base Folder").setDesc("Root folder for journal content (empty = vault root)").addText(
+    new import_obsidian6.Setting(containerEl).setName("Base Folder").setDesc("Root folder for journal content (empty = vault root)").addText(
       (text) => text.setPlaceholder("Link").setValue(this.plugin.settings.baseFolder).onChange(async (value) => {
         this.plugin.settings.baseFolder = value.trim();
         await this.plugin.saveSettings();
@@ -1979,7 +967,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
       { name: "Reference", key: "reference" }
     ];
     optionalFolders.forEach((folder) => {
-      new import_obsidian7.Setting(containerEl).setName(`${folder.name} Folder`).setDesc(
+      new import_obsidian6.Setting(containerEl).setName(`${folder.name} Folder`).setDesc(
         `Create a ${folder.name.toLowerCase()} folder alongside journal`
       ).addToggle((toggle) => {
         const enabled = this.plugin.settings.directoryStructure.includes(
@@ -1996,7 +984,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         });
       });
     });
-    new import_obsidian7.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton(
+    new import_obsidian6.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton(
       (button) => button.setButtonText("Rebuild").onClick(async () => {
         try {
           await this.plugin.directoryManager.rebuildDirectoryStructure();
@@ -2018,7 +1006,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
     this.addJournalSettings(containerEl);
   }
   addJournalSettings(containerEl) {
-    new import_obsidian7.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
+    new import_obsidian6.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
       (text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.journalYearFormat).onChange(async (value) => {
         if (value.trim()) {
           this.plugin.settings.journalYearFormat = value.trim();
@@ -2026,7 +1014,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText(
+    new import_obsidian6.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM-MMMM creates "07-July")').addText(
       (text) => text.setPlaceholder("MM-MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
         if (value.trim()) {
           this.plugin.settings.journalMonthFormat = value.trim();
@@ -2034,7 +1022,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText(
+    new import_obsidian6.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText(
       (text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
         if (value.trim()) {
           this.plugin.settings.journalDateFormat = value.trim();
@@ -2045,7 +1033,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
   }
   addJournalTemplateSettings(containerEl) {
     containerEl.createEl("h2", { text: "\u{1F4DD} Journal Template Settings" });
-    new import_obsidian7.Setting(containerEl).setName("Daily Note Template Location").setDesc(
+    new import_obsidian6.Setting(containerEl).setName("Daily Note Template Location").setDesc(
       'Override the default template path (e.g. "templates/Daily Notes Template.md")'
     ).addText(
       (text) => text.setPlaceholder("templates/Daily Notes Template.md").setValue(this.plugin.settings.customTemplateLocation || "").onChange(async (value) => {
@@ -2053,7 +1041,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Setup Templates").setDesc(
+    new import_obsidian6.Setting(containerEl).setName("Setup Templates").setDesc(
       "Create templates directory alongside journal and copy Daily Notes template (works with Templater plugin)"
     ).addButton(
       (button) => button.setButtonText("Setup Templates").onClick(async () => {
@@ -2087,7 +1075,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
       text: "Control how this plugin integrates with Obsidian's Daily Notes plugin. Your original settings will be backed up automatically.",
       cls: "setting-item-description"
     });
-    new import_obsidian7.Setting(containerEl).setName("Enable Daily Notes Integration").setDesc(
+    new import_obsidian6.Setting(containerEl).setDesc(
       "Automatically backup and apply Daily Notes plugin settings to use our folder structure"
     ).addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.dailyNotesIntegration.enabled).onChange(async (value) => {
@@ -2095,19 +1083,11 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
           if (value) {
             await this.plugin.updateDailyNotesSettings();
             this.plugin.settings.dailyNotesIntegration.enabled = true;
-            this.showStatus(
-              containerEl,
-              "\u2705 Daily Notes integration enabled! Your original settings have been backed up.",
-              true
-            );
+            this.plugin.errorHandler.showSuccess("\u2705 Daily Notes integration enabled! Your original settings have been backed up.");
           } else {
             await this.plugin.restoreDailyNotesSettings();
             this.plugin.settings.dailyNotesIntegration.enabled = false;
-            this.showStatus(
-              containerEl,
-              "\u2705 Daily Notes integration disabled! Your original settings have been restored.",
-              true
-            );
+            this.plugin.errorHandler.showSuccess("\u2705 Daily Notes integration disabled! Your original settings have been restored.");
           }
           await this.plugin.saveSettings();
         } catch (error) {
@@ -2125,15 +1105,11 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("Reapply Integration Settings").setDesc("Reapply the integration settings to Daily Notes plugin").addButton(
+    new import_obsidian6.Setting(containerEl).setName("Reapply Integration Settings").setDesc("Reapply the integration settings to Daily Notes plugin").addButton(
       (button) => button.setButtonText("Reapply").onClick(async () => {
         try {
           await this.plugin.updateDailyNotesSettings();
-          this.showStatus(
-            containerEl,
-            "\u2705 Daily Notes integration settings reapplied successfully!",
-            true
-          );
+          this.plugin.errorHandler.showSuccess("\u2705 Daily Notes integration settings reapplied successfully!");
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           this.showStatus(
@@ -2151,7 +1127,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
     const backup = this.plugin.settings.dailyNotesIntegration.backup;
     if (backup) {
       const backupDate = new Date(backup.timestamp).toLocaleString();
-      new import_obsidian7.Setting(containerEl).setName("\u{1F4E6} Backup Information").setDesc(`Backup created: ${backupDate} (${backup.pluginType} plugin)`);
+      new import_obsidian6.Setting(containerEl).setName("\u{1F4E6} Backup Information").setDesc(`Backup created: ${backupDate} (${backup.pluginType} plugin)`);
     }
   }
   // Helper to show status/feedback message
@@ -2166,7 +1142,7 @@ var SettingsTab = class extends import_obsidian7.PluginSettingTab {
 };
 
 // src/main.ts
-var LinkPlugin = class extends import_obsidian8.Plugin {
+var LinkPlugin = class extends import_obsidian7.Plugin {
   async onload() {
     console.log(
       "Loading Obsidian Link Journal v2.2.0 - Pure Journal Management..."
@@ -2177,11 +1153,9 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
       this.errorHandler = new ErrorHandler(this);
       this.directoryManager = new DirectoryManager(this);
       this.journalManager = new JournalManager(this);
-      this.linkManager = new LinkManager(this);
       this.ribbonManager = new RibbonManager(this);
       this.addSettingTab(new SettingsTab(this.app, this));
       this.ribbonManager.initializeRibbon();
-      this.linkManager.initialize();
       this.registerCommands();
       this.registerEventHandlers();
       await this.directoryManager.rebuildDirectoryStructure();
@@ -2216,32 +1190,6 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     }
   }
   registerCommands() {
-    this.addCommand({
-      id: COMMAND_IDS.CREATE_LINKED_NOTE,
-      name: "Create Linked Note from Selection",
-      editorCallback: (editor, view) => {
-        try {
-          const selection = editor.getSelection();
-          if (selection) {
-            if ("previewMode" in view) {
-              this.linkManager.createLinkedNote(selection, editor, view);
-            } else {
-              this.errorHandler.handleError(
-                new Error("Invalid view type"),
-                "Please use this command in a markdown view"
-              );
-            }
-          } else {
-            this.errorHandler.handleError(
-              new Error("No text selected"),
-              "Please select text to create a linked note"
-            );
-          }
-        } catch (error) {
-          this.errorHandler.handleError(error, "Failed to create linked note");
-        }
-      }
-    });
     this.addCommand({
       id: COMMAND_IDS.REBUILD_DIRECTORY,
       name: "Rebuild Directory Structure",
@@ -2355,11 +1303,12 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     );
   }
   /**
-   * Prompt user for a date input
+   * Algorithm 5: Date Input Modal
+   * Presents a modal dialog for date input, handles user input and keyboard shortcuts.
    */
   async promptForDate() {
     return new Promise((resolve) => {
-      const modal = new import_obsidian8.Modal(this.app);
+      const modal = new import_obsidian7.Modal(this.app);
       modal.setTitle("Create Future Daily Note");
       const { contentEl } = modal;
       contentEl.createEl("p", {
@@ -2439,7 +1388,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     });
   }
   /**
-   * Start monitoring for date changes to automatically create new monthly folders
+   * Algorithm 6: Date Change Monitoring
+   * Periodically checks if the month has changed and creates new monthly folders as needed.
    */
   startDateChangeMonitoring() {
     let lastCheckedMonth = DateService.format(DateService.now(), "YYYY-MM");
@@ -2463,15 +1413,14 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
           console.error("Error in date change monitoring:", error);
         }
       }, 60 * 60 * 1e3)
-      // Check every hour
     );
     console.log(
       "Date change monitoring started - will auto-create monthly folders"
     );
   }
   /**
-   * Update Obsidian's Daily Notes plugin settings to use our folder structure
-   * Only updates if integration is enabled and specific controls are enabled
+   * Algorithm 7: Daily Notes Plugin Integration
+   * Updates Obsidian's Daily Notes plugin settings to use our folder structure.
    */
   async updateDailyNotesSettings() {
     var _a, _b, _c, _d;
@@ -2500,7 +1449,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     }
   }
   /**
-   * Updates core Daily Notes plugin settings with backup
+   * Algorithm 7: Daily Notes Plugin Integration (Core)
+   * Updates core Daily Notes plugin settings with backup.
    */
   async updateCorePluginSettings(dailyNotesPlugin) {
     const dailyNotesSettings = dailyNotesPlugin.instance.options;
@@ -2517,7 +1467,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);
   }
   /**
-   * Updates community Daily Notes plugin settings with backup
+   * Algorithm 7: Daily Notes Plugin Integration (Community)
+   * Updates community Daily Notes plugin settings with backup.
    */
   async updateCommunityPluginSettings(communityDailyNotes) {
     if (!this.settings.dailyNotesIntegration.backup) {
@@ -2537,7 +1488,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);
   }
   /**
-   * Creates a backup of current Daily Notes settings
+   * Algorithm 8: Backup/Restore Algorithm (Backup)
+   * Creates a backup of current Daily Notes settings.
    */
   async createDailyNotesBackup(pluginType, currentSettings) {
     this.settings.dailyNotesIntegration.backup = {
@@ -2549,7 +1501,8 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
     console.log(`Created Daily Notes backup for ${pluginType} plugin`);
   }
   /**
-   * Restores Daily Notes settings from backup
+   * Algorithm 8: Backup/Restore Algorithm (Restore)
+   * Restores Daily Notes settings from backup.
    */
   async restoreDailyNotesSettings() {
     var _a, _b, _c, _d;
@@ -2589,11 +1542,12 @@ var LinkPlugin = class extends import_obsidian8.Plugin {
       );
     }
   }
+  /**
+   * Algorithm 9: Cleanup
+   * Cleans up managers and UI elements on plugin unload.
+   */
   onunload() {
     console.log("Obsidian Link Journal unloaded");
-    if (this.linkManager) {
-      this.linkManager.cleanup();
-    }
     if (this.ribbonManager) {
       this.ribbonManager.cleanup();
     }

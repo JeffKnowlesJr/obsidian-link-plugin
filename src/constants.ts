@@ -56,19 +56,18 @@ export const DEFAULT_JOURNAL_STRUCTURE = {
   journal: {
     Misc: null,
     '2025': {
-      '01January': null,
-      '02February': null,
-      '03March': null,
-      '04April': null,
-      '05May': null,
-      '06June': null,
-      '07July': null,
-      '08August': null,
-      '09September': null,
-      '10October': null,
-      '11November': null,
-      '12December': null,
-      Misc: null,
+      '01 January': null,
+      '02 February': null,
+      '03 March': null,
+      '04 April': null,
+      '05 May': null,
+      '06 June': null,
+      '07 July': null,
+      '08 August': null,
+      '09 September': null,
+      '10 October': null,
+      '11 November': null,
+      '12 December': null,
       'Yearly List': null,
       'Yearly Log': null
     },
@@ -96,9 +95,6 @@ export const DEFAULT_FILES_STRUCTURE = {
     other: null
   }
 }
-
-// Optional complex structure mentioned in README
-export const OPTIONAL_DIRECTORIES = ['context', 'schema', 'Projects']
 
 export const COMMAND_IDS = {
   REBUILD_DIRECTORY: 'rebuild-directory-structure',
@@ -170,9 +166,8 @@ tags: []
 ---
 
 # {{title}}
-
 `
-} as const
+} as const;
 
 export const REGEX_PATTERNS = {
   WIKI_LINK: /\[\[(.*?)\]\]/g,

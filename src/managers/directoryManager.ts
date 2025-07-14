@@ -179,8 +179,8 @@ previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
 next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
 tags:
   - ☀️
+  - <% tp.date.now("MM-DD dddd") %>
 resources: []
-stakeholders:
 ---
 ---
 ## Log
@@ -188,17 +188,15 @@ stakeholders:
 ### Routine Checklist
 
 - [ ] Open Daily Note
-- [ ] **Daily Checks**
+- [ ] **Morning Checks**
 	- [ ] Bed and Clothes 🛏️🧺
-		- [ ] Self Care🛀🧴
-	- [ ] Clean Kitchen
-		- [ ] Make Breakfast 🍽✨
+  - [ ] Self Care🛀🧴
+  - [ ] Make Breakfast 🍽✨
 	- [ ] Pet Care 🐕🚶🏻‍♂️
-		- [ ] Wear Watch ⌚️
-	- [ ] Get Focused 🖥️💊
-		- [ ] Put [Calendar](https://calendar.google.com) 📆
+	- [ ] Get Focused 🖥️
+  - [ ] Check [Calendar](https://calendar.google.com) 📆
 	- [ ] Check [Mail](https://mail.google.com) ✉️ 
-		- [ ] Reviews [[Yearly List]] ✅
+  - [ ] Review [[Yearly List]] ✅
 	- [ ] Review [July Log](Yearly%20Log.md#July) 🗓️
 
 ---`
