@@ -37,6 +37,9 @@ export interface LinkPluginSettings {
     backup: DailyNotesBackup | null
   }
 
+  // UI Settings
+  showRibbonButton: boolean
+
   // Other settings
   debugMode: boolean
 

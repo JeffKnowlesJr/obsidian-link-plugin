@@ -80,6 +80,68 @@ export class SettingsTab extends PluginSettingTab {
     this.addJournalTemplateSettings(containerEl)
   }
 
+  private addPluginStatusSettings(containerEl: HTMLElement): void {
+    // Plugin Enable/Disable Toggle
+    new Setting(containerEl)
+      .setName('Enable Plugin')
+      .setDesc('Enable or disable the journal management plugin. When disabled, no folder structure or integration operations will be performed.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.enabled)
+          .onChange(async (value) => {
+            this.plugin.settings.enabled = value
+            await this.plugin.saveSettings()
+            
+            if (value) {
+              // If enabling, perform the operations that would normally happen on load
+              try {
+                await this.plugin.directoryManager.rebuildDirectoryStructure()
+                await this.plugin.journalManager.checkAndCreateCurrentMonthFolder()
+                await this.plugin.updateDailyNotesSettings()
+                this.plugin.errorHandler.showNotice(
+                  '✅ Plugin enabled - Journal management features are now active!'
+                )
+              } catch (error) {
+                this.plugin.errorHandler.handleError(
+                  error,
+                  'Failed to initialize plugin after enabling'
+                )
+              }
+            } else {
+              this.plugin.errorHandler.showNotice(
+                '⚠️ Plugin disabled - Journal management features are now inactive'
+              )
+            }
+          })
+      )
+
+    // Ribbon Button Toggle
+    new Setting(containerEl)
+      .setName('Show Ribbon Button')
+      .setDesc('Show or hide the Link settings button in the ribbon. When hidden, you can still access settings through the Community Plugins menu.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showRibbonButton)
+          .onChange(async (value) => {
+            this.plugin.settings.showRibbonButton = value
+            await this.plugin.saveSettings()
+            
+            // Update ribbon to reflect the change
+            this.plugin.ribbonManager.updateButtonStates()
+            
+            if (value) {
+              this.plugin.errorHandler.showNotice(
+                '✅ Ribbon button is now visible'
+              )
+            } else {
+              this.plugin.errorHandler.showNotice(
+                '⚠️ Ribbon button is now hidden. Access settings via Community Plugins menu.'
+              )
+            }
+          })
+      )
+  }
+
   private addCoreSettings(containerEl: HTMLElement): void {
     // Base Folder
     new Setting(containerEl)

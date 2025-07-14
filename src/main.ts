@@ -132,6 +132,10 @@ export default class LinkPlugin extends Plugin {
       id: COMMAND_IDS.REBUILD_DIRECTORY,
       name: 'Rebuild Directory Structure',
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           this.directoryManager.rebuildDirectoryStructure()
         } catch (error) {
@@ -148,6 +152,10 @@ export default class LinkPlugin extends Plugin {
       id: COMMAND_IDS.OPEN_TODAY_JOURNAL,
       name: "Open Today's Journal",
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           this.journalManager.openTodayJournal()
         } catch (error) {
@@ -161,6 +169,10 @@ export default class LinkPlugin extends Plugin {
       id: COMMAND_IDS.CREATE_TODAY_NOTE,
       name: "Create Today's Daily Note",
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           const file = await this.journalManager.createTodayNote()
           const leaf = this.app.workspace.getLeaf()
@@ -176,6 +188,10 @@ export default class LinkPlugin extends Plugin {
       id: COMMAND_IDS.CREATE_FUTURE_NOTE,
       name: 'Create Future Daily Note',
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           const dateInput = await this.promptForDate()
           if (dateInput) {
@@ -202,6 +218,10 @@ export default class LinkPlugin extends Plugin {
       id: COMMAND_IDS.CREATE_MONTHLY_FOLDERS,
       name: 'Create Monthly Folders for Current Year',
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           const startOfYear = DateService.startOfYear()
           const endOfYear = DateService.endOfYear()
@@ -226,6 +246,10 @@ export default class LinkPlugin extends Plugin {
       id: 'show-ribbon-actions',
       name: 'Show Ribbon Quick Actions',
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+          return
+        }
         try {
           this.ribbonManager.showQuickActionsMenu()
         } catch (error) {
@@ -242,6 +266,7 @@ export default class LinkPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on('create', (file) => {
         if (
+          this.settings.enabled &&
           'stat' in file &&
           'basename' in file &&
           'extension' in file &&
@@ -256,6 +281,7 @@ export default class LinkPlugin extends Plugin {
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
         if (
+          this.settings.enabled &&
           this.settings.debugMode &&
           file.path.includes(this.settings.journalRootFolder)
         ) {

@@ -161,11 +161,19 @@ var DailyNotesSettings = class {
 var GeneralSettings = class {
   static getDefaults() {
     return {
+      enabled: false,
+      showRibbonButton: true,
       debugMode: false
     };
   }
   static validate(settings) {
     const validated = {};
+    if (typeof settings.enabled === "boolean") {
+      validated.enabled = settings.enabled;
+    }
+    if (typeof settings.showRibbonButton === "boolean") {
+      validated.showRibbonButton = settings.showRibbonButton;
+    }
     if (typeof settings.debugMode === "boolean") {
       validated.debugMode = settings.debugMode;
     }
@@ -756,7 +764,9 @@ var RibbonManager = class {
   initializeRibbon() {
     this.clearRibbon();
     this.addCreateFutureNoteButton();
-    this.addSettingsButton();
+    if (this.plugin.settings.showRibbonButton) {
+      this.addSettingsButton();
+    }
     DebugUtils.log("Ribbon initialized - Core journal functionality enabled");
   }
   /**
@@ -767,6 +777,10 @@ var RibbonManager = class {
       "calendar-plus",
       "Create Future Note - Select date to create note",
       async () => {
+        if (!this.plugin.settings.enabled) {
+          this.plugin.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this feature.");
+          return;
+        }
         try {
           const selectedDate = await this.showDatePicker();
           if (selectedDate) {
@@ -878,12 +892,17 @@ var RibbonManager = class {
    * Update button states based on settings
    */
   updateButtonStates() {
+    this.initializeRibbon();
     DebugUtils.log("Ribbon buttons updated");
   }
   /**
    * Show quick actions menu
    */
   showQuickActionsMenu() {
+    if (!this.plugin.settings.enabled) {
+      this.plugin.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use journal management features.");
+      return;
+    }
     const message = `Obsidian Link Journal Quick Actions:
 \u2022 Create Today's Note: Open or create today's journal
 \u2022 Create Monthly Folders: Set up folder structure
@@ -912,12 +931,57 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
       text: "Simple journal management settings",
       cls: "setting-item-description"
     });
+    new import_obsidian6.Setting(containerEl).setName("Plugin Status").setHeading();
+    this.addPluginStatusSettings(containerEl);
     new import_obsidian6.Setting(containerEl).setName("Daily Notes Integration").setHeading();
     this.addDailyNotesIntegrationSettings(containerEl);
     new import_obsidian6.Setting(containerEl).setName("Core Settings").setHeading();
     this.addCoreSettings(containerEl);
     new import_obsidian6.Setting(containerEl).setName("Journal Template Settings").setHeading();
     this.addJournalTemplateSettings(containerEl);
+  }
+  addPluginStatusSettings(containerEl) {
+    new import_obsidian6.Setting(containerEl).setName("Enable Plugin").setDesc("Enable or disable the journal management plugin. When disabled, no folder structure or integration operations will be performed.").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.enabled).onChange(async (value) => {
+        this.plugin.settings.enabled = value;
+        await this.plugin.saveSettings();
+        if (value) {
+          try {
+            await this.plugin.directoryManager.rebuildDirectoryStructure();
+            await this.plugin.journalManager.checkAndCreateCurrentMonthFolder();
+            await this.plugin.updateDailyNotesSettings();
+            this.plugin.errorHandler.showNotice(
+              "\u2705 Plugin enabled - Journal management features are now active!"
+            );
+          } catch (error) {
+            this.plugin.errorHandler.handleError(
+              error,
+              "Failed to initialize plugin after enabling"
+            );
+          }
+        } else {
+          this.plugin.errorHandler.showNotice(
+            "\u26A0\uFE0F Plugin disabled - Journal management features are now inactive"
+          );
+        }
+      })
+    );
+    new import_obsidian6.Setting(containerEl).setName("Show Ribbon Button").setDesc("Show or hide the Link settings button in the ribbon. When hidden, you can still access settings through the Community Plugins menu.").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.showRibbonButton).onChange(async (value) => {
+        this.plugin.settings.showRibbonButton = value;
+        await this.plugin.saveSettings();
+        this.plugin.ribbonManager.updateButtonStates();
+        if (value) {
+          this.plugin.errorHandler.showNotice(
+            "\u2705 Ribbon button is now visible"
+          );
+        } else {
+          this.plugin.errorHandler.showNotice(
+            "\u26A0\uFE0F Ribbon button is now hidden. Access settings via Community Plugins menu."
+          );
+        }
+      })
+    );
   }
   addCoreSettings(containerEl) {
     new import_obsidian6.Setting(containerEl).setName("Base Folder").setDesc("Root folder for journal content (empty = vault root)").addText(
@@ -1138,18 +1202,25 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       this.ribbonManager.initializeRibbon();
       this.registerCommands();
       this.registerEventHandlers();
-      await this.directoryManager.rebuildDirectoryStructure();
-      await this.journalManager.checkAndCreateCurrentMonthFolder();
-      await this.updateDailyNotesSettings();
-      this.startDateChangeMonitoring();
-      const debugInfo = DateService.getDebugInfo();
-      DebugUtils.log("DateService initialized:", debugInfo);
-      DebugUtils.log("Today:", DateService.today());
-      DebugUtils.log("Current month:", DateService.currentMonth());
-      this.errorHandler.showNotice(
-        "Obsidian Link Journal loaded - Pure journal management ready!"
-      );
-      DebugUtils.log("Obsidian Link Journal loaded successfully - Core journal functionality enabled");
+      if (this.settings.enabled) {
+        await this.directoryManager.rebuildDirectoryStructure();
+        await this.journalManager.checkAndCreateCurrentMonthFolder();
+        await this.updateDailyNotesSettings();
+        this.startDateChangeMonitoring();
+        const debugInfo = DateService.getDebugInfo();
+        DebugUtils.log("DateService initialized:", debugInfo);
+        DebugUtils.log("Today:", DateService.today());
+        DebugUtils.log("Current month:", DateService.currentMonth());
+        this.errorHandler.showNotice(
+          "Obsidian Link Journal loaded - Pure journal management ready!"
+        );
+        DebugUtils.log("Obsidian Link Journal loaded successfully - Core journal functionality enabled");
+      } else {
+        DebugUtils.log("Obsidian Link Journal loaded - Plugin disabled, no operations performed");
+        this.errorHandler.showNotice(
+          "Obsidian Link Journal loaded - Plugin is disabled. Enable it in settings to start using journal management features."
+        );
+      }
     } catch (error) {
       DebugUtils.error("Failed to load Link Plugin:", error);
       if (this.errorHandler) {
@@ -1177,6 +1248,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: COMMAND_IDS.REBUILD_DIRECTORY,
       name: "Rebuild Directory Structure",
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           this.directoryManager.rebuildDirectoryStructure();
         } catch (error) {
@@ -1191,6 +1266,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: COMMAND_IDS.OPEN_TODAY_JOURNAL,
       name: "Open Today's Journal",
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           this.journalManager.openTodayJournal();
         } catch (error) {
@@ -1202,6 +1281,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: COMMAND_IDS.CREATE_TODAY_NOTE,
       name: "Create Today's Daily Note",
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           const file = await this.journalManager.createTodayNote();
           const leaf = this.app.workspace.getLeaf();
@@ -1215,6 +1298,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: COMMAND_IDS.CREATE_FUTURE_NOTE,
       name: "Create Future Daily Note",
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           const dateInput = await this.promptForDate();
           if (dateInput) {
@@ -1239,6 +1326,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: COMMAND_IDS.CREATE_MONTHLY_FOLDERS,
       name: "Create Monthly Folders for Current Year",
       callback: async () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           const startOfYear = DateService.startOfYear();
           const endOfYear = DateService.endOfYear();
@@ -1261,6 +1352,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       id: "show-ribbon-actions",
       name: "Show Ribbon Quick Actions",
       callback: () => {
+        if (!this.settings.enabled) {
+          this.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use this command.");
+          return;
+        }
         try {
           this.ribbonManager.showQuickActionsMenu();
         } catch (error) {
@@ -1272,14 +1367,14 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
   registerEventHandlers() {
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if ("stat" in file && "basename" in file && "extension" in file && file.path.includes(this.settings.journalRootFolder)) {
+        if (this.settings.enabled && "stat" in file && "basename" in file && "extension" in file && file.path.includes(this.settings.journalRootFolder)) {
           this.journalManager.updateJournalLinks(file);
         }
       })
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (this.settings.debugMode && file.path.includes(this.settings.journalRootFolder)) {
+        if (this.settings.enabled && this.settings.debugMode && file.path.includes(this.settings.journalRootFolder)) {
           DebugUtils.log("Journal file modified:", file.path);
         }
       })
@@ -1379,6 +1474,9 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     this.registerInterval(
       window.setInterval(async () => {
         try {
+          if (!this.settings.enabled) {
+            return;
+          }
           const currentMonth = DateService.format(DateService.now(), "YYYY-MM");
           if (currentMonth !== lastCheckedMonth) {
             DebugUtils.log(

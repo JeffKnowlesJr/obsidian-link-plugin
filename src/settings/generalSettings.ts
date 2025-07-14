@@ -20,6 +20,7 @@
 
 export interface GeneralSettingsConfig {
   enabled: boolean;
+  showRibbonButton: boolean;
   debugMode: boolean;
 }
 
@@ -27,6 +28,7 @@ export class GeneralSettings {
   static getDefaults(): GeneralSettingsConfig {
     return {
       enabled: false,
+      showRibbonButton: true,
       debugMode: false,
     };
   }
@@ -37,6 +39,11 @@ export class GeneralSettings {
     // Validate enabled setting
     if (typeof settings.enabled === 'boolean') {
       validated.enabled = settings.enabled;
+    }
+
+    // Validate ribbon button setting
+    if (typeof settings.showRibbonButton === 'boolean') {
+      validated.showRibbonButton = settings.showRibbonButton;
     }
 
     // Validate debug mode setting

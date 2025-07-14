@@ -74,7 +74,11 @@ export class RibbonManager {
 
     // Add core journal management buttons only
     this.addCreateFutureNoteButton();
-    this.addSettingsButton();
+    
+    // Only add settings button if enabled in settings
+    if (this.plugin.settings.showRibbonButton) {
+      this.addSettingsButton();
+    }
 
     DebugUtils.log('Ribbon initialized - Core journal functionality enabled');
   }
@@ -87,6 +91,10 @@ export class RibbonManager {
       'calendar-plus',
       'Create Future Note - Select date to create note',
       async () => {
+        if (!this.plugin.settings.enabled) {
+          this.plugin.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this feature.');
+          return;
+        }
         try {
           // Show date picker for future note creation
           const selectedDate = await this.showDatePicker();
@@ -230,7 +238,8 @@ export class RibbonManager {
    * Update button states based on settings
    */
   updateButtonStates(): void {
-    // No state-dependent buttons in simplified ribbon
+    // Reinitialize ribbon to reflect current settings
+    this.initializeRibbon();
     DebugUtils.log('Ribbon buttons updated');
   }
 
@@ -238,6 +247,11 @@ export class RibbonManager {
    * Show quick actions menu
    */
   showQuickActionsMenu(): void {
+    if (!this.plugin.settings.enabled) {
+      this.plugin.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use journal management features.');
+      return;
+    }
+    
     // Simple notice with core actions
     const message = `Obsidian Link Journal Quick Actions:
 • Create Today's Note: Open or create today's journal
