@@ -79,6 +79,7 @@ export default class LinkPlugin extends Plugin {
       // Only perform directory structure and integration operations if plugin is enabled
       if (this.settings.enabled) {
         await this.directoryManager.rebuildDirectoryStructure()
+        await this.directoryManager.setupTemplates() // Add template setup
         await this.journalManager.checkAndCreateCurrentMonthFolder()
         await this.updateDailyNotesSettings()
         this.startDateChangeMonitoring()

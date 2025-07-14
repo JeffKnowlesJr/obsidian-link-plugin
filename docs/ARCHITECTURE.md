@@ -96,17 +96,21 @@ async onload() {
   this.registerCommands()
   this.registerEventHandlers()
   
-  // 7. Initialize directory structure
-  await this.directoryManager.rebuildDirectoryStructure()
-  
-  // 8. Ensure current month folder exists
-  await this.journalManager.checkAndCreateCurrentMonthFolder()
-  
-  // 9. Update Daily Notes integration
-  await this.updateDailyNotesSettings()
-  
-  // 10. Start date change monitoring
-  this.startDateChangeMonitoring()
+  // 7. Conditional initialization based on plugin status
+  if (this.settings.enabled) {
+    // Initialize directory structure
+    await this.directoryManager.rebuildDirectoryStructure()
+    await this.directoryManager.setupTemplates()
+    
+    // Ensure current month folder exists
+    await this.journalManager.checkAndCreateCurrentMonthFolder()
+    
+    // Update Daily Notes integration
+    await this.updateDailyNotesSettings()
+    
+    // Start date change monitoring
+    this.startDateChangeMonitoring()
+  }
 }
 ```
 
@@ -160,13 +164,75 @@ registerEventHandlers() {
 }
 ```
 
-### 2. Type System (`types.ts`)
+### 2. Plugin Control Architecture
+
+The plugin implements a sophisticated enable/disable system that provides user control over when operations are performed:
+
+#### Plugin Status Management Algorithm
+```typescript
+// Plugin starts disabled by default for safety
+enabled: boolean = false
+showRibbonButton: boolean = true
+
+// Conditional initialization based on plugin status
+if (this.settings.enabled) {
+  // Perform all initialization operations
+  await this.directoryManager.rebuildDirectoryStructure()
+  await this.directoryManager.setupTemplates()
+  await this.journalManager.checkAndCreateCurrentMonthFolder()
+  await this.updateDailyNotesSettings()
+  this.startDateChangeMonitoring()
+} else {
+  // Plugin loaded but no operations performed
+  DebugUtils.log('Plugin disabled - no operations performed')
+}
+```
+
+#### Ribbon Button Management Algorithm
+```typescript
+initializeRibbon(): void {
+  this.clearRibbon()
+  
+  // Only add functional buttons if plugin is enabled
+  if (this.plugin.settings.enabled) {
+    this.addCreateFutureNoteButton()
+  }
+  
+  // Settings button visibility controlled by setting
+  if (this.plugin.settings.showRibbonButton) {
+    this.addSettingsButton()
+  }
+}
+```
+
+#### Command Protection Algorithm
+```typescript
+registerCommands() {
+  this.addCommand({
+    id: COMMAND_IDS.CREATE_TODAY_NOTE,
+    name: "Create Today's Daily Note",
+    callback: async () => {
+      // Check if plugin is enabled before executing
+      if (!this.settings.enabled) {
+        this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+        return
+      }
+      // Execute command logic
+    }
+  })
+}
+```
+
+### 3. Type System (`types.ts`)
 
 The type system defines the data structures used throughout the application:
 
 #### Settings Management Algorithm
 ```typescript
 export interface LinkPluginSettings {
+  // Plugin enable/disable setting
+  enabled: boolean
+  
   // Directory structure settings
   baseFolder: string // Root folder for all plugin-created directories
   directoryStructure: string[]
@@ -187,6 +253,9 @@ export interface LinkPluginSettings {
     enabled: boolean
     backup: DailyNotesBackup | null
   }
+  
+  // UI Settings
+  showRibbonButton: boolean
   
   // Other settings
   debugMode: boolean

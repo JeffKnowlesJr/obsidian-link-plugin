@@ -13,10 +13,13 @@ The Obsidian Link Plugin is a focused daily note organization system that provid
 4. Initialize managers (Directory, Journal, Ribbon)
 5. Setup UI components
 6. Register commands and event handlers
-7. Create directory structure
-8. Ensure current month folder exists
-9. Update Daily Notes integration
-10. Start date change monitoring
+7. **Check plugin status** - if enabled:
+   - Create directory structure
+   - Setup templates
+   - Ensure current month folder exists
+   - Update Daily Notes integration
+   - Start date change monitoring
+8. **If disabled**: No operations performed, plugin ready for manual enable
 
 ### 2. Daily Operations
 1. User creates/opens journal entries
@@ -62,17 +65,24 @@ async onload() {
   this.registerCommands()
   this.registerEventHandlers()
   
-  // 7. Initialize directory structure
-  await this.directoryManager.rebuildDirectoryStructure()
-  
-  // 8. Ensure current month folder exists
-  await this.journalManager.checkAndCreateCurrentMonthFolder()
-  
-  // 9. Update Daily Notes integration
-  await this.updateDailyNotesSettings()
-  
-  // 10. Start date change monitoring
-  this.startDateChangeMonitoring()
+  // 7. Conditional initialization based on plugin status
+  if (this.settings.enabled) {
+    // Initialize directory structure
+    await this.directoryManager.rebuildDirectoryStructure()
+    await this.directoryManager.setupTemplates()
+    
+    // Ensure current month folder exists
+    await this.journalManager.checkAndCreateCurrentMonthFolder()
+    
+    // Update Daily Notes integration
+    await this.updateDailyNotesSettings()
+    
+    // Start date change monitoring
+    this.startDateChangeMonitoring()
+  } else {
+    // Plugin loaded but no operations performed
+    DebugUtils.log('Plugin disabled - no operations performed')
+  }
 }
 ```
 
@@ -98,6 +108,11 @@ private startDateChangeMonitoring(): void {
   
   this.registerInterval(
     window.setInterval(async () => {
+      // Only perform date monitoring if plugin is enabled
+      if (!this.settings.enabled) {
+        return
+      }
+      
       const currentMonth = DateService.format(DateService.now(), 'YYYY-MM')
       
       if (currentMonth !== lastCheckedMonth) {
@@ -129,6 +144,46 @@ async updateDailyNotesSettings(): Promise<void> {
     }
   } catch (error) {
     DebugUtils.log('Daily Notes integration skipped:', error)
+  }
+}
+```
+
+### Plugin Control System
+```typescript
+// Plugin status management
+interface LinkPluginSettings {
+  enabled: boolean              // Controls when operations are performed
+  showRibbonButton: boolean     // Controls settings ribbon button visibility
+  // ... other settings
+}
+
+// Conditional command execution
+registerCommands() {
+  this.addCommand({
+    id: COMMAND_IDS.CREATE_TODAY_NOTE,
+    name: "Create Today's Daily Note",
+    callback: async () => {
+      if (!this.settings.enabled) {
+        this.errorHandler.showNotice('❌ Plugin is disabled. Enable it in settings to use this command.')
+        return
+      }
+      // Execute command logic
+    }
+  })
+}
+
+// Conditional ribbon button display
+initializeRibbon(): void {
+  this.clearRibbon()
+  
+  // Only add functional buttons if plugin is enabled
+  if (this.plugin.settings.enabled) {
+    this.addCreateFutureNoteButton()
+  }
+  
+  // Settings button visibility controlled by setting
+  if (this.plugin.settings.showRibbonButton) {
+    this.addSettingsButton()
   }
 }
 ```

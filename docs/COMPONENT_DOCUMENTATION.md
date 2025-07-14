@@ -52,6 +52,9 @@ Defines the data structures and interfaces used throughout the application, ensu
 #### Settings Management
 ```typescript
 export interface LinkPluginSettings {
+  // Plugin enable/disable setting
+  enabled: boolean
+  
   // Directory structure settings
   baseFolder: string
   directoryStructure: string[]
@@ -72,6 +75,9 @@ export interface LinkPluginSettings {
     enabled: boolean
     backup: DailyNotesBackup | null
   }
+  
+  // UI Settings
+  showRibbonButton: boolean
   
   // Other settings
   debugMode: boolean
@@ -345,12 +351,13 @@ class DebugUtils {
 ### SettingsTab (`ui/settingsTab.ts`)
 
 #### Purpose
-Provides the settings user interface with organized sections for different configuration areas.
+Provides the settings user interface with organized sections for different configuration areas, including plugin control and ribbon button management.
 
 #### Key Methods
 ```typescript
 class SettingsTab extends PluginSettingTab {
   display(): void
+  private addPluginStatusSettings(containerEl: HTMLElement): void
   private addCoreSettings(containerEl: HTMLElement): void
   private addJournalSettings(containerEl: HTMLElement): void
   private addJournalTemplateSettings(containerEl: HTMLElement): void
@@ -364,21 +371,63 @@ display(): void {
   // 1. Clear container
   containerEl.empty()
   
-  // 2. Add Daily Notes Integration section
+  // 2. Add Plugin Status section (new)
+  this.addPluginStatusSettings(containerEl)
+  
+  // 3. Add Daily Notes Integration section
   this.addDailyNotesIntegrationSettings(containerEl)
   
-  // 3. Add Core Settings section
+  // 4. Add Core Settings section
   this.addCoreSettings(containerEl)
   
-  // 4. Add Journal Template Settings section
+  // 5. Add Journal Template Settings section
   this.addJournalTemplateSettings(containerEl)
+}
+```
+
+#### Plugin Control Features
+```typescript
+// Plugin Status Settings
+private addPluginStatusSettings(containerEl: HTMLElement): void {
+  // Enable/Disable Plugin Toggle
+  new Setting(containerEl)
+    .setName('Enable Plugin')
+    .setDesc('Enable or disable the journal management plugin')
+    .addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings.enabled)
+      .onChange(async (value) => {
+        this.plugin.settings.enabled = value
+        await this.plugin.saveSettings()
+        
+        if (value) {
+          // Perform initialization operations when enabling
+          await this.plugin.directoryManager.rebuildDirectoryStructure()
+          await this.plugin.directoryManager.setupTemplates()
+          await this.plugin.journalManager.checkAndCreateCurrentMonthFolder()
+          await this.plugin.updateDailyNotesSettings()
+        }
+      })
+    })
+  
+  // Ribbon Button Toggle
+  new Setting(containerEl)
+    .setName('Show Ribbon Button')
+    .setDesc('Show or hide the Link settings button in the ribbon')
+    .addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings.showRibbonButton)
+      .onChange(async (value) => {
+        this.plugin.settings.showRibbonButton = value
+        await this.plugin.saveSettings()
+        this.plugin.ribbonManager.updateButtonStates()
+      })
+    })
 }
 ```
 
 ### RibbonManager (`ui/ribbonManager.ts`)
 
 #### Purpose
-Manages ribbon button functionality and user interface elements.
+Manages ribbon button functionality and user interface elements with conditional display based on plugin status.
 
 #### Key Methods
 ```typescript
@@ -393,12 +442,21 @@ class RibbonManager {
 }
 ```
 
-#### Core Algorithm: Ribbon Management
+#### Core Algorithm: Conditional Ribbon Management
 ```typescript
 initializeRibbon(): void {
   this.clearRibbon()
-  this.addCreateFutureNoteButton()
-  this.addSettingsButton()
+  
+  // Only add functional buttons if plugin is enabled
+  if (this.plugin.settings.enabled) {
+    this.addCreateFutureNoteButton()
+  }
+  
+  // Settings button visibility controlled by setting
+  if (this.plugin.settings.showRibbonButton) {
+    this.addSettingsButton()
+  }
+  
   DebugUtils.log('Ribbon initialized - Core journal functionality enabled')
 }
 ```

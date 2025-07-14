@@ -96,6 +96,7 @@ export class SettingsTab extends PluginSettingTab {
               // If enabling, perform the operations that would normally happen on load
               try {
                 await this.plugin.directoryManager.rebuildDirectoryStructure()
+                await this.plugin.directoryManager.setupTemplates() // Add template setup
                 await this.plugin.journalManager.checkAndCreateCurrentMonthFolder()
                 await this.plugin.updateDailyNotesSettings()
                 this.plugin.errorHandler.showNotice(

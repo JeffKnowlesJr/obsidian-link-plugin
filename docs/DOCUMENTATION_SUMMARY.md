@@ -33,6 +33,7 @@ docs/
 **Audience**: End users of the plugin
 **Content**:
 - Installation and setup instructions
+- Plugin control and enable/disable functionality
 - Feature explanations and usage
 - Configuration options
 - Troubleshooting guide
@@ -43,6 +44,7 @@ docs/
 **Audience**: Developers and technical users
 **Content**:
 - System architecture diagrams
+- Plugin control and enable/disable architecture
 - Key algorithms and data flow
 - Integration points
 - Performance considerations

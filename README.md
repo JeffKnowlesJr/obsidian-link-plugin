@@ -1,4 +1,4 @@
-npm # Obsidian Link Plugin v1.0.0
+# Obsidian Link Plugin v1.0.0
 
 A focused Obsidian plugin for **intelligent daily note organization** with automatic monthly folder management and seamless Daily Notes integration. Future notes creation as well. No clutter, just the core functionality that matters.
 
@@ -19,27 +19,39 @@ A focused Obsidian plugin for **intelligent daily note organization** with autom
 - **Safe Restore**: One-click restore to your original by disabling the plugin
 - **Template Support**: Integrated with Templater plugin for dynamic date navigation
 
+### 🎛️ Smart Plugin Control
+
+- **Enable/Disable Plugin**: Control when the plugin performs operations
+- **Ribbon Button Management**: Show or hide the settings ribbon button
+- **No Automatic Operations**: Plugin starts disabled by default - no folder creation until you're ready
+- **Template Auto-Setup**: Templates are automatically created when the plugin is enabled
+
 ## 📁 Folder Structure (Simple & Working)
 
 The plugin creates this organized structure:
 
 ```
 Link/
-├── journal/
-│   ├── 2025/                    # Year folders
-│   │   ├── July/                # Month folders
+├── journal/                        # Daily notes organized by year and month
+│   ├── 2025/
+│   │   ├── July/
+│   │   │   ├── 2025-07-01 Tuesday.md
+│   │   │   ├── 2025-07-02 Wednesday.md
+│   │   │   └── ...
 │   │   ├── August/
+│   │   │   └── ...
 │   │   └── ...
-│   └── [your daily notes]
-├── templates/
-│   └── Daily Notes Template.md  # Created with Templater compatibility
-└── reference/
-    └── linkplugin/             # All reference files are generated inside this subfolder
-        ├── Architecture Decisions.md
-        ├── Development Patterns.md
-        ├── Integration Guide.md
-        ├── Troubleshooting Lessons.md
-        └── ... (other subfolders/files as needed)
+│   └── [other daily notes]
+├── workspace/                      # (Optional) Project/workspace notes
+│   └── Client Name/
+│       └── Project Name/
+│           └── [project notes]
+├── reference/                      # (Optional) Reference notes
+│   └── Reference Topic/
+│       └── [reference notes]
+├── templates/                      # (Optional) Templates for notes
+│   └── Daily Notes Template.md     # Templater-compatible template
+
 ```
 
 **Key Benefits:**
@@ -61,9 +73,16 @@ Link/
 
 ### Basic Usage (All You Need)
 
-1. **Create Today's Note**: Click the "📝" ribbon button
-2. **Configure Monthly Structure**: Use Settings to set folder formats
-3. **That's It**: The plugin handles the rest automatically
+1. **Enable the Plugin**: Go to Settings → Plugin Status → Enable Plugin
+2. **Create Today's Note**: Click the "📝" ribbon button (appears when plugin is enabled)
+3. **Configure Monthly Structure**: Use Settings to set folder formats
+4. **That's It**: The plugin handles the rest automatically
+
+### Plugin Control
+
+- **Plugin Status**: Enable/disable the plugin to control when operations are performed
+- **Ribbon Button**: Show/hide the settings ribbon button for easy access
+- **Safe Default**: Plugin starts disabled - no automatic folder creation until you're ready
 
 ### Settings That Matter
 
@@ -75,7 +94,12 @@ Link/
 
 ## ⚙️ Configuration
 
-Access settings via the ribbon button:
+Access settings via the ribbon button or Community Plugins menu:
+
+### Plugin Status Settings
+
+- **Enable Plugin**: Turn the plugin on/off to control when operations are performed
+- **Show Ribbon Button**: Control visibility of the settings ribbon button
 
 ### Journal Settings
 

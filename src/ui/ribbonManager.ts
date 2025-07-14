@@ -72,8 +72,10 @@ export class RibbonManager {
     // Clear existing buttons
     this.clearRibbon();
 
-    // Add core journal management buttons only
-    this.addCreateFutureNoteButton();
+    // Only add journal management buttons if plugin is enabled
+    if (this.plugin.settings.enabled) {
+      this.addCreateFutureNoteButton();
+    }
     
     // Only add settings button if enabled in settings
     if (this.plugin.settings.showRibbonButton) {
@@ -223,8 +225,13 @@ export class RibbonManager {
    * Clear all ribbon buttons
    */
   clearRibbon(): void {
-    this.ribbonButtons.forEach(button => button.remove());
+    this.ribbonButtons.forEach(button => {
+      if (button && button.parentNode) {
+        button.remove();
+      }
+    });
     this.ribbonButtons = [];
+    DebugUtils.log('Cleared all ribbon buttons');
   }
 
   /**
@@ -239,8 +246,9 @@ export class RibbonManager {
    */
   updateButtonStates(): void {
     // Reinitialize ribbon to reflect current settings
+    DebugUtils.log('Updating ribbon buttons based on settings...');
     this.initializeRibbon();
-    DebugUtils.log('Ribbon buttons updated');
+    DebugUtils.log(`Ribbon updated - Plugin enabled: ${this.plugin.settings.enabled}, Show ribbon: ${this.plugin.settings.showRibbonButton}`);
   }
 
   /**

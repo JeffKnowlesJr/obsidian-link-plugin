@@ -763,7 +763,9 @@ var RibbonManager = class {
    */
   initializeRibbon() {
     this.clearRibbon();
-    this.addCreateFutureNoteButton();
+    if (this.plugin.settings.enabled) {
+      this.addCreateFutureNoteButton();
+    }
     if (this.plugin.settings.showRibbonButton) {
       this.addSettingsButton();
     }
@@ -879,8 +881,13 @@ var RibbonManager = class {
    * Clear all ribbon buttons
    */
   clearRibbon() {
-    this.ribbonButtons.forEach((button) => button.remove());
+    this.ribbonButtons.forEach((button) => {
+      if (button && button.parentNode) {
+        button.remove();
+      }
+    });
     this.ribbonButtons = [];
+    DebugUtils.log("Cleared all ribbon buttons");
   }
   /**
    * Cleanup method for plugin unload
@@ -892,8 +899,9 @@ var RibbonManager = class {
    * Update button states based on settings
    */
   updateButtonStates() {
+    DebugUtils.log("Updating ribbon buttons based on settings...");
     this.initializeRibbon();
-    DebugUtils.log("Ribbon buttons updated");
+    DebugUtils.log(`Ribbon updated - Plugin enabled: ${this.plugin.settings.enabled}, Show ribbon: ${this.plugin.settings.showRibbonButton}`);
   }
   /**
    * Show quick actions menu
@@ -948,6 +956,7 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
         if (value) {
           try {
             await this.plugin.directoryManager.rebuildDirectoryStructure();
+            await this.plugin.directoryManager.setupTemplates();
             await this.plugin.journalManager.checkAndCreateCurrentMonthFolder();
             await this.plugin.updateDailyNotesSettings();
             this.plugin.errorHandler.showNotice(
@@ -1204,6 +1213,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       this.registerEventHandlers();
       if (this.settings.enabled) {
         await this.directoryManager.rebuildDirectoryStructure();
+        await this.directoryManager.setupTemplates();
         await this.journalManager.checkAndCreateCurrentMonthFolder();
         await this.updateDailyNotesSettings();
         this.startDateChangeMonitoring();
