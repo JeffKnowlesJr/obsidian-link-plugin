@@ -80,6 +80,7 @@ import LinkPlugin from '../main';
 import { DateService } from '../services/dateService';
 import { DateUtils } from '../utils/dateUtils';
 import { JournalEntry } from '../types';
+import { DebugUtils } from '../utils/debugUtils';
 
 export class JournalManager {
   plugin: LinkPlugin;
@@ -111,7 +112,7 @@ export class JournalManager {
       // Create the file using Obsidian's default daily note template (empty content)
       // Let Obsidian's Daily Notes plugin handle the template
       file = await vault.create(filePath, '');
-      console.log(`Created daily note: ${filePath}`);
+      DebugUtils.log(`Created daily note: ${filePath}`);
     }
 
     return file;
@@ -125,14 +126,15 @@ export class JournalManager {
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
     const monthName = DateService.format(date, 'MMMM YYYY');
     
-    // Check if folder already exists
-    const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath);
+    // Check if folder already exists using Vault API
+    const folder = this.plugin.app.vault.getFolderByPath(monthlyFolderPath);
+    const folderExists = folder !== null;
     
     if (!folderExists) {
       await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
-      console.log(`✅ Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
+      DebugUtils.log(`✅ Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
     } else {
-      console.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
+      DebugUtils.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
     }
   }
 
@@ -173,14 +175,14 @@ export class JournalManager {
   async createFutureDailyNote(date: Date | string): Promise<TFile> {
     const targetDate = DateService.from(date);
     
-    console.log(`Creating future daily note for: ${DateService.format(targetDate, 'YYYY-MM-DD')}`);
+    DebugUtils.log(`Creating future daily note for: ${DateService.format(targetDate, 'YYYY-MM-DD')}`);
     
     // This will automatically create the monthly folder if it doesn't exist
     const file = await this.createOrOpenJournalEntry(targetDate);
     
     // Log the created folder structure for verification
     const monthlyPath = this.getMonthlyFolderPath(targetDate);
-    console.log(`Future note created in: ${monthlyPath}`);
+    DebugUtils.log(`Future note created in: ${monthlyPath}`);
     
     return file;
   }
@@ -211,7 +213,7 @@ export class JournalManager {
     if (daysUntilNextMonth <= 2) {
       const nextMonth = DateService.add(currentDate, 1, 'month');
       await this.ensureMonthlyFolderExists(nextMonth);
-      console.log('Pre-created next month folder (end of month detected)');
+      DebugUtils.log('Pre-created next month folder (end of month detected)');
     }
   }
 

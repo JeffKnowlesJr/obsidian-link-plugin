@@ -9,6 +9,7 @@ import {
 import { PathUtils } from '../utils/pathUtils'
 import { DirectoryTemplate } from '../types'
 import { DateService } from '../services/dateService'
+import { DebugUtils } from '../utils/debugUtils'
 
 /**
  * Algorithm for DirectoryManager:
@@ -78,9 +79,9 @@ export class DirectoryManager {
       const basePath = baseFolder ? normalizePath(baseFolder) : ''
       if (basePath) {
         await this.getOrCreateDirectory(basePath)
-        console.log(`Created base directory: ${basePath}`)
+        DebugUtils.log(`Created base directory: ${basePath}`)
       } else {
-        console.log('Using vault root as base directory')
+        DebugUtils.log('Using vault root as base directory')
       }
 
       // Only create folders that are toggled on (in directoryStructure)
@@ -92,7 +93,7 @@ export class DirectoryManager {
           ? PathUtils.joinPath(basePath, dirName)
           : dirName
         await this.getOrCreateDirectory(dirPath)
-        console.log(`Created directory: ${dirPath}`)
+        DebugUtils.log(`Created directory: ${dirPath}`)
 
       }
 
@@ -111,7 +112,7 @@ export class DirectoryManager {
 
     // Always create the basic journal directory
     await this.getOrCreateDirectory(journalPath)
-    console.log(`Created journal directory: ${journalPath}`)
+    DebugUtils.log(`Created journal directory: ${journalPath}`)
 
     // Only create complex structure if simple mode is disabled
     if (!this.plugin.settings.simpleJournalMode) {
@@ -127,9 +128,9 @@ export class DirectoryManager {
       await this.getOrCreateDirectory(currentYearPath)
       await this.getOrCreateDirectory(currentMonthPath)
 
-      console.log(`Created current month directory: ${currentMonthPath}`)
+      DebugUtils.log(`Created current month directory: ${currentMonthPath}`)
 
-      console.log('Current month journal structure created')
+      DebugUtils.log('Current month journal structure created')
     }
   }
 
@@ -146,7 +147,7 @@ export class DirectoryManager {
 
       // Create templates directory as sibling to journal
       await this.getOrCreateDirectory(templatesPath)
-      console.log(`Created templates directory: ${templatesPath}`)
+      DebugUtils.log(`Created templates directory: ${templatesPath}`)
 
       // Copy daily notes template if it doesn't exist
       const templateFilePath = PathUtils.joinPath(
@@ -158,9 +159,9 @@ export class DirectoryManager {
       if (!vault.getAbstractFileByPath(templateFilePath)) {
         const templateContent = DirectoryManager.getDailyNotesTemplateContent()
         await vault.create(templateFilePath, templateContent)
-        console.log(`Created template file: ${templateFilePath}`)
+        DebugUtils.log(`Created template file: ${templateFilePath}`)
       } else {
-        console.log(`Template already exists: ${templateFilePath}`)
+        DebugUtils.log(`Template already exists: ${templateFilePath}`)
       }
     } catch (error) {
       throw new Error(`Failed to setup templates: ${error}`)

@@ -49,20 +49,28 @@ export class SettingsTab extends PluginSettingTab {
     const { containerEl } = this
     containerEl.empty()
 
-    containerEl.createEl('h1', { text: 'Link Plugin Settings' })
+    // Add description without heading
     containerEl.createEl('p', {
       text: 'Simple journal management settings',
       cls: 'setting-item-description'
     })
 
-    // Daily Notes Integration as its own section
-    containerEl.createEl('h2', { text: 'Daily Notes Integration' })
+    // Daily Notes Integration section
+    new Setting(containerEl)
+      .setName('Daily Notes Integration')
+      .setHeading();
     this.addDailyNotesIntegrationSettings(containerEl)
 
-    // Core Settings as a separate section
-    containerEl.createEl('h2', { text: '📁 Core Settings' })
+    // Core Settings section
+    new Setting(containerEl)
+      .setName('Core Settings')
+      .setHeading();
     this.addCoreSettings(containerEl)
 
+    // Journal Template Settings section
+    new Setting(containerEl)
+      .setName('Journal Template Settings')
+      .setHeading();
     this.addJournalTemplateSettings(containerEl)
   }
 
@@ -152,6 +160,19 @@ export class SettingsTab extends PluginSettingTab {
 
     // Journal Settings (without Simple Journal Mode toggle)
     this.addJournalSettings(containerEl)
+
+    // Debug Mode Setting
+    new Setting(containerEl)
+      .setName('Debug Mode')
+      .setDesc('Enable debug logging to console (for troubleshooting)')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.debugMode)
+          .onChange(async (value) => {
+            this.plugin.settings.debugMode = value
+            await this.plugin.saveSettings()
+          })
+      )
   }
 
   private addJournalSettings(containerEl: HTMLElement): void {
@@ -205,7 +226,6 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private addJournalTemplateSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '📝 Journal Template Settings' })
 
     // Daily Note Template Location
     new Setting(containerEl)
@@ -267,7 +287,6 @@ export class SettingsTab extends PluginSettingTab {
    * Adds Daily Notes integration settings with backup and restore functionality
    */
   private addDailyNotesIntegrationSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Daily Notes Integration' })
     containerEl.createEl('p', {
       text: "Control how this plugin integrates with Obsidian's Daily Notes plugin. Your original settings will be backed up automatically.",
       cls: 'setting-item-description'

@@ -55,6 +55,7 @@ import { MarkdownView, Modal } from 'obsidian';
 import LinkPlugin from '../main';
 import { RIBBON_BUTTONS } from '../constants';
 import { DateService } from '../services/dateService';
+import { DebugUtils } from '../utils/debugUtils';
 
 export class RibbonManager {
   private plugin: LinkPlugin;
@@ -75,7 +76,7 @@ export class RibbonManager {
     this.addCreateFutureNoteButton();
     this.addSettingsButton();
 
-    console.log('Ribbon initialized - Core journal functionality enabled');
+    DebugUtils.log('Ribbon initialized - Core journal functionality enabled');
   }
 
   /**
@@ -230,7 +231,7 @@ export class RibbonManager {
    */
   updateButtonStates(): void {
     // No state-dependent buttons in simplified ribbon
-    console.log('Ribbon buttons updated');
+    DebugUtils.log('Ribbon buttons updated');
   }
 
   /**

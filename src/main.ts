@@ -7,6 +7,7 @@ import { ErrorHandler } from './utils/errorHandler'
 import { RibbonManager } from './ui/ribbonManager'
 import { SettingsTab } from './ui/settingsTab'
 import { DateService } from './services/dateService'
+import { DebugUtils } from './utils/debugUtils'
 import { COMMAND_IDS } from './constants'
 
 /**
@@ -60,9 +61,8 @@ export default class LinkPlugin extends Plugin {
 
   async onload() {
     // Algorithm 1: Initialization Sequence
-    console.log(
-      'Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...'
-    )
+    DebugUtils.initialize(this)
+    DebugUtils.log('Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...')
 
     try {
       DateService.initialize()
@@ -80,17 +80,15 @@ export default class LinkPlugin extends Plugin {
       await this.updateDailyNotesSettings()
       this.startDateChangeMonitoring()
       const debugInfo = DateService.getDebugInfo()
-      console.log('DateService initialized:', debugInfo)
-      console.log('Today:', DateService.today())
-      console.log('Current month:', DateService.currentMonth())
+      DebugUtils.log('DateService initialized:', debugInfo)
+      DebugUtils.log('Today:', DateService.today())
+      DebugUtils.log('Current month:', DateService.currentMonth())
       this.errorHandler.showNotice(
         'Obsidian Link Journal loaded - Pure journal management ready!'
       )
-      console.log(
-        'Obsidian Link Journal loaded successfully - Core journal functionality enabled'
-      )
+      DebugUtils.log('Obsidian Link Journal loaded successfully - Core journal functionality enabled')
     } catch (error) {
-      console.error('Failed to load Link Plugin:', error)
+      DebugUtils.error('Failed to load Link Plugin:', error)
       if (this.errorHandler) {
         this.errorHandler.handleError(error, 'Plugin initialization failed')
       }
@@ -246,7 +244,7 @@ export default class LinkPlugin extends Plugin {
           this.settings.debugMode &&
           file.path.includes(this.settings.journalRootFolder)
         ) {
-          console.log('Journal file modified:', file.path)
+          DebugUtils.log('Journal file modified:', file.path)
         }
       })
     )
@@ -365,7 +363,7 @@ export default class LinkPlugin extends Plugin {
         try {
           const currentMonth = DateService.format(DateService.now(), 'YYYY-MM')
           if (currentMonth !== lastCheckedMonth) {
-            console.log(
+            DebugUtils.log(
               `Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`
             )
             await this.journalManager.checkAndCreateCurrentMonthFolder()
@@ -377,12 +375,12 @@ export default class LinkPlugin extends Plugin {
             )
           }
         } catch (error) {
-          console.error('Error in date change monitoring:', error)
+          DebugUtils.error('Error in date change monitoring:', error)
         }
       }, 60 * 60 * 1000)
     )
 
-    console.log(
+    DebugUtils.log(
       'Date change monitoring started - will auto-create monthly folders'
     )
   }
@@ -410,13 +408,13 @@ export default class LinkPlugin extends Plugin {
         if (communityDailyNotes) {
           await this.updateCommunityPluginSettings(communityDailyNotes)
         } else {
-          console.log(
+          DebugUtils.log(
             'Daily Notes plugin not found or not enabled - using plugin folder structure only'
           )
         }
       }
     } catch (error) {
-      console.log(
+      DebugUtils.log(
         'Daily Notes integration skipped:',
         error instanceof Error ? error.message : String(error)
       )
@@ -447,7 +445,7 @@ export default class LinkPlugin extends Plugin {
       : 'templates/Daily Notes Template.md'
     dailyNotesSettings.template = templatesPath
 
-    console.log(`Updated Core Daily Notes plugin settings`)
+    DebugUtils.log(`Updated Core Daily Notes plugin settings`)
     this.errorHandler.showNotice(`✅ Daily Notes settings updated`)
   }
 
@@ -479,7 +477,7 @@ export default class LinkPlugin extends Plugin {
     communityDailyNotes.settings.template = templatesPath
 
     await communityDailyNotes.saveSettings()
-    console.log(`Updated Community Daily Notes plugin settings`)
+    DebugUtils.log(`Updated Community Daily Notes plugin settings`)
     this.errorHandler.showNotice(`✅ Daily Notes settings updated`)
   }
 
@@ -498,7 +496,7 @@ export default class LinkPlugin extends Plugin {
     }
 
     await this.saveSettings()
-    console.log(`Created Daily Notes backup for ${pluginType} plugin`)
+    DebugUtils.log(`Created Daily Notes backup for ${pluginType} plugin`)
   }
 
   /**
@@ -522,7 +520,7 @@ export default class LinkPlugin extends Plugin {
             dailyNotesPlugin.instance.options,
             backup.originalSettings
           )
-          console.log('Restored Core Daily Notes settings from backup')
+          DebugUtils.log('Restored Core Daily Notes settings from backup')
         }
       } else {
         const communityDailyNotes = (this.app as any).plugins?.plugins?.[
@@ -531,7 +529,7 @@ export default class LinkPlugin extends Plugin {
         if (communityDailyNotes) {
           Object.assign(communityDailyNotes.settings, backup.originalSettings)
           await communityDailyNotes.saveSettings()
-          console.log('Restored Community Daily Notes settings from backup')
+          DebugUtils.log('Restored Community Daily Notes settings from backup')
         }
       }
 
@@ -555,7 +553,7 @@ export default class LinkPlugin extends Plugin {
    * Cleans up managers and UI elements on plugin unload.
    */
   onunload() {
-    console.log('Obsidian Link Journal unloaded')
+    DebugUtils.log('Obsidian Link Journal unloaded')
 
     if (this.ribbonManager) {
       this.ribbonManager.cleanup()

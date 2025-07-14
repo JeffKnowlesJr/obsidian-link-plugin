@@ -363,6 +363,26 @@ var DateService = class {
   }
 };
 
+// src/utils/debugUtils.ts
+var DebugUtils = class {
+  static initialize(plugin) {
+    this.plugin = plugin;
+  }
+  static log(message, ...args) {
+    if (this.isDebugEnabled()) {
+      console.log(`[Link Plugin] ${message}`, ...args);
+    }
+  }
+  static error(message, error) {
+    console.error(`[Link Plugin] ${message}`, error);
+  }
+  static isDebugEnabled() {
+    var _a, _b;
+    return ((_b = (_a = this.plugin) == null ? void 0 : _a.settings) == null ? void 0 : _b.debugMode) === true;
+  }
+};
+DebugUtils.plugin = null;
+
 // src/managers/directoryManager.ts
 var DirectoryManager = class {
   constructor(plugin) {
@@ -379,16 +399,16 @@ var DirectoryManager = class {
       const basePath = baseFolder ? (0, import_obsidian2.normalizePath)(baseFolder) : "";
       if (basePath) {
         await this.getOrCreateDirectory(basePath);
-        console.log(`Created base directory: ${basePath}`);
+        DebugUtils.log(`Created base directory: ${basePath}`);
       } else {
-        console.log("Using vault root as base directory");
+        DebugUtils.log("Using vault root as base directory");
       }
       for (const dirName of directoryStructure || ["journal"]) {
         if (dirName === "templates")
           continue;
         const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
         await this.getOrCreateDirectory(dirPath);
-        console.log(`Created directory: ${dirPath}`);
+        DebugUtils.log(`Created directory: ${dirPath}`);
       }
       await this.createJournalStructure(basePath);
     } catch (error) {
@@ -401,7 +421,7 @@ var DirectoryManager = class {
   async createJournalStructure(basePath) {
     const journalPath = PathUtils.joinPath(basePath, "journal");
     await this.getOrCreateDirectory(journalPath);
-    console.log(`Created journal directory: ${journalPath}`);
+    DebugUtils.log(`Created journal directory: ${journalPath}`);
     if (!this.plugin.settings.simpleJournalMode) {
       const currentDate = DateService.now();
       const currentYear = DateService.format(currentDate, "YYYY");
@@ -410,8 +430,8 @@ var DirectoryManager = class {
       const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth);
       await this.getOrCreateDirectory(currentYearPath);
       await this.getOrCreateDirectory(currentMonthPath);
-      console.log(`Created current month directory: ${currentMonthPath}`);
-      console.log("Current month journal structure created");
+      DebugUtils.log(`Created current month directory: ${currentMonthPath}`);
+      DebugUtils.log("Current month journal structure created");
     }
   }
   /**
@@ -423,7 +443,7 @@ var DirectoryManager = class {
       const { baseFolder } = this.plugin.settings;
       const templatesPath = baseFolder ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH) : DEFAULT_TEMPLATES_PATH;
       await this.getOrCreateDirectory(templatesPath);
-      console.log(`Created templates directory: ${templatesPath}`);
+      DebugUtils.log(`Created templates directory: ${templatesPath}`);
       const templateFilePath = PathUtils.joinPath(
         templatesPath,
         DAILY_NOTES_TEMPLATE_NAME
@@ -432,9 +452,9 @@ var DirectoryManager = class {
       if (!vault.getAbstractFileByPath(templateFilePath)) {
         const templateContent = DirectoryManager.getDailyNotesTemplateContent();
         await vault.create(templateFilePath, templateContent);
-        console.log(`Created template file: ${templateFilePath}`);
+        DebugUtils.log(`Created template file: ${templateFilePath}`);
       } else {
-        console.log(`Template already exists: ${templateFilePath}`);
+        DebugUtils.log(`Template already exists: ${templateFilePath}`);
       }
     } catch (error) {
       throw new Error(`Failed to setup templates: ${error}`);
@@ -527,7 +547,7 @@ var JournalManager = class {
     let file = vault.getAbstractFileByPath(filePath);
     if (!file) {
       file = await vault.create(filePath, "");
-      console.log(`Created daily note: ${filePath}`);
+      DebugUtils.log(`Created daily note: ${filePath}`);
     }
     return file;
   }
@@ -538,12 +558,13 @@ var JournalManager = class {
   async ensureMonthlyFolderExists(date) {
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
     const monthName = DateService.format(date, "MMMM YYYY");
-    const folderExists = await this.plugin.app.vault.adapter.exists(monthlyFolderPath);
+    const folder = this.plugin.app.vault.getFolderByPath(monthlyFolderPath);
+    const folderExists = folder !== null;
     if (!folderExists) {
       await this.plugin.directoryManager.getOrCreateDirectory(monthlyFolderPath);
-      console.log(`\u2705 Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
+      DebugUtils.log(`\u2705 Created monthly folder for ${monthName}: ${monthlyFolderPath}`);
     } else {
-      console.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
+      DebugUtils.log(`Monthly folder for ${monthName} already exists: ${monthlyFolderPath}`);
     }
   }
   /**
@@ -576,10 +597,10 @@ var JournalManager = class {
    */
   async createFutureDailyNote(date) {
     const targetDate = DateService.from(date);
-    console.log(`Creating future daily note for: ${DateService.format(targetDate, "YYYY-MM-DD")}`);
+    DebugUtils.log(`Creating future daily note for: ${DateService.format(targetDate, "YYYY-MM-DD")}`);
     const file = await this.createOrOpenJournalEntry(targetDate);
     const monthlyPath = this.getMonthlyFolderPath(targetDate);
-    console.log(`Future note created in: ${monthlyPath}`);
+    DebugUtils.log(`Future note created in: ${monthlyPath}`);
     return file;
   }
   /**
@@ -603,7 +624,7 @@ var JournalManager = class {
     if (daysUntilNextMonth <= 2) {
       const nextMonth = DateService.add(currentDate, 1, "month");
       await this.ensureMonthlyFolderExists(nextMonth);
-      console.log("Pre-created next month folder (end of month detected)");
+      DebugUtils.log("Pre-created next month folder (end of month detected)");
     }
   }
   /**
@@ -712,7 +733,7 @@ var RibbonManager = class {
     this.clearRibbon();
     this.addCreateFutureNoteButton();
     this.addSettingsButton();
-    console.log("Ribbon initialized - Core journal functionality enabled");
+    DebugUtils.log("Ribbon initialized - Core journal functionality enabled");
   }
   /**
    * Add Create Future Note button - CORE FEATURE with date picker
@@ -833,7 +854,7 @@ var RibbonManager = class {
    * Update button states based on settings
    */
   updateButtonStates() {
-    console.log("Ribbon buttons updated");
+    DebugUtils.log("Ribbon buttons updated");
   }
   /**
    * Show quick actions menu
@@ -863,15 +884,15 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h1", { text: "Link Plugin Settings" });
     containerEl.createEl("p", {
       text: "Simple journal management settings",
       cls: "setting-item-description"
     });
-    containerEl.createEl("h2", { text: "Daily Notes Integration" });
+    new import_obsidian6.Setting(containerEl).setName("Daily Notes Integration").setHeading();
     this.addDailyNotesIntegrationSettings(containerEl);
-    containerEl.createEl("h2", { text: "\u{1F4C1} Core Settings" });
+    new import_obsidian6.Setting(containerEl).setName("Core Settings").setHeading();
     this.addCoreSettings(containerEl);
+    new import_obsidian6.Setting(containerEl).setName("Journal Template Settings").setHeading();
     this.addJournalTemplateSettings(containerEl);
   }
   addCoreSettings(containerEl) {
@@ -935,6 +956,12 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
       })
     );
     this.addJournalSettings(containerEl);
+    new import_obsidian6.Setting(containerEl).setName("Debug Mode").setDesc("Enable debug logging to console (for troubleshooting)").addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
+        this.plugin.settings.debugMode = value;
+        await this.plugin.saveSettings();
+      })
+    );
   }
   addJournalSettings(containerEl) {
     new import_obsidian6.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
@@ -963,7 +990,6 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
     );
   }
   addJournalTemplateSettings(containerEl) {
-    containerEl.createEl("h2", { text: "\u{1F4DD} Journal Template Settings" });
     new import_obsidian6.Setting(containerEl).setName("Daily Note Template Location").setDesc(
       'Override the default template path (e.g. "templates/Daily Notes Template.md")'
     ).addText(
@@ -1001,7 +1027,6 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
    * Adds Daily Notes integration settings with backup and restore functionality
    */
   addDailyNotesIntegrationSettings(containerEl) {
-    containerEl.createEl("h3", { text: "Daily Notes Integration" });
     containerEl.createEl("p", {
       text: "Control how this plugin integrates with Obsidian's Daily Notes plugin. Your original settings will be backed up automatically.",
       cls: "setting-item-description"
@@ -1075,9 +1100,8 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
 // src/main.ts
 var LinkPlugin = class extends import_obsidian7.Plugin {
   async onload() {
-    console.log(
-      "Loading Obsidian Link Journal v2.2.0 - Pure Journal Management..."
-    );
+    DebugUtils.initialize(this);
+    DebugUtils.log("Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...");
     try {
       DateService.initialize();
       await this.loadSettings();
@@ -1094,17 +1118,15 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       await this.updateDailyNotesSettings();
       this.startDateChangeMonitoring();
       const debugInfo = DateService.getDebugInfo();
-      console.log("DateService initialized:", debugInfo);
-      console.log("Today:", DateService.today());
-      console.log("Current month:", DateService.currentMonth());
+      DebugUtils.log("DateService initialized:", debugInfo);
+      DebugUtils.log("Today:", DateService.today());
+      DebugUtils.log("Current month:", DateService.currentMonth());
       this.errorHandler.showNotice(
         "Obsidian Link Journal loaded - Pure journal management ready!"
       );
-      console.log(
-        "Obsidian Link Journal loaded successfully - Core journal functionality enabled"
-      );
+      DebugUtils.log("Obsidian Link Journal loaded successfully - Core journal functionality enabled");
     } catch (error) {
-      console.error("Failed to load Link Plugin:", error);
+      DebugUtils.error("Failed to load Link Plugin:", error);
       if (this.errorHandler) {
         this.errorHandler.handleError(error, "Plugin initialization failed");
       }
@@ -1228,7 +1250,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
         if (this.settings.debugMode && file.path.includes(this.settings.journalRootFolder)) {
-          console.log("Journal file modified:", file.path);
+          DebugUtils.log("Journal file modified:", file.path);
         }
       })
     );
@@ -1329,7 +1351,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         try {
           const currentMonth = DateService.format(DateService.now(), "YYYY-MM");
           if (currentMonth !== lastCheckedMonth) {
-            console.log(
+            DebugUtils.log(
               `Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`
             );
             await this.journalManager.checkAndCreateCurrentMonthFolder();
@@ -1341,11 +1363,11 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
             );
           }
         } catch (error) {
-          console.error("Error in date change monitoring:", error);
+          DebugUtils.error("Error in date change monitoring:", error);
         }
       }, 60 * 60 * 1e3)
     );
-    console.log(
+    DebugUtils.log(
       "Date change monitoring started - will auto-create monthly folders"
     );
   }
@@ -1367,13 +1389,13 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         if (communityDailyNotes) {
           await this.updateCommunityPluginSettings(communityDailyNotes);
         } else {
-          console.log(
+          DebugUtils.log(
             "Daily Notes plugin not found or not enabled - using plugin folder structure only"
           );
         }
       }
     } catch (error) {
-      console.log(
+      DebugUtils.log(
         "Daily Notes integration skipped:",
         error instanceof Error ? error.message : String(error)
       );
@@ -1394,7 +1416,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     dailyNotesSettings.format = this.settings.journalDateFormat;
     const templatesPath = this.settings.customTemplateLocation ? this.settings.customTemplateLocation : this.settings.baseFolder ? `${this.settings.baseFolder}/templates/Daily Notes Template.md` : "templates/Daily Notes Template.md";
     dailyNotesSettings.template = templatesPath;
-    console.log(`Updated Core Daily Notes plugin settings`);
+    DebugUtils.log(`Updated Core Daily Notes plugin settings`);
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);
   }
   /**
@@ -1415,7 +1437,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
     const templatesPath = this.settings.customTemplateLocation ? this.settings.customTemplateLocation : this.settings.baseFolder ? `${this.settings.baseFolder}/templates/Daily Notes Template.md` : "templates/Daily Notes Template.md";
     communityDailyNotes.settings.template = templatesPath;
     await communityDailyNotes.saveSettings();
-    console.log(`Updated Community Daily Notes plugin settings`);
+    DebugUtils.log(`Updated Community Daily Notes plugin settings`);
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);
   }
   /**
@@ -1429,7 +1451,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       originalSettings: { ...currentSettings }
     };
     await this.saveSettings();
-    console.log(`Created Daily Notes backup for ${pluginType} plugin`);
+    DebugUtils.log(`Created Daily Notes backup for ${pluginType} plugin`);
   }
   /**
    * Algorithm 8: Backup/Restore Algorithm (Restore)
@@ -1450,14 +1472,14 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
             dailyNotesPlugin.instance.options,
             backup.originalSettings
           );
-          console.log("Restored Core Daily Notes settings from backup");
+          DebugUtils.log("Restored Core Daily Notes settings from backup");
         }
       } else {
         const communityDailyNotes = (_d = (_c = this.app.plugins) == null ? void 0 : _c.plugins) == null ? void 0 : _d["daily-notes"];
         if (communityDailyNotes) {
           Object.assign(communityDailyNotes.settings, backup.originalSettings);
           await communityDailyNotes.saveSettings();
-          console.log("Restored Community Daily Notes settings from backup");
+          DebugUtils.log("Restored Community Daily Notes settings from backup");
         }
       }
       this.settings.dailyNotesIntegration.enabled = false;
@@ -1478,7 +1500,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
    * Cleans up managers and UI elements on plugin unload.
    */
   onunload() {
-    console.log("Obsidian Link Journal unloaded");
+    DebugUtils.log("Obsidian Link Journal unloaded");
     if (this.ribbonManager) {
       this.ribbonManager.cleanup();
     }
