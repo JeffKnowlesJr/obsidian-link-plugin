@@ -26,7 +26,7 @@ This document provides development guidelines, testing strategies, and contribut
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd obsidian-link-plugin
+cd datefolders-for-dailynotes
 
 # Install dependencies
 npm install
@@ -48,7 +48,7 @@ npm run dev
 ## Project Structure
 
 ```
-obsidian-link-plugin/
+datefolders-for-dailynotes/
 ├── src/
 │   ├── main.ts                 # Main plugin class
 │   ├── types.ts                # Type definitions

@@ -92,13 +92,13 @@ export default class LinkPlugin extends Plugin {
         DebugUtils.log('Today:', DateService.today())
         DebugUtils.log('Current month:', DateService.currentMonth())
         this.errorHandler.showNotice(
-          'Obsidian Link Journal loaded - Pure journal management ready!'
+          'DateFolders For DailyNotes loaded - Pure journal management ready!'
         )
-        DebugUtils.log('Obsidian Link Journal loaded successfully - Core journal functionality enabled')
+        DebugUtils.log('DateFolders For DailyNotes loaded successfully - Core journal functionality enabled')
       } else {
-        DebugUtils.log('Obsidian Link Journal loaded - Plugin disabled, no operations performed')
+        DebugUtils.log('DateFolders For DailyNotes loaded - Plugin disabled, no operations performed')
         this.errorHandler.showNotice(
-          'Obsidian Link Journal loaded - Plugin is disabled. Enable it in settings to start using journal management features.'
+          'DateFolders For DailyNotes loaded - Plugin is disabled. Enable it in settings to start using DateFolders management features.'
         )
       }
     } catch (error) {
@@ -592,7 +592,7 @@ export default class LinkPlugin extends Plugin {
    * Cleans up managers and UI elements on plugin unload.
    */
   onunload() {
-    DebugUtils.log('Obsidian Link Journal unloaded')
+    DebugUtils.log('DateFolders For DailyNotes unloaded')
 
     if (this.ribbonManager) {
       this.ribbonManager.cleanup()

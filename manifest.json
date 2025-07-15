@@ -5,7 +5,7 @@
   "minAppVersion": "0.15.0",
   "description": "Automatic date-based folder organization with year/month structure and seamless Daily Notes integration",
   "author": "jkjrdev.com",
-  "authorUrl": "https://github.com/jkjrdev/obsidian-link-plugin",
+  "authorUrl": "https://github.com/jkjrdev/datefolders-for-dailynotes",
   "fundingUrl": "https://patreon.com/jeffslink",
   "isDesktopOnly": false,
   "keywords": [

@@ -768,13 +768,13 @@ var RibbonManager = class {
   addSettingsButton() {
     const button = this.plugin.addRibbonIcon(
       "link",
-      "Open Obsidian Link Journal Settings",
+      "DateFolders For DailyNotes Settings",
       () => {
         try {
           this.plugin.app.setting.open();
           this.plugin.app.setting.openTabById(this.plugin.manifest.id);
         } catch (error) {
-          this.plugin.errorHandler.showNotice("Please open Settings \u2192 Community Plugins \u2192 Obsidian Link Journal to configure");
+          this.plugin.errorHandler.showNotice("Please open Settings \u2192 Community Plugins \u2192 DateFolders For DailyNotes to configure");
           this.plugin.errorHandler.handleError(error, "Failed to open settings automatically");
         }
       }
@@ -815,7 +815,7 @@ var RibbonManager = class {
       this.plugin.errorHandler.showNotice("\u274C Plugin is disabled. Enable it in settings to use journal management features.");
       return;
     }
-    const message = `Obsidian Link Journal Quick Actions:
+    const message = `DateFolders For DailyNotes Quick Actions:
 \u2022 Create Today's Note: Open or create today's journal
 \u2022 Create Monthly Folders: Set up folder structure
 \u2022 Settings: Configure journal management`;
@@ -1070,13 +1070,13 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         DebugUtils.log("Today:", DateService.today());
         DebugUtils.log("Current month:", DateService.currentMonth());
         this.errorHandler.showNotice(
-          "Obsidian Link Journal loaded - Pure journal management ready!"
+          "DateFolders For DailyNotes loaded - Pure journal management ready!"
         );
-        DebugUtils.log("Obsidian Link Journal loaded successfully - Core journal functionality enabled");
+        DebugUtils.log("DateFolders For DailyNotes loaded successfully - Core journal functionality enabled");
       } else {
-        DebugUtils.log("Obsidian Link Journal loaded - Plugin disabled, no operations performed");
+        DebugUtils.log("DateFolders For DailyNotes loaded - Plugin disabled, no operations performed");
         this.errorHandler.showNotice(
-          "Obsidian Link Journal loaded - Plugin is disabled. Enable it in settings to start using journal management features."
+          "DateFolders For DailyNotes loaded - Plugin is disabled. Enable it in settings to start using DateFolders management features."
         );
       }
     } catch (error) {
@@ -1482,7 +1482,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
    * Cleans up managers and UI elements on plugin unload.
    */
   onunload() {
-    DebugUtils.log("Obsidian Link Journal unloaded");
+    DebugUtils.log("DateFolders For DailyNotes unloaded");
     if (this.ribbonManager) {
       this.ribbonManager.cleanup();
     }

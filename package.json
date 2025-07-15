@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-link-plugin",
+  "name": "datefolders-for-dailynotes",
   "version": "1.0.0",
   "description": "Daily note directory management, Future notes, and an introduction to graymatter and templates",
   "main": "main.js",
@@ -24,12 +24,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jkjrdev/obsidian-link-plugin.git"
+    "url": "https://github.com/jkjrdev/datefolders-for-dailynotes.git"
   },
   "bugs": {
-    "url": "https://github.com/jkjrdev/obsidian-link-plugin/issues"
+    "url": "https://github.com/jkjrdev/datefolders-for-dailynotes/issues"
   },
-  "homepage": "https://github.com/jkjrdev/obsidian-link-plugin#readme",
+  "homepage": "https://github.com/jkjrdev/datefolders-for-dailynotes#readme",
   "devDependencies": {
     "@types/node": "^16.11.6",
     "@typescript-eslint/eslint-plugin": "5.29.0",

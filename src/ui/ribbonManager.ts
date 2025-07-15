@@ -203,7 +203,7 @@ export class RibbonManager {
   private addSettingsButton(): void {
     const button = this.plugin.addRibbonIcon(
       'link',
-      'Open Obsidian Link Journal Settings',
+      'DateFolders For DailyNotes Settings',
       () => {
         try {
           // Open settings using the correct Obsidian API
@@ -213,7 +213,7 @@ export class RibbonManager {
           this.plugin.app.setting.openTabById(this.plugin.manifest.id);
         } catch (error) {
           // Fallback - use notice to instruct user
-          this.plugin.errorHandler.showNotice('Please open Settings → Community Plugins → Obsidian Link Journal to configure');
+          this.plugin.errorHandler.showNotice('Please open Settings → Community Plugins → DateFolders For DailyNotes to configure');
           this.plugin.errorHandler.handleError(error, 'Failed to open settings automatically');
         }
       }
@@ -261,7 +261,7 @@ export class RibbonManager {
     }
     
     // Simple notice with core actions
-    const message = `Obsidian Link Journal Quick Actions:
+    const message = `DateFolders For DailyNotes Quick Actions:
 • Create Today's Note: Open or create today's journal
 • Create Monthly Folders: Set up folder structure
 • Settings: Configure journal management`;
