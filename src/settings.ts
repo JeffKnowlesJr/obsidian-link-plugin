@@ -27,8 +27,8 @@ export {
 } from './settings/directorySettings';
 
 export {
-  JournalSettings,
-  type JournalSettingsConfig
+  DailyNotesSettings,
+  type DailyNotesSettingsConfig
 } from './settings/journalSettings';
 
 

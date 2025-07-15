@@ -1,9 +1,9 @@
 {
-  "id": "link-plugin",
-  "name": "Obsidian Link Plugin",
+  "id": "datefolders",
+  "name": "DateFolders for DailyNotes",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "Intelligent daily note organization with automatic monthly folder management and seamless Daily Notes integration",
+  "description": "Automatic date-based folder organization with year/month structure and seamless Daily Notes integration",
   "author": "jkjrdev.com",
   "authorUrl": "https://github.com/jkjrdev/obsidian-link-plugin",
   "fundingUrl": "https://patreon.com/jeffslink",
@@ -11,10 +11,9 @@
   "keywords": [
     "obsidian",
     "plugin",
-    "journal",
     "daily notes",
+    "date folders",
     "organization",
-    "templates",
     "folder management"
   ],
   "main": "main.js"

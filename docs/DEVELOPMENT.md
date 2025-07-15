@@ -1,171 +1,234 @@
-# Development Guide - Obsidian Link Plugin
+# Development Guide - DateFolders for DailyNotes Plugin
 
-A comprehensive guide for developers and contributors to the Obsidian Link Plugin.
+This document provides development guidelines, testing strategies, and contribution information for the DateFolders for DailyNotes plugin.
 
 ## 📖 Table of Contents
 
-- [Overview](#overview)
 - [Development Setup](#development-setup)
 - [Project Structure](#project-structure)
-- [Testing](#testing)
-- [Building](#building)
-- [Contributing](#contributing)
 - [Code Style](#code-style)
+- [Testing Strategy](#testing-strategy)
 - [Debugging](#debugging)
+- [Contributing](#contributing)
 - [Release Process](#release-process)
-
-## Overview
-
-This guide helps developers set up the development environment, understand the codebase, and contribute to the Obsidian Link Plugin. The project uses TypeScript, follows modern development practices, and includes comprehensive testing.
-
-### Prerequisites
-
-- **Node.js** v16 or later
-- **Git** for version control
-- **Obsidian** for testing the plugin
-- **VS Code** (recommended) with TypeScript support
 
 ## Development Setup
 
-### 1. Clone the Repository
+### Prerequisites
+
+1. **Node.js**: Version 16 or higher
+2. **npm**: Package manager
+3. **Git**: Version control
+4. **Obsidian**: For testing the plugin
+
+### Installation
 
 ```bash
-git clone https://github.com/jkjrdev/obsidian-link-plugin.git
+# Clone the repository
+git clone <repository-url>
 cd obsidian-link-plugin
-```
 
-### 2. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Development Scripts
-
-The project includes several npm scripts for development:
-
-```bash
-# Development mode with hot reload
-npm run dev
-
-# Build for production
+# Build the plugin
 npm run build
 
-# Run tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Organize documentation
-npm run organize-docs
+# Watch for changes during development
+npm run dev
 ```
 
-### 4. Development Workflow
+### Development Environment
 
-1. **Start Development Server**:
-   ```bash
-   npm run dev
-   ```
-
-2. **Open Obsidian** and enable developer mode
-3. **Load the plugin** from the `main.js` file in the project root
-4. **Make changes** to the TypeScript files
-5. **Test changes** in Obsidian
-6. **Run tests** to ensure functionality
-7. **Build for production** when ready
+1. **TypeScript**: The project uses TypeScript for type safety
+2. **ESLint**: Code linting and style enforcement
+3. **Jest**: Unit testing framework
+4. **esbuild**: Fast bundling for development
 
 ## Project Structure
 
 ```
 obsidian-link-plugin/
-├── src/                          # Source code
-│   ├── main.ts                   # Main plugin class
-│   ├── types.ts                  # Type definitions
-│   ├── constants.ts              # Constants and configuration
-│   ├── settings.ts               # Settings management
-│   ├── managers/                 # Domain-specific managers
-│   │   ├── directoryManager.ts
-│   │   ├── fileSortingManager.ts
-│   │   └── journalManager.ts
-│   ├── services/                 # Shared services
-│   │   └── dateService.ts
-│   ├── settings/                 # Modular settings
-│   │   ├── index.ts
-│   │   ├── defaultSettings.ts
-│   │   ├── settingsValidator.ts
-│   │   ├── directorySettings.ts
-│   │   ├── journalSettings.ts
-│   │   ├── generalSettings.ts
-│   │   └── dailyNotesSettings.ts
-│   ├── ui/                       # User interface components
-│   │   ├── ribbonManager.ts
-│   │   └── settingsTab.ts
-│   └── utils/                    # Utility functions
-│       ├── errorHandler.ts
-│       ├── pathUtils.ts
-│       └── dateUtils.ts
-├── docs/                         # Documentation
-│   ├── README.md                 # Documentation index
-│   ├── USER_GUIDE.md            # User documentation
-│   ├── ARCHITECTURE.md          # Technical architecture
-│   ├── COMPONENT_DOCUMENTATION.md # Component analysis
-│   └── DEVELOPMENT.md           # This file
-├── package.json                  # Dependencies and scripts
-├── tsconfig.json                # TypeScript configuration
-├── esbuild.config.mjs           # Build configuration
-├── jest.config.js               # Test configuration
-└── manifest.json                # Plugin manifest
+├── src/
+│   ├── main.ts                 # Main plugin class
+│   ├── types.ts                # Type definitions
+│   ├── constants.ts            # Constants and configuration
+│   ├── settings.ts             # Settings management
+│   ├── managers/
+│   │   ├── directoryManager.ts # Directory structure management
+│   │   └── dailyNotesManager.ts # Daily note management
+│   ├── services/
+│   │   └── dateService.ts      # Date handling utilities
+│   ├── settings/
+│   │   ├── index.ts            # Settings exports
+│   │   ├── defaultSettings.ts  # Default settings
+│   │   ├── settingsValidator.ts # Settings validation
+│   │   ├── directorySettings.ts # Directory settings
+│   │   ├── dailyNotesSettings.ts # Daily note settings
+│   │   └── generalSettings.ts  # General settings
+│   ├── ui/
+│   │   ├── settingsTab.ts      # Settings UI
+│   │   └── ribbonManager.ts    # Ribbon button management
+│   └── utils/
+│       ├── errorHandler.ts     # Error handling
+│       ├── pathUtils.ts        # Path utilities
+│       └── debugUtils.ts       # Debug utilities
+├── docs/                       # Documentation
+├── tests/                      # Test files
+├── manifest.json               # Plugin manifest
+├── package.json                # Dependencies and scripts
+├── tsconfig.json              # TypeScript configuration
+├── esbuild.config.mjs         # Build configuration
+└── jest.config.js             # Test configuration
 ```
 
-### Key Files Explained
+### Key Components
 
-#### `src/main.ts`
-The main plugin class that orchestrates the entire application. Contains:
-- Plugin lifecycle management
-- Settings loading/saving
-- Command registration
-- Event handling
-- Integration with Obsidian APIs
+- **Main Plugin Class**: Orchestrates all components
+- **DirectoryManager**: Handles folder structure creation
+- **DailyNotesManager**: Manages daily note creation and links
+- **DateService**: Provides date utilities
+- **Settings System**: Modular configuration management
+- **UI Components**: Settings and ribbon management
+- **Utilities**: Error handling, path utilities, debugging
 
-#### `src/managers/`
-Domain-specific managers that handle specific functionality:
-- **DirectoryManager**: Folder structure creation and management
-- **JournalManager**: Journal entry creation and management
-- **FileSortingManager**: File organization and sorting
+## Code Style
 
-#### `src/services/`
-Shared services used across the application:
-- **DateService**: Centralized date handling and formatting
+### TypeScript Guidelines
 
-#### `src/settings/`
-Modular settings system:
-- **defaultSettings.ts**: Default configuration values
-- **settingsValidator.ts**: Settings validation logic
-- **index.ts**: Settings module exports
+1. **Type Safety**: Use strict TypeScript settings
+2. **Interfaces**: Define clear interfaces for all data structures
+3. **Generics**: Use generics where appropriate
+4. **Enums**: Use enums for constants
+5. **Async/Await**: Prefer async/await over Promises
 
-#### `src/ui/`
-User interface components:
-- **SettingsTab**: Settings panel UI
-- **RibbonManager**: Ribbon button management
+### Naming Conventions
 
-## Testing
+1. **Classes**: PascalCase (e.g., `DirectoryManager`)
+2. **Methods**: camelCase (e.g., `createDailyNote()`)
+3. **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_SETTINGS`)
+4. **Interfaces**: PascalCase with 'I' prefix (e.g., `IDailyNoteSettings`)
+5. **Files**: camelCase (e.g., `dailyNotesManager.ts`)
+
+### Code Organization
+
+1. **Single Responsibility**: Each class has one clear purpose
+2. **Dependency Injection**: Pass dependencies through constructors
+3. **Error Handling**: Use try/catch blocks and error boundaries
+4. **Documentation**: Include JSDoc comments for public methods
+5. **Testing**: Write tests for all public methods
+
+### Example Code Structure
+
+```typescript
+/**
+ * Manages daily note creation and organization
+ */
+export class DailyNotesManager {
+  private plugin: LinkPlugin;
+  private errorHandler: ErrorHandler;
+
+  constructor(plugin: LinkPlugin) {
+    this.plugin = plugin;
+    this.errorHandler = new ErrorHandler(plugin);
+  }
+
+  /**
+   * Creates or opens a daily note for the specified date
+   * @param date - The date for the daily note
+   * @returns Promise<TFile> - The created or existing file
+   */
+  async createOrOpenDailyNote(date: Date): Promise<TFile> {
+    try {
+      // Implementation
+    } catch (error) {
+      this.errorHandler.handleError(error, 'Failed to create daily note');
+      throw error;
+    }
+  }
+}
+```
+
+## Testing Strategy
 
 ### Test Structure
 
-The project uses Jest for testing with the following structure:
-
 ```
 tests/
-├── unit/                         # Unit tests
+├── unit/
 │   ├── managers/
+│   │   ├── directoryManager.test.ts
+│   │   └── dailyNotesManager.test.ts
 │   ├── services/
+│   │   └── dateService.test.ts
+│   ├── settings/
+│   │   ├── settingsValidator.test.ts
+│   │   └── dailyNotesSettings.test.ts
 │   └── utils/
-├── integration/                  # Integration tests
-└── fixtures/                    # Test data and fixtures
+│       ├── errorHandler.test.ts
+│       └── pathUtils.test.ts
+├── integration/
+│   ├── plugin.test.ts
+│   └── dailyNotesManager.test.ts
+└── e2e/
+    └── userWorkflow.test.ts
 ```
 
-### Running Tests
+### Unit Testing
+
+```typescript
+// tests/unit/managers/dailyNotesManager.test.ts
+import { DailyNotesManager } from '../../src/managers/dailyNotesManager'
+import { mockPlugin } from '../mocks/plugin'
+
+describe('DailyNotesManager Unit Tests', () => {
+  let dailyNotesManager: DailyNotesManager
+
+  beforeEach(() => {
+    dailyNotesManager = new DailyNotesManager(mockPlugin)
+  })
+
+  describe('createOrOpenDailyNote', () => {
+    it('should create a new daily note when it does not exist', async () => {
+      const date = new Date('2024-01-01')
+      const file = await dailyNotesManager.createOrOpenDailyNote(date)
+      
+      expect(file).toBeDefined()
+      expect(file.path).toContain('2024-01-01')
+    })
+
+    it('should return existing file when daily note already exists', async () => {
+      // Test implementation
+    })
+  })
+})
+```
+
+### Integration Testing
+
+```typescript
+// tests/integration/dailyNotesManager.test.ts
+import { DailyNotesManager } from '../../src/managers/dailyNotesManager'
+
+describe('DailyNotesManager Integration', () => {
+  let dailyNotesManager: DailyNotesManager
+
+  beforeEach(() => {
+    dailyNotesManager = new DailyNotesManager(mockApp)
+  })
+
+  it('should create monthly folder structure when creating daily note', async () => {
+    const date = new Date('2024-01-01')
+    const file = await dailyNotesManager.createOrOpenDailyNote(date)
+    
+    // Verify folder structure was created
+    const monthlyFolder = mockApp.vault.getFolderByPath('DailyNotes/2024/01 January')
+    expect(monthlyFolder).toBeDefined()
+  })
+})
+```
+
+### Test Commands
 
 ```bash
 # Run all tests
@@ -175,396 +238,141 @@ npm test
 npm run test:watch
 
 # Run specific test file
-npm test -- path/to/test.ts
+npm test -- dailyNotesManager.test.ts
 
-# Run tests with coverage
-npm test -- --coverage
-```
-
-### Writing Tests
-
-#### Unit Test Example
-
-```typescript
-// tests/unit/services/dateService.test.ts
-import { DateService } from '../../../src/services/dateService'
-
-describe('DateService', () => {
-  beforeEach(() => {
-    DateService.initialize()
-  })
-
-  describe('format', () => {
-    it('should format date correctly', () => {
-      const date = new Date('2025-01-15')
-      const result = DateService.format(date, 'YYYY-MM-DD')
-      expect(result).toBe('2025-01-15')
-    })
-  })
-
-  describe('getJournalFilename', () => {
-    it('should generate correct filename', () => {
-      const date = new Date('2025-01-15')
-      const result = DateService.getJournalFilename(date, 'YYYY-MM-DD dddd')
-      expect(result).toBe('2025-01-15 Wednesday')
-    })
-  })
-})
-```
-
-#### Integration Test Example
-
-```typescript
-// tests/integration/journalManager.test.ts
-import { JournalManager } from '../../src/managers/journalManager'
-import { MockApp } from '../fixtures/mockApp'
-
-describe('JournalManager Integration', () => {
-  let journalManager: JournalManager
-  let mockApp: MockApp
-
-  beforeEach(() => {
-    mockApp = new MockApp()
-    journalManager = new JournalManager(mockApp)
-  })
-
-  it('should create journal entry with correct path', async () => {
-    const date = new Date('2025-01-15')
-    const file = await journalManager.createOrOpenJournalEntry(date)
-    
-    expect(file.path).toContain('journal/2025/January')
-    expect(file.name).toMatch(/2025-01-15/)
-  })
-})
-```
-
-### Test Fixtures
-
-Create reusable test data in `tests/fixtures/`:
-
-```typescript
-// tests/fixtures/mockApp.ts
-export class MockApp {
-  vault = {
-    create: jest.fn(),
-    getAbstractFileByPath: jest.fn(),
-    adapter: {
-      exists: jest.fn()
-    }
-  }
-  
-  workspace = {
-    getLeaf: jest.fn()
-  }
-  
-  settings = {
-    journalDateFormat: 'YYYY-MM-DD dddd',
-    journalYearFormat: 'YYYY',
-    journalMonthFormat: 'MMMM',
-    simpleJournalMode: false
-  }
-}
-```
-
-## Building
-
-### Development Build
-
-```bash
-npm run dev
-```
-
-This command:
-1. Watches for file changes
-2. Compiles TypeScript to JavaScript
-3. Bundles the code using esbuild
-4. Outputs to `main.js` in the project root
-
-### Production Build
-
-```bash
-npm run build
-```
-
-This command:
-1. Runs TypeScript type checking
-2. Compiles and bundles for production
-3. Minifies the output
-4. Creates optimized `main.js`
-
-### Build Configuration
-
-The build process is configured in `esbuild.config.mjs`:
-
-```javascript
-// esbuild.config.mjs
-import esbuild from 'esbuild'
-
-const production = process.argv[2] === 'production'
-
-esbuild.build({
-  entryPoints: ['src/main.ts'],
-  bundle: true,
-  outfile: 'main.js',
-  format: 'cjs',
-  platform: 'node',
-  target: 'node14',
-  minify: production,
-  sourcemap: !production,
-  watch: !production
-})
-```
-
-## Contributing
-
-### Contribution Guidelines
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/your-feature`
-3. **Make your changes** following the code style guidelines
-4. **Write tests** for new functionality
-5. **Update documentation** if needed
-6. **Run tests** to ensure everything works
-7. **Submit a pull request**
-
-### Pull Request Process
-
-1. **Describe the changes** clearly in the PR description
-2. **Include tests** for new functionality
-3. **Update documentation** if the API changes
-4. **Ensure all tests pass**
-5. **Request review** from maintainers
-
-### Code Review Checklist
-
-- [ ] Code follows the style guide
-- [ ] Tests are included and pass
-- [ ] Documentation is updated
-- [ ] No breaking changes (or clearly documented)
-- [ ] Error handling is appropriate
-- [ ] Performance impact is considered
-
-## Code Style
-
-### TypeScript Guidelines
-
-1. **Use TypeScript strictly**: Enable strict mode in `tsconfig.json`
-2. **Define interfaces**: Create interfaces for all data structures
-3. **Use type annotations**: Explicitly type function parameters and return values
-4. **Avoid `any`**: Use proper types instead of `any`
-
-```typescript
-// Good
-interface JournalEntry {
-  date: string
-  path: string
-  title: string
-}
-
-function createJournalEntry(date: Date): JournalEntry {
-  return {
-    date: DateService.format(date, 'YYYY-MM-DD'),
-    path: generatePath(date),
-    title: generateTitle(date)
-  }
-}
-
-// Avoid
-function createJournalEntry(date: any): any {
-  return {
-    date: date.toString(),
-    path: 'some/path',
-    title: 'some title'
-  }
-}
-```
-
-### Naming Conventions
-
-1. **Files**: Use kebab-case for file names (`directory-manager.ts`)
-2. **Classes**: Use PascalCase (`DirectoryManager`)
-3. **Functions**: Use camelCase (`createJournalEntry`)
-4. **Constants**: Use UPPER_SNAKE_CASE (`DEFAULT_SETTINGS`)
-5. **Interfaces**: Use PascalCase with `I` prefix for interfaces (`IJournalEntry`)
-
-### Code Organization
-
-1. **Single Responsibility**: Each class/function has one clear purpose
-2. **Dependency Injection**: Pass dependencies through constructors
-3. **Error Handling**: Use try-catch blocks and proper error types
-4. **Comments**: Use JSDoc comments for public APIs
-
-```typescript
-/**
- * Creates a journal entry for the specified date
- * @param date - The date for the journal entry
- * @returns Promise resolving to the created file
- * @throws Error if the file cannot be created
- */
-async createJournalEntry(date: Date): Promise<TFile> {
-  try {
-    const path = this.generatePath(date)
-    const file = await this.app.vault.create(path, '')
-    return file
-  } catch (error) {
-    throw new Error(`Failed to create journal entry: ${error.message}`)
-  }
-}
+# Generate coverage report
+npm run test:coverage
 ```
 
 ## Debugging
 
-### Development Debugging
+### Debug Mode
 
-1. **Enable Debug Mode**: Set `debugMode: true` in settings
-2. **Check Console**: Open browser console (Ctrl+Shift+I)
-3. **Use Console Logs**: Add `console.log()` statements for debugging
-4. **Check Network Tab**: Monitor API calls and file operations
+Enable debug mode in settings to get detailed logging:
 
-### Debug Configuration
+```typescript
+// In settings
+debugMode: true
 
-Add debug configuration to VS Code:
-
-```json
-// .vscode/launch.json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug Plugin",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceFolder}/src/main.ts",
-      "outFiles": ["${workspaceFolder}/main.js"],
-      "sourceMaps": true
-    }
-  ]
-}
+// In code
+DebugUtils.log('Creating daily note for date:', date)
+DebugUtils.error('Failed to create folder:', error)
 ```
 
-### Common Debugging Scenarios
+### Debug Utilities
 
-#### Plugin Not Loading
-1. Check browser console for errors
-2. Verify `main.js` exists and is valid
-3. Check Obsidian plugin settings
-4. Ensure all dependencies are installed
+```typescript
+// Debug information
+DebugUtils.getDebugInfo()
 
-#### Settings Not Saving
-1. Check file permissions
-2. Verify settings validation
-3. Check for circular references in settings
-4. Enable debug mode for detailed logging
+// Performance timing
+const start = performance.now()
+// ... operation
+const end = performance.now()
+DebugUtils.log(`Operation took ${end - start}ms`)
+```
 
-#### File Operations Failing
-1. Check vault permissions
-2. Verify file paths are valid
-3. Check for file system errors
-4. Test with simple file operations first
+### Common Debug Scenarios
+
+1. **Settings Issues**: Check settings validation and defaults
+2. **File System Errors**: Verify paths and permissions
+3. **Date Formatting**: Check date format strings
+4. **Plugin Integration**: Verify Daily Notes plugin settings
+5. **UI Issues**: Check settings panel and ribbon buttons
+
+## Contributing
+
+### Development Workflow
+
+1. **Fork**: Fork the repository
+2. **Branch**: Create a feature branch
+3. **Develop**: Implement your changes
+4. **Test**: Write tests for your changes
+5. **Document**: Update documentation
+6. **Submit**: Create a pull request
+
+### Code Review Checklist
+
+- [ ] Code follows style guidelines
+- [ ] Tests are written and passing
+- [ ] Documentation is updated
+- [ ] Error handling is implemented
+- [ ] Performance is considered
+- [ ] Security is addressed
+
+### Pull Request Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Manual testing completed
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Documentation updated
+- [ ] No breaking changes
+```
 
 ## Release Process
 
 ### Version Management
 
-The project uses semantic versioning:
+1. **Semantic Versioning**: Follow semver (MAJOR.MINOR.PATCH)
+2. **Changelog**: Maintain CHANGELOG.md
+3. **Release Notes**: Document breaking changes
+4. **Migration Guide**: Provide upgrade instructions
 
-- **Patch** (1.0.1): Bug fixes and minor improvements
-- **Minor** (1.1.0): New features, backward compatible
-- **Major** (2.0.0): Breaking changes
+### Build Process
 
-### Release Steps
+```bash
+# Build for production
+npm run build
 
-1. **Update Version**:
-   ```bash
-   npm version patch|minor|major
-   ```
+# Build for development
+npm run dev
 
-2. **Update Documentation**:
-   - Update README.md with new features
-   - Update version numbers in documentation
-   - Update changelog
+# Run tests before release
+npm test
 
-3. **Build for Production**:
-   ```bash
-   npm run build
-   ```
-
-4. **Test the Build**:
-   - Load the plugin in Obsidian
-   - Test all functionality
-   - Verify settings work correctly
-
-5. **Create Release**:
-   - Tag the release in Git
-   - Create GitHub release
-   - Upload built files
+# Check code quality
+npm run lint
+```
 
 ### Release Checklist
 
-- [ ] All tests pass
-- [ ] Documentation is updated
-- [ ] Version numbers are correct
-- [ ] Build is tested in Obsidian
-- [ ] Release notes are written
-- [ ] GitHub release is created
+- [ ] All tests passing
+- [ ] Code linting clean
+- [ ] Documentation updated
+- [ ] Version bumped
+- [ ] Changelog updated
+- [ ] Release notes written
+- [ ] Build successful
+- [ ] Manual testing completed
 
-## Advanced Development
+### Deployment
 
-### Plugin Architecture
-
-The plugin follows a modular architecture:
-
-```
-Main Plugin Class
-├── Managers (Domain Logic)
-│   ├── DirectoryManager
-│   ├── JournalManager
-│   └── FileSortingManager
-├── Services (Shared Logic)
-│   └── DateService
-├── UI Components
-│   ├── SettingsTab
-│   └── RibbonManager
-└── Utilities
-    ├── ErrorHandler
-    ├── PathUtils
-    └── DateUtils
-```
-
-### Adding New Features
-
-1. **Identify the Domain**: Which manager should handle this?
-2. **Create the Interface**: Define types and interfaces
-3. **Implement the Logic**: Add to appropriate manager
-4. **Add UI Components**: Create settings or UI elements
-5. **Write Tests**: Ensure functionality is tested
-6. **Update Documentation**: Document the new feature
-
-### Performance Optimization
-
-1. **Lazy Loading**: Initialize components only when needed
-2. **Caching**: Cache frequently accessed data
-3. **Efficient Algorithms**: Use optimized algorithms
-4. **Memory Management**: Clean up resources properly
-5. **Minimal File Operations**: Batch operations when possible
-
-### Security Considerations
-
-1. **Input Validation**: Validate all user inputs
-2. **Path Sanitization**: Sanitize file paths
-3. **Error Handling**: Don't expose sensitive information
-4. **Permission Checks**: Verify file system permissions
-5. **Safe Defaults**: Use safe default values
+1. **Tag Release**: Create git tag
+2. **Build Artifacts**: Generate distribution files
+3. **Publish**: Release to appropriate channels
+4. **Announce**: Notify users of new release
 
 ## Conclusion
 
-This development guide provides the foundation for contributing to the Obsidian Link Plugin. Follow the guidelines, write tests, and maintain code quality to ensure the plugin remains robust and maintainable.
+This development guide provides the foundation for contributing to the DateFolders for DailyNotes plugin. Follow these guidelines to ensure code quality, maintainability, and reliability.
 
-For more information:
-- **[User Guide](USER_GUIDE.md)** - User documentation
-- **[Architecture Overview](ARCHITECTURE.md)** - Technical architecture
-- **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Detailed component analysis
-
----
-
-**Need help?** Open an issue on GitHub or ask questions in the development discussions. 
+For more information, see:
+- [Architecture Documentation](ARCHITECTURE.md)
+- [Component Documentation](COMPONENT_DOCUMENTATION.md)
+- [Application Documentation](APPLICATION_DOCUMENTATION.md)
+- [User Guide](USER_GUIDE.md) 

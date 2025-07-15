@@ -30,9 +30,7 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian7 = require("obsidian");
 
 // src/constants.ts
-var DEFAULT_BASE_FOLDER = "Link";
-var DEFAULT_TEMPLATES_PATH = "templates";
-var DAILY_NOTES_TEMPLATE_NAME = "Daily Notes Template.md";
+var DEFAULT_BASE_FOLDER = "DateFolders";
 var COMMAND_IDS = {
   REBUILD_DIRECTORY: "rebuild-directory-structure",
   OPEN_TODAY_JOURNAL: "open-today-journal",
@@ -51,27 +49,24 @@ var DirectorySettings = class {
   static getDefaults() {
     return {
       baseFolder: DEFAULT_BASE_FOLDER,
-      // Creates all directories under 'Link/' by default
-      directoryStructure: ["journal"],
-      restrictedDirectories: [],
-      documentDirectory: "journal",
-      // Simplified to journal only
-      journalRootFolder: "journal"
+      // Creates all directories under 'DateFolders/' by default
+      directoryStructure: ["daily-notes"],
+      dailyNotesRootFolder: "daily-notes"
       // Updated to match README structure
     };
   }
   /**
-   * This function validates and sanitizes a partial DirectorySettingsConfig object.
-   * 
-   * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
-   * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
-   * - For array properties (`directoryStructure`, `restrictedDirectories`), it checks if they are arrays and copies them if so.
-   * - For string properties (`documentDirectory`, `journalRootFolder`), it checks if they are strings and copies them if so.
-   * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
-   * 
-   * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
-   * malformed or unexpected input from causing issues in the application.
-   */
+    * This function validates and sanitizes a partial DirectorySettingsConfig object.
+    * 
+    * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
+    * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
+     * - For array properties (`directoryStructure`), it checks if they are arrays and copies them if so.
+  * - For string properties (`dailyNotesRootFolder`), it checks if they are strings and copies them if so.
+    * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
+    * 
+    * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
+    * malformed or unexpected input from causing issues in the application.
+    */
   static validate(settings) {
     const validated = {};
     if (settings.baseFolder !== void 0 && typeof settings.baseFolder === "string") {
@@ -85,40 +80,34 @@ var DirectorySettings = class {
     if (settings.directoryStructure && Array.isArray(settings.directoryStructure)) {
       validated.directoryStructure = settings.directoryStructure;
     }
-    if (settings.restrictedDirectories && Array.isArray(settings.restrictedDirectories)) {
-      validated.restrictedDirectories = settings.restrictedDirectories;
-    }
-    if (settings.documentDirectory && typeof settings.documentDirectory === "string") {
-      validated.documentDirectory = settings.documentDirectory;
-    }
-    if (settings.journalRootFolder && typeof settings.journalRootFolder === "string") {
-      validated.journalRootFolder = settings.journalRootFolder;
+    if (settings.dailyNotesRootFolder && typeof settings.dailyNotesRootFolder === "string") {
+      validated.dailyNotesRootFolder = settings.dailyNotesRootFolder;
     }
     return validated;
   }
 };
 
 // src/settings/journalSettings.ts
-var JournalSettings = class {
+var DailyNotesSettings = class {
   static getDefaults() {
     return {
-      journalDateFormat: "YYYY-MM-DD dddd",
-      journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
-      journalYearFormat: "YYYY",
-      journalMonthFormat: "MM MMMM",
-      simpleJournalMode: false
+      dailyNoteDateFormat: "YYYY-MM-DD dddd",
+      dailyNoteFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
+      dailyNoteYearFormat: "YYYY",
+      dailyNoteMonthFormat: "MM MMMM",
+      simpleDailyNotesMode: false
     };
   }
   static validate(settings) {
     const validated = {};
-    if (settings.journalDateFormat && typeof settings.journalDateFormat === "string") {
-      validated.journalDateFormat = settings.journalDateFormat;
+    if (settings.dailyNoteDateFormat && typeof settings.dailyNoteDateFormat === "string") {
+      validated.dailyNoteDateFormat = settings.dailyNoteDateFormat;
     }
-    if (settings.journalFolderFormat && typeof settings.journalFolderFormat === "string") {
-      validated.journalFolderFormat = settings.journalFolderFormat;
+    if (settings.dailyNoteFolderFormat && typeof settings.dailyNoteFolderFormat === "string") {
+      validated.dailyNoteFolderFormat = settings.dailyNoteFolderFormat;
     }
-    if (typeof settings.simpleJournalMode === "boolean") {
-      validated.simpleJournalMode = settings.simpleJournalMode;
+    if (typeof settings.simpleDailyNotesMode === "boolean") {
+      validated.simpleDailyNotesMode = settings.simpleDailyNotesMode;
     }
     return validated;
   }
@@ -133,7 +122,7 @@ var JournalSettings = class {
 };
 
 // src/settings/dailyNotesSettings.ts
-var DailyNotesSettings = class {
+var DailyNotesSettings2 = class {
   static getDefaults() {
     return {
       dailyNotesIntegration: {
@@ -193,13 +182,13 @@ var GeneralSettings = class {
 function validateSettings(settings) {
   const validatedSettings = {
     ...DirectorySettings.getDefaults(),
-    ...JournalSettings.getDefaults(),
     ...DailyNotesSettings.getDefaults(),
+    ...DailyNotesSettings2.getDefaults(),
     ...GeneralSettings.getDefaults()
   };
   const directoryValidation = DirectorySettings.validate(settings);
-  const journalValidation = JournalSettings.validate(settings);
-  const dailyNotesValidation = DailyNotesSettings.validate(settings);
+  const journalValidation = DailyNotesSettings.validate(settings);
+  const dailyNotesValidation = DailyNotesSettings2.validate(settings);
   const generalValidation = GeneralSettings.validate(settings);
   Object.assign(
     validatedSettings,
@@ -208,21 +197,15 @@ function validateSettings(settings) {
     dailyNotesValidation,
     generalValidation
   );
-  if (typeof settings.customTemplateLocation === "string") {
-    validatedSettings.customTemplateLocation = settings.customTemplateLocation.trim();
-  } else {
-    validatedSettings.customTemplateLocation = void 0;
-  }
   return validatedSettings;
 }
 
 // src/settings/defaultSettings.ts
 var DEFAULT_SETTINGS = {
   ...DirectorySettings.getDefaults(),
-  ...JournalSettings.getDefaults(),
   ...DailyNotesSettings.getDefaults(),
-  ...GeneralSettings.getDefaults(),
-  customTemplateLocation: void 0
+  ...DailyNotesSettings2.getDefaults(),
+  ...GeneralSettings.getDefaults()
 };
 
 // src/managers/directoryManager.ts
@@ -412,11 +395,11 @@ var DirectoryManager = class {
         DebugUtils.log("Using vault root as base directory");
       }
       for (const dirName of directoryStructure || ["journal"]) {
-        if (dirName === "templates")
-          continue;
-        const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
-        await this.getOrCreateDirectory(dirPath);
-        DebugUtils.log(`Created directory: ${dirPath}`);
+        if (dirName === "journal") {
+          const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
+          await this.getOrCreateDirectory(dirPath);
+          DebugUtils.log(`Created directory: ${dirPath}`);
+        }
       }
       await this.createJournalStructure(basePath);
     } catch (error) {
@@ -430,7 +413,7 @@ var DirectoryManager = class {
     const journalPath = PathUtils.joinPath(basePath, "journal");
     await this.getOrCreateDirectory(journalPath);
     DebugUtils.log(`Created journal directory: ${journalPath}`);
-    if (!this.plugin.settings.simpleJournalMode) {
+    if (!this.plugin.settings.simpleDailyNotesMode) {
       const currentDate = DateService.now();
       const currentYear = DateService.format(currentDate, "YYYY");
       const currentMonth = DateService.format(currentDate, "MM MMMM");
@@ -441,64 +424,6 @@ var DirectoryManager = class {
       DebugUtils.log(`Created current month directory: ${currentMonthPath}`);
       DebugUtils.log("Current month journal structure created");
     }
-  }
-  /**
-   * Creates templates directory and copies the daily notes template when enabled
-   * Templates are siblings to journal structure for proper organization
-   */
-  async setupTemplates() {
-    try {
-      const { baseFolder } = this.plugin.settings;
-      const templatesPath = baseFolder ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH) : DEFAULT_TEMPLATES_PATH;
-      await this.getOrCreateDirectory(templatesPath);
-      DebugUtils.log(`Created templates directory: ${templatesPath}`);
-      const templateFilePath = PathUtils.joinPath(
-        templatesPath,
-        DAILY_NOTES_TEMPLATE_NAME
-      );
-      const { vault } = this.plugin.app;
-      if (!vault.getAbstractFileByPath(templateFilePath)) {
-        const templateContent = DirectoryManager.getDailyNotesTemplateContent();
-        await vault.create(templateFilePath, templateContent);
-        DebugUtils.log(`Created template file: ${templateFilePath}`);
-      } else {
-        DebugUtils.log(`Template already exists: ${templateFilePath}`);
-      }
-    } catch (error) {
-      throw new Error(`Failed to setup templates: ${error}`);
-    }
-  }
-  /**
-   * Gets the daily notes template content from the plugin assets
-   * Always returns the raw template with Templater syntax to avoid conflicts
-   */
-  static getDailyNotesTemplateContent() {
-    return `---
-previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
-next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
-tags:
-  - \u2600\uFE0F
-  - <% tp.date.now("MM-DD dddd") %>
-resources: []
----
----
-## Log
-
-### Routine Checklist
-
-- [ ] Open Daily Note
-- [ ] **Morning Checks**
-	- [ ] Bed and Clothes \u{1F6CF}\uFE0F\u{1F9FA}
-  - [ ] Self Care\u{1F6C0}\u{1F9F4}
-  - [ ] Make Breakfast \u{1F37D}\u2728
-	- [ ] Pet Care \u{1F415}\u{1F6B6}\u{1F3FB}\u200D\u2642\uFE0F
-	- [ ] Get Focused \u{1F5A5}\uFE0F\u{1F48A}
-  - [ ] Check [Calendar](https://calendar.google.com) \u{1F4C6}
-	- [ ] Check [Mail](https://mail.google.com) \u2709\uFE0F 
-  - [ ] Review [[Yearly List]] \u2705
-	- [ ] Review [July Log](Yearly%20Log.md#July) \u{1F5D3}\uFE0F
-
----`;
   }
   /**
    * Returns the full path to the journal directory, respecting baseFolder and settings
@@ -535,35 +460,29 @@ resources: []
   }
 };
 
-// src/managers/journalManager.ts
+// src/managers/dailyNotesManager.ts
 var import_obsidian3 = require("obsidian");
-var JournalManager = class {
+var DailyNotesManager = class {
   constructor(plugin) {
     this.plugin = plugin;
   }
   /**
-   * Creates or opens a journal entry for the specified date
+   * Creates or opens a daily note for the specified date
    * Automatically creates monthly folders as needed
    */
-  async createOrOpenJournalEntry(date) {
+  async createOrOpenDailyNote(date) {
     const { vault } = this.plugin.app;
-    const { journalDateFormat } = this.plugin.settings;
+    const { dailyNoteDateFormat } = this.plugin.settings;
     await this.ensureMonthlyFolderExists(date);
     const monthlyFolderPath = this.getMonthlyFolderPath(date);
-    const fileName = DateService.getJournalFilename(date, journalDateFormat);
+    const fileName = DateService.getJournalFilename(date, dailyNoteDateFormat);
     const filePath = (0, import_obsidian3.normalizePath)(`${monthlyFolderPath}/${fileName}.md`);
     let file = vault.getAbstractFileByPath(filePath);
     if (!file) {
-      const templateContent = this.getTemplateContentForDate(date);
-      file = await vault.create(filePath, templateContent);
-      DebugUtils.log(`Created daily note with template: ${filePath}`);
+      file = await vault.create(filePath, "");
+      DebugUtils.log(`Created daily note: ${filePath}`);
     } else {
-      const content = await vault.read(file);
-      if (!content.trim()) {
-        const templateContent = this.getTemplateContentForDate(date);
-        await vault.modify(file, templateContent);
-        DebugUtils.log(`Populated existing empty note with template: ${filePath}`);
-      }
+      DebugUtils.log(`Daily note already exists: ${filePath}`);
     }
     return file;
   }
@@ -589,14 +508,14 @@ var JournalManager = class {
    */
   getMonthlyFolderPath(date) {
     const journalBasePath = this.plugin.directoryManager.getJournalPath();
-    if (this.plugin.settings.simpleJournalMode) {
+    if (this.plugin.settings.simpleDailyNotesMode) {
       return journalBasePath;
     }
     return DateService.getMonthlyFolderPath(
       journalBasePath,
       date,
-      this.plugin.settings.journalYearFormat,
-      this.plugin.settings.journalMonthFormat
+      this.plugin.settings.dailyNoteYearFormat,
+      this.plugin.settings.dailyNoteMonthFormat
     );
   }
   /**
@@ -605,7 +524,7 @@ var JournalManager = class {
    */
   async createTodayNote() {
     const today = DateService.now();
-    return await this.createOrOpenJournalEntry(today);
+    return await this.createOrOpenDailyNote(today);
   }
   /**
    * Creates a daily note for a future date
@@ -615,33 +534,18 @@ var JournalManager = class {
   async createFutureDailyNote(date) {
     const targetDate = DateService.from(date);
     DebugUtils.log(`Creating future daily note for: ${DateService.format(targetDate, "YYYY-MM-DD")}`);
-    const file = await this.createOrOpenJournalEntry(targetDate);
+    const file = await this.createOrOpenDailyNote(targetDate);
     const monthlyPath = this.getMonthlyFolderPath(targetDate);
     DebugUtils.log(`Future note created in: ${monthlyPath}`);
     return file;
   }
   /**
-   * Gets the template content modified for a specific date
-   * Replaces the current moment references with the target date
-   */
-  getTemplateContentForDate(targetDate) {
-    const { journalDateFormat } = this.plugin.settings;
-    const baseTemplate = DirectoryManager.getDailyNotesTemplateContent();
-    const previousDate = DateService.previousDay(targetDate);
-    const nextDate = DateService.nextDay(targetDate);
-    const previousFormatted = DateService.format(previousDate, journalDateFormat);
-    const nextFormatted = DateService.format(nextDate, journalDateFormat);
-    const targetFormatted = DateService.format(targetDate, journalDateFormat);
-    const modifiedTemplate = baseTemplate.replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", -1\) %>/g, previousFormatted).replace(/<% tp\.date\.now\("YYYY-MM-DD dddd", 1\) %>/g, nextFormatted).replace(/<% tp\.date\.now\("MM-DD dddd"\) %>/g, DateService.format(targetDate, "MM-DD dddd"));
-    return modifiedTemplate;
-  }
-  /**
-   * Opens the journal entry for today
+   * Opens the daily note for today
    * Creates monthly folder and daily note if they don't exist
    */
-  async openTodayJournal() {
+  async openTodayDailyNote() {
     const today = DateService.now();
-    const file = await this.createOrOpenJournalEntry(today);
+    const file = await this.createOrOpenDailyNote(today);
     const leaf = this.plugin.app.workspace.getLeaf();
     await leaf.openFile(file);
   }
@@ -672,53 +576,53 @@ var JournalManager = class {
     }
   }
   /**
-   * Opens journal entry for a specific date
+   * Opens daily note for a specific date
    */
-  async openJournalForDate(date) {
+  async openDailyNoteForDate(date) {
     const momentDate = DateService.from(date);
-    const file = await this.createOrOpenJournalEntry(momentDate);
+    const file = await this.createOrOpenDailyNote(momentDate);
     const leaf = this.plugin.app.workspace.getLeaf();
     await leaf.openFile(file);
   }
   /**
-   * Updates links between journal entries
+   * Updates links between daily notes
    */
-  async updateJournalLinks(file) {
+  async updateDailyNoteLinks(file) {
     const { vault } = this.plugin.app;
-    const { journalDateFormat } = this.plugin.settings;
-    const fileDate = DateService.extractDateFromFilename(file.basename, journalDateFormat || "YYYY-MM-DD dddd");
+    const { dailyNoteDateFormat } = this.plugin.settings;
+    const fileDate = DateService.extractDateFromFilename(file.basename, dailyNoteDateFormat || "YYYY-MM-DD dddd");
     if (!fileDate)
       return;
     const content = await vault.read(file);
     const previousDay = DateService.previousDay(fileDate);
     const nextDay = DateService.nextDay(fileDate);
-    const previousFileName = DateService.format(previousDay, journalDateFormat);
-    const nextFileName = DateService.format(nextDay, journalDateFormat);
+    const previousFileName = DateService.format(previousDay, dailyNoteDateFormat);
+    const nextFileName = DateService.format(nextDay, dailyNoteDateFormat);
     const updatedContent = content.replace(/previous: '\[\[(.*?)\]\]'/g, `previous: '[[${previousFileName}]]'`).replace(/next: '\[\[(.*?)\]\]'/g, `next: '[[${nextFileName}]]'`);
     if (updatedContent !== content) {
       await vault.modify(file, updatedContent);
     }
   }
   /**
-   * Get journal entries for a date range
+   * Get daily note entries for a date range
    */
-  async getJournalEntries(startDate, endDate) {
+  async getDailyNoteEntries(startDate, endDate) {
     const { vault } = this.plugin.app;
-    const { journalDateFormat } = this.plugin.settings;
+    const { dailyNoteDateFormat } = this.plugin.settings;
     const entries = [];
     let current = DateService.from(startDate);
     while (DateService.isSameOrBefore(current, endDate)) {
       const filePath = DateService.getJournalFilePath(
         this.plugin.directoryManager.getJournalPath(),
         current,
-        journalDateFormat
+        dailyNoteDateFormat
       );
       const file = vault.getAbstractFileByPath(filePath);
       if (file) {
         entries.push({
           date: DateService.format(current, "YYYY-MM-DD"),
           path: filePath,
-          title: DateService.format(current, journalDateFormat),
+          title: DateService.format(current, dailyNoteDateFormat),
           previous: DateService.format(DateService.previousDay(current), "YYYY-MM-DD"),
           next: DateService.format(DateService.nextDay(current), "YYYY-MM-DD")
         });
@@ -786,7 +690,7 @@ var RibbonManager = class {
         try {
           const selectedDate = await this.showDatePicker();
           if (selectedDate) {
-            const file = await this.plugin.journalManager.createFutureDailyNote(selectedDate);
+            const file = await this.plugin.dailyNotesManager.createFutureDailyNote(selectedDate);
             const leaf = this.plugin.app.workspace.getLeaf();
             await leaf.openFile(file);
             const formattedDate = DateService.format(DateService.from(selectedDate), "YYYY-MM-DD");
@@ -945,8 +849,6 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
     this.addDailyNotesIntegrationSettings(containerEl);
     new import_obsidian6.Setting(containerEl).setName("Core Settings").setHeading();
     this.addCoreSettings(containerEl);
-    new import_obsidian6.Setting(containerEl).setName("Journal Template Settings").setHeading();
-    this.addJournalTemplateSettings(containerEl);
   }
   addPluginStatusSettings(containerEl) {
     new import_obsidian6.Setting(containerEl).setName("Enable Plugin").setDesc("Enable or disable the journal management plugin. When disabled, no folder structure or integration operations will be performed.").addToggle(
@@ -956,9 +858,10 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
         if (value) {
           try {
             await this.plugin.directoryManager.rebuildDirectoryStructure();
-            await this.plugin.directoryManager.setupTemplates();
-            await this.plugin.journalManager.checkAndCreateCurrentMonthFolder();
-            await this.plugin.updateDailyNotesSettings();
+            await this.plugin.dailyNotesManager.checkAndCreateCurrentMonthFolder();
+            if (this.plugin.settings.dailyNotesIntegration.enabled) {
+              await this.plugin.updateDailyNotesSettings();
+            }
             this.plugin.errorHandler.showNotice(
               "\u2705 Plugin enabled - Journal management features are now active!"
             );
@@ -1012,28 +915,6 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
         }
       }
     });
-    const optionalFolders = [
-      { name: "Workspace", key: "workspace" },
-      { name: "Reference", key: "reference" }
-    ];
-    optionalFolders.forEach((folder) => {
-      new import_obsidian6.Setting(containerEl).setName(`${folder.name} Folder`).setDesc(
-        `Create a ${folder.name.toLowerCase()} folder alongside journal`
-      ).addToggle((toggle) => {
-        const enabled = this.plugin.settings.directoryStructure.includes(
-          folder.key
-        );
-        toggle.setValue(enabled).onChange(async (value) => {
-          const dirs = this.plugin.settings.directoryStructure.filter(
-            (d) => d !== folder.key
-          );
-          if (value)
-            dirs.push(folder.key);
-          this.plugin.settings.directoryStructure = dirs;
-          await this.plugin.saveSettings();
-        });
-      });
-    });
     new import_obsidian6.Setting(containerEl).setName("Rebuild Journal Structure").setDesc("Recreate the journal folder structure").addButton(
       (button) => button.setButtonText("Rebuild").onClick(async () => {
         try {
@@ -1063,60 +944,26 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
   }
   addJournalSettings(containerEl) {
     new import_obsidian6.Setting(containerEl).setName("Year Folder Format").setDesc('Format for year folders (YYYY creates "2025")').addText(
-      (text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.journalYearFormat).onChange(async (value) => {
+      (text) => text.setPlaceholder("YYYY").setValue(this.plugin.settings.dailyNoteYearFormat).onChange(async (value) => {
         if (value.trim()) {
-          this.plugin.settings.journalYearFormat = value.trim();
+          this.plugin.settings.dailyNoteYearFormat = value.trim();
           await this.plugin.saveSettings();
         }
       })
     );
     new import_obsidian6.Setting(containerEl).setName("Month Folder Format").setDesc('Format for month folders (MM MMMM creates "07-July")').addText(
-      (text) => text.setPlaceholder("MM MMMM").setValue(this.plugin.settings.journalMonthFormat).onChange(async (value) => {
+      (text) => text.setPlaceholder("MM MMMM").setValue(this.plugin.settings.dailyNoteMonthFormat).onChange(async (value) => {
         if (value.trim()) {
-          this.plugin.settings.journalMonthFormat = value.trim();
+          this.plugin.settings.dailyNoteMonthFormat = value.trim();
           await this.plugin.saveSettings();
         }
       })
     );
     new import_obsidian6.Setting(containerEl).setName("Daily Note Format").setDesc("Format for daily note filenames").addText(
-      (text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.journalDateFormat).onChange(async (value) => {
+      (text) => text.setPlaceholder("YYYY-MM-DD dddd").setValue(this.plugin.settings.dailyNoteDateFormat).onChange(async (value) => {
         if (value.trim()) {
-          this.plugin.settings.journalDateFormat = value.trim();
+          this.plugin.settings.dailyNoteDateFormat = value.trim();
           await this.plugin.saveSettings();
-        }
-      })
-    );
-  }
-  addJournalTemplateSettings(containerEl) {
-    new import_obsidian6.Setting(containerEl).setName("Daily Note Template Location").setDesc(
-      'Override the default template path (e.g. "templates/Daily Notes Template.md")'
-    ).addText(
-      (text) => text.setPlaceholder("templates/Daily Notes Template.md").setValue(this.plugin.settings.customTemplateLocation || "").onChange(async (value) => {
-        this.plugin.settings.customTemplateLocation = value.trim();
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian6.Setting(containerEl).setName("Setup Templates").setDesc(
-      "Create templates directory alongside journal and copy Daily Notes template (works with Templater plugin)"
-    ).addButton(
-      (button) => button.setButtonText("Setup Templates").onClick(async () => {
-        var _a, _b;
-        try {
-          await this.plugin.directoryManager.setupTemplates();
-          const templatesPath = this.plugin.settings.baseFolder ? `${this.plugin.settings.baseFolder}/templates` : "templates";
-          const templaterPlugin = (_b = (_a = this.plugin.app.plugins) == null ? void 0 : _a.plugins) == null ? void 0 : _b["templater-obsidian"];
-          const hasTemplater = templaterPlugin && templaterPlugin._loaded;
-          const templaterStatus = hasTemplater ? "\n\n\u2705 Templater plugin detected - Template will work with dynamic dates" : "\n\n\u26A0\uFE0F Templater plugin not detected - Template contains Templater syntax that may not render";
-          alert(
-            "\u2705 Templates setup successfully!\n\nTemplates directory created alongside journal at: " + templatesPath + templaterStatus
-          );
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          alert("\u274C Failed to setup templates.\n\nError: " + errorMessage);
-          this.plugin.errorHandler.handleError(
-            error,
-            "Failed to setup templates"
-          );
         }
       })
     );
@@ -1199,13 +1046,13 @@ var SettingsTab = class extends import_obsidian6.PluginSettingTab {
 var LinkPlugin = class extends import_obsidian7.Plugin {
   async onload() {
     DebugUtils.initialize(this);
-    DebugUtils.log("Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...");
+    DebugUtils.log("Loading DateFolders for DailyNotes v2.2.0 - Pure Date-Based Organization...");
     try {
       DateService.initialize();
       await this.loadSettings();
       this.errorHandler = new ErrorHandler(this);
       this.directoryManager = new DirectoryManager(this);
-      this.journalManager = new JournalManager(this);
+      this.dailyNotesManager = new DailyNotesManager(this);
       this.ribbonManager = new RibbonManager(this);
       this.addSettingTab(new SettingsTab(this.app, this));
       this.ribbonManager.initializeRibbon();
@@ -1213,9 +1060,10 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       this.registerEventHandlers();
       if (this.settings.enabled) {
         await this.directoryManager.rebuildDirectoryStructure();
-        await this.directoryManager.setupTemplates();
-        await this.journalManager.checkAndCreateCurrentMonthFolder();
-        await this.updateDailyNotesSettings();
+        await this.dailyNotesManager.checkAndCreateCurrentMonthFolder();
+        if (this.settings.dailyNotesIntegration.enabled) {
+          await this.updateDailyNotesSettings();
+        }
         this.startDateChangeMonitoring();
         const debugInfo = DateService.getDebugInfo();
         DebugUtils.log("DateService initialized:", debugInfo);
@@ -1281,7 +1129,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
           return;
         }
         try {
-          this.journalManager.openTodayJournal();
+          this.dailyNotesManager.openTodayDailyNote();
         } catch (error) {
           this.errorHandler.handleError(error, "Failed to open today's journal");
         }
@@ -1296,7 +1144,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
           return;
         }
         try {
-          const file = await this.journalManager.createTodayNote();
+          const file = await this.dailyNotesManager.createTodayNote();
           const leaf = this.app.workspace.getLeaf();
           await leaf.openFile(file);
         } catch (error) {
@@ -1315,7 +1163,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         try {
           const dateInput = await this.promptForDate();
           if (dateInput) {
-            const file = await this.journalManager.createFutureDailyNote(
+            const file = await this.dailyNotesManager.createFutureDailyNote(
               dateInput
             );
             const leaf = this.app.workspace.getLeaf();
@@ -1343,7 +1191,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
         try {
           const startOfYear = DateService.startOfYear();
           const endOfYear = DateService.endOfYear();
-          await this.journalManager.createMonthlyFoldersForRange(
+          await this.dailyNotesManager.createMonthlyFoldersForRange(
             startOfYear,
             endOfYear
           );
@@ -1377,14 +1225,14 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
   registerEventHandlers() {
     this.registerEvent(
       this.app.vault.on("create", (file) => {
-        if (this.settings.enabled && "stat" in file && "basename" in file && "extension" in file && file.path.includes(this.settings.journalRootFolder)) {
-          this.journalManager.updateJournalLinks(file);
+        if (this.settings.enabled && "stat" in file && "basename" in file && "extension" in file && file.path.includes(this.settings.dailyNotesRootFolder)) {
+          this.dailyNotesManager.updateDailyNoteLinks(file);
         }
       })
     );
     this.registerEvent(
       this.app.vault.on("modify", (file) => {
-        if (this.settings.enabled && this.settings.debugMode && file.path.includes(this.settings.journalRootFolder)) {
+        if (this.settings.enabled && this.settings.debugMode && file.path.includes(this.settings.dailyNotesRootFolder)) {
           DebugUtils.log("Journal file modified:", file.path);
         }
       })
@@ -1492,7 +1340,7 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
             DebugUtils.log(
               `Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`
             );
-            await this.journalManager.checkAndCreateCurrentMonthFolder();
+            await this.dailyNotesManager.checkAndCreateCurrentMonthFolder();
             await this.updateDailyNotesSettings();
             lastCheckedMonth = currentMonth;
             const monthName = DateService.format(DateService.now(), "MMMM YYYY");
@@ -1549,11 +1397,9 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       await this.createDailyNotesBackup("core", dailyNotesSettings);
     }
     const currentDate = DateService.now();
-    const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+    const monthlyFolderPath = this.dailyNotesManager.getMonthlyFolderPath(currentDate);
     dailyNotesSettings.folder = monthlyFolderPath;
-    dailyNotesSettings.format = this.settings.journalDateFormat;
-    const templatesPath = this.settings.customTemplateLocation ? this.settings.customTemplateLocation : this.settings.baseFolder ? `${this.settings.baseFolder}/templates/Daily Notes Template.md` : "templates/Daily Notes Template.md";
-    dailyNotesSettings.template = templatesPath;
+    dailyNotesSettings.format = this.settings.dailyNoteDateFormat;
     DebugUtils.log(`Updated Core Daily Notes plugin settings`);
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);
   }
@@ -1569,11 +1415,9 @@ var LinkPlugin = class extends import_obsidian7.Plugin {
       );
     }
     const currentDate = DateService.now();
-    const monthlyFolderPath = this.journalManager.getMonthlyFolderPath(currentDate);
+    const monthlyFolderPath = this.dailyNotesManager.getMonthlyFolderPath(currentDate);
     communityDailyNotes.settings.folder = monthlyFolderPath;
-    communityDailyNotes.settings.format = this.settings.journalDateFormat;
-    const templatesPath = this.settings.customTemplateLocation ? this.settings.customTemplateLocation : this.settings.baseFolder ? `${this.settings.baseFolder}/templates/Daily Notes Template.md` : "templates/Daily Notes Template.md";
-    communityDailyNotes.settings.template = templatesPath;
+    communityDailyNotes.settings.format = this.settings.dailyNoteDateFormat;
     await communityDailyNotes.saveSettings();
     DebugUtils.log(`Updated Community Daily Notes plugin settings`);
     this.errorHandler.showNotice(`\u2705 Daily Notes settings updated`);

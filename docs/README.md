@@ -1,6 +1,6 @@
-# Obsidian Link Plugin Documentation
+# Obsidian Journal Plugin Documentation
 
-Welcome to the comprehensive documentation for the Obsidian Link Plugin. This documentation is organized to help you understand the plugin's architecture, components, and usage with minimal duplication.
+Welcome to the comprehensive documentation for the Obsidian Journal Plugin. This documentation is organized to help you understand the plugin's architecture, components, and usage with minimal duplication.
 
 ## 📚 Documentation Overview
 

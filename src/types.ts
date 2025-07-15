@@ -20,16 +20,14 @@ export interface LinkPluginSettings {
   // Directory structure settings
   baseFolder: string // Root folder for all plugin-created directories
   directoryStructure: string[]
-  restrictedDirectories: string[]
-  documentDirectory: string
-  journalRootFolder: string
+  dailyNotesRootFolder: string
 
-  // Journal settings - SIMPLIFIED
-  journalDateFormat: string
-  journalFolderFormat: string
-  journalYearFormat: string
-  journalMonthFormat: string
-  simpleJournalMode: boolean // Single setting: true = simple, false = dynamic
+  // Daily Notes settings - SIMPLIFIED
+  dailyNoteDateFormat: string
+  dailyNoteFolderFormat: string
+  dailyNoteYearFormat: string
+  dailyNoteMonthFormat: string
+  simpleDailyNotesMode: boolean // Single setting: true = simple, false = dynamic
 
   // Daily Notes Integration Settings
   dailyNotesIntegration: {
@@ -42,9 +40,6 @@ export interface LinkPluginSettings {
 
   // Other settings
   debugMode: boolean
-
-  // Custom template location (optional)
-  customTemplateLocation?: string
 }
 
 export interface DailyNotesBackup {

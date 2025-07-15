@@ -7,20 +7,12 @@
  * - DEFAULT_DIRECTORIES:
  *     1. Define an array of core directories (e.g., 'journal') for the minimal journal structure.
  *
- * - DEFAULT_TEMPLATES_PATH & DAILY_NOTES_TEMPLATE_NAME:
- *     1. Set the path and filename for storing and referencing note templates.
+
  *
  * - DEFAULT_JOURNAL_STRUCTURE:
  *     1. Define a nested object representing the folder structure for journals, including years, months, and archive years.
  *
- * - DEFAULT_REFERENCE_STRUCTURE:
- *     1. Define a simple object for a 'reference' folder for reference notes.
- *
- * - DEFAULT_FILES_STRUCTURE:
- *     1. Define a nested object for a 'files' folder with subfolders for different file types.
- *
- * - OPTIONAL_DIRECTORIES:
- *     1. List additional optional directories that can be included in the vault structure.
+
  *
  * - COMMAND_IDS:
  *     1. Map command names to unique string IDs for registering plugin commands.
@@ -39,18 +31,16 @@
  */
 
 // Default base folder to prevent collision with existing vault structure
-export const DEFAULT_BASE_FOLDER = 'Link'
+export const DEFAULT_BASE_FOLDER = 'DateFolders'
 
-// Core directory structure - journal only by default
-export const DEFAULT_DIRECTORIES = ['journal']
+// Core directory structure - daily notes only by default
+export const DEFAULT_DIRECTORIES = ['daily-notes']
 
-// Template settings - sibling to journal structure for proper organization
-export const DEFAULT_TEMPLATES_PATH = 'templates'
-export const DAILY_NOTES_TEMPLATE_NAME = 'Daily Notes Template.md'
 
-// Detailed journal structure with new format matching user preferences
+
+// Detailed daily notes structure with new format matching user preferences
 export const DEFAULT_JOURNAL_STRUCTURE = {
-  journal: {
+  'daily-notes': {
     Misc: null,
     '2025': {
       '01 January': null,
@@ -76,22 +66,7 @@ export const DEFAULT_JOURNAL_STRUCTURE = {
   }
 }
 
-// Reference structure - files folder moved out as separate directory
-export const DEFAULT_REFERENCE_STRUCTURE = {
-  reference: null // For reference notes and documents only
-}
 
-// Files structure - now separate from references
-export const DEFAULT_FILES_STRUCTURE = {
-  files: {
-    images: null,
-    videos: null,
-    pdfs: null,
-    audio: null,
-    docs: null,
-    other: null
-  }
-}
 
 export const COMMAND_IDS = {
   REBUILD_DIRECTORY: 'rebuild-directory-structure',

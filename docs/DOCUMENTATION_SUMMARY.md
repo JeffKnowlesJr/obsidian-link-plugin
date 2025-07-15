@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Obsidian Link Plugin documentation has been streamlined and organized into a comprehensive, cross-referenced system with minimal duplication. This document summarizes the structure and purpose of each documentation file.
+The DateFolders for DailyNotes plugin documentation has been streamlined and organized into a comprehensive, cross-referenced system with minimal duplication. This document summarizes the structure and purpose of each documentation file.
 
 ## 📁 Documentation Structure
 
@@ -14,6 +14,7 @@ docs/
 ├── COMPONENT_DOCUMENTATION.md  # Detailed component analysis
 ├── APPLICATION_DOCUMENTATION.md # Application-level documentation
 ├── DEVELOPMENT.md              # Development setup and guidelines
+├── PRIME_DIRECTIVE.md          # MVP guidelines and principles
 └── DOCUMENTATION_SUMMARY.md   # This file - Documentation overview
 ```
 
@@ -80,6 +81,15 @@ docs/
 - Code style and conventions
 - Release process
 
+### 7. `docs/PRIME_DIRECTIVE.md` - MVP Guidelines
+**Purpose**: Defines MVP principles and scope
+**Audience**: Developers and maintainers
+**Content**:
+- Core MVP principles
+- Feature scope and limitations
+- Compliance checklist
+- Review guidelines
+
 ## 🔗 Cross-References
 
 ### Navigation Structure
@@ -110,6 +120,7 @@ Each documentation file includes:
 1. **[Development Guide](DEVELOPMENT.md)** - Setup and contribution guidelines
 2. **[Component Documentation](COMPONENT_DOCUMENTATION.md)** - Understand existing code
 3. **[Architecture Overview](ARCHITECTURE.md)** - Understand design decisions
+4. **[Prime Directive](PRIME_DIRECTIVE.md)** - Understand MVP principles
 
 ## 🎨 Documentation Style
 
@@ -175,6 +186,7 @@ Each documentation file includes:
 - **Component Documentation**: ~18KB - Detailed component analysis
 - **Application Documentation**: ~8KB - Application-level details
 - **Development Guide**: ~16KB - Development setup and guidelines
+- **Prime Directive**: ~6KB - MVP guidelines and principles
 
 ### Coverage Areas
 - **User Documentation**: Installation, usage, troubleshooting
@@ -182,6 +194,7 @@ Each documentation file includes:
 - **Application Documentation**: Application flow, integration
 - **Development Documentation**: Setup, testing, contributing
 - **Reference Documentation**: APIs, interfaces, patterns
+- **MVP Guidelines**: Principles, scope, compliance
 
 ## 🎯 Streamlining Improvements
 
@@ -199,6 +212,6 @@ Each documentation file includes:
 
 ## Conclusion
 
-The streamlined documentation structure provides a comprehensive, well-organized resource for all users of the Obsidian Link Plugin with minimal duplication. The cross-referenced system ensures users can easily find the information they need, while the modular organization makes maintenance straightforward.
+The streamlined documentation structure provides a comprehensive, well-organized resource for all users of the DateFolders for DailyNotes plugin with minimal duplication. The cross-referenced system ensures users can easily find the information they need, while the modular organization makes maintenance straightforward.
 
 For questions about this documentation structure, please refer to the individual documentation files or open an issue on GitHub. 

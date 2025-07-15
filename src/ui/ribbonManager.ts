@@ -102,7 +102,7 @@ export class RibbonManager {
           const selectedDate = await this.showDatePicker();
           if (selectedDate) {
             // Create the future note with automatic folder creation
-            const file = await this.plugin.journalManager.createFutureDailyNote(selectedDate);
+            const file = await this.plugin.dailyNotesManager.createFutureDailyNote(selectedDate);
             const leaf = this.plugin.app.workspace.getLeaf();
             await leaf.openFile(file);
             

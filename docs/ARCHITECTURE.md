@@ -1,6 +1,6 @@
-# Architecture Overview - Obsidian Link Plugin
+# Architecture Overview - DateFolders for DailyNotes Plugin
 
-A comprehensive technical overview of the Obsidian Link Plugin's architecture, algorithms, and system design.
+A comprehensive technical overview of the DateFolders for DailyNotes plugin's architecture, algorithms, and system design.
 
 ## 📖 Table of Contents
 
@@ -15,7 +15,7 @@ A comprehensive technical overview of the Obsidian Link Plugin's architecture, a
 
 ## Overview
 
-The Obsidian Link Plugin is designed with a clean, modular architecture that separates concerns and provides robust error handling. The system is built around a core plugin class that orchestrates specialized managers, services, and UI components.
+The DateFolders for DailyNotes plugin is designed with a clean, modular architecture that separates concerns and provides robust error handling. The system is built around a core plugin class that orchestrates specialized managers, services, and UI components focused on daily note management.
 
 ### Design Principles
 
@@ -42,7 +42,7 @@ The Obsidian Link Plugin is designed with a clean, modular architecture that sep
 │Managers│   │Services │   │UI Comps │
 │        │   │         │   │         │
 │• Dir  │   │• Date   │   │• Settings│
-│• Journal│  │         │   │• Ribbon │
+│• Daily│   │         │   │• Ribbon │
 └────────┘   └─────────┘   └─────────┘
     │             │             │
     └─────────────┼─────────────┘
@@ -59,7 +59,7 @@ The Obsidian Link Plugin is designed with a clean, modular architecture that sep
 ### Component Relationships
 
 - **Main Plugin Class**: Orchestrates all components and manages lifecycle
-- **Managers**: Handle specific domains (Directory, Journal)
+- **Managers**: Handle specific domains (Directory, DailyNotes)
 - **Services**: Provide shared functionality (DateService)
 - **UI Components**: Settings and ribbon management
 - **Utilities**: Helper functions and error handling
@@ -85,7 +85,7 @@ async onload() {
   
   // 4. Initialize managers
   this.directoryManager = new DirectoryManager(this)
-  this.journalManager = new JournalManager(this)
+  this.dailyNotesManager = new DailyNotesManager(this)
   this.ribbonManager = new RibbonManager(this)
   
   // 5. Setup UI
@@ -100,10 +100,9 @@ async onload() {
   if (this.settings.enabled) {
     // Initialize directory structure
     await this.directoryManager.rebuildDirectoryStructure()
-    await this.directoryManager.setupTemplates()
     
     // Ensure current month folder exists
-    await this.journalManager.checkAndCreateCurrentMonthFolder()
+    await this.dailyNotesManager.checkAndCreateCurrentMonthFolder()
     
     // Update Daily Notes integration
     await this.updateDailyNotesSettings()
@@ -132,7 +131,7 @@ async saveSettings() {
 #### Command Registration Algorithm
 ```typescript
 registerCommands() {
-  // Each command encapsulates a specific journal management action
+  // Each command encapsulates a specific daily note management action
   // Error handling is wrapped around each command
   this.addCommand({
     id: COMMAND_IDS.REBUILD_DIRECTORY,
@@ -155,9 +154,9 @@ registerEventHandlers() {
   // Listen for file creation and modification events
   this.registerEvent(
     this.app.vault.on('create', (file) => {
-      // Check if the file is a journal file and update links
-      if (file.path.includes(this.settings.journalRootFolder)) {
-        this.journalManager.updateJournalLinks(file as TFile)
+      // Check if the file is a daily note file and update links
+      if (file.path.includes(this.settings.dailyNotesRootFolder)) {
+        this.dailyNotesManager.updateDailyNoteLinks(file as TFile)
       }
     })
   )
@@ -178,8 +177,7 @@ showRibbonButton: boolean = true
 if (this.settings.enabled) {
   // Perform all initialization operations
   await this.directoryManager.rebuildDirectoryStructure()
-  await this.directoryManager.setupTemplates()
-  await this.journalManager.checkAndCreateCurrentMonthFolder()
+  await this.dailyNotesManager.checkAndCreateCurrentMonthFolder()
   await this.updateDailyNotesSettings()
   this.startDateChangeMonitoring()
 } else {
@@ -234,18 +232,12 @@ export interface LinkPluginSettings {
   enabled: boolean
   
   // Directory structure settings
-  baseFolder: string // Root folder for all plugin-created directories
-  directoryStructure: string[]
-  restrictedDirectories: string[]
-  documentDirectory: string
-  journalRootFolder: string
+  baseFolder: string // Root folder for journal structure
   
   // Journal settings
   journalDateFormat: string
-  journalFolderFormat: string
   journalYearFormat: string
   journalMonthFormat: string
-  journalTemplate: string
   simpleJournalMode: boolean
   
   // Daily Notes Integration Settings
@@ -259,17 +251,12 @@ export interface LinkPluginSettings {
   
   // Other settings
   debugMode: boolean
-  customTemplateLocation?: string
 }
 ```
 
-#### Directory and Journal Structure Algorithm
+#### Directory and Daily Notes Structure Algorithm
 ```typescript
-export interface DirectoryTemplate {
-  [key: string]: DirectoryTemplate | null
-}
-
-export interface JournalEntry {
+export interface DailyNoteEntry {
   date: string
   path: string
   title: string
@@ -294,38 +281,23 @@ The constants system provides centralized configuration and patterns:
 
 #### Default Configuration Algorithm
 ```typescript
-export const DEFAULT_BASE_FOLDER = 'Link'
-export const DEFAULT_DIRECTORIES = ['journal']
-export const DEFAULT_TEMPLATES_PATH = 'templates'
-export const DAILY_NOTES_TEMPLATE_NAME = 'Daily Notes Template.md'
+export const DEFAULT_BASE_FOLDER = 'DailyNotes'
+export const DEFAULT_DIRECTORIES = ['daily-notes']
 ```
 
 #### Command and UI Configuration Algorithm
 ```typescript
 export const COMMAND_IDS = {
   REBUILD_DIRECTORY: 'rebuild-directory-structure',
-  OPEN_TODAY_JOURNAL: 'open-today-journal',
+  OPEN_TODAY_DAILY_NOTE: 'open-today-daily-note',
   CREATE_TODAY_NOTE: 'create-today-note',
   CREATE_FUTURE_NOTE: 'create-future-note',
   CREATE_MONTHLY_FOLDERS: 'create-monthly-folders'
 } as const
 ```
 
-#### Template and Pattern Configuration Algorithm
+#### Pattern Configuration Algorithm
 ```typescript
-export const DEFAULT_TEMPLATES = {
-  JOURNAL: `# {{date}}
-## Daily Log
-## Tasks
-- [ ] 
-## Notes
-## Reflection
----
-Previous: {{previous}}
-Next: {{next}}
-`
-} as const
-
 export const REGEX_PATTERNS = {
   WIKI_LINK: /\[\[(.*?)\]\]/g,
   DATE_FILENAME: /\d{4}-\d{2}-\d{2}/,
@@ -345,7 +317,7 @@ The settings system provides modular configuration management:
 
 #### Modular Settings Structure Algorithm
 ```typescript
-// Each settings domain (Directory, Journal, Note, General) is defined in its own module
+// Each settings domain (Directory, DailyNotes, General) is defined in its own module
 // These modules can be imported individually for advanced usage or testing
 ```
 
@@ -371,29 +343,29 @@ async rebuildDirectoryStructure(): Promise<void> {
   }
   
   // 2. Create configured directories
-  for (const dirName of directoryStructure || ['journal']) {
+  for (const dirName of directoryStructure || ['daily-notes']) {
     const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName
     await this.getOrCreateDirectory(dirPath)
   }
   
-  // 3. Create journal structure
-  await this.createJournalStructure(basePath)
+  // 3. Create daily notes structure
+  await this.createDailyNotesStructure(basePath)
 }
 ```
 
-#### Journal Structure Algorithm
+#### Daily Notes Structure Algorithm
 ```typescript
-async createJournalStructure(basePath: string): Promise<void> {
-  const journalPath = PathUtils.joinPath(basePath, 'journal')
-  await this.getOrCreateDirectory(journalPath)
+async createDailyNotesStructure(basePath: string): Promise<void> {
+  const dailyNotesPath = PathUtils.joinPath(basePath, 'daily-notes')
+  await this.getOrCreateDirectory(dailyNotesPath)
   
   // Only create complex structure if simple mode is disabled
-  if (!this.plugin.settings.simpleJournalMode) {
+  if (!this.plugin.settings.simpleDailyNotesMode) {
     const currentDate = DateService.now()
     const currentYear = DateService.format(currentDate, 'YYYY')
     const currentMonth = DateService.format(currentDate, 'MM MMMM')
     
-    const currentYearPath = PathUtils.joinPath(journalPath, currentYear)
+    const currentYearPath = PathUtils.joinPath(dailyNotesPath, currentYear)
     const currentMonthPath = PathUtils.joinPath(currentYearPath, currentMonth)
     
     await this.getOrCreateDirectory(currentYearPath)
@@ -402,36 +374,19 @@ async createJournalStructure(basePath: string): Promise<void> {
 }
 ```
 
-#### Template Setup Algorithm
+### DailyNotesManager (`managers/dailyNotesManager.ts`)
+
+Handles daily note creation and management:
+
+#### Daily Note Creation Algorithm
 ```typescript
-async setupTemplates(): Promise<void> {
-  const templatesPath = baseFolder
-    ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH)
-    : DEFAULT_TEMPLATES_PATH
-  
-  await this.getOrCreateDirectory(templatesPath)
-  
-  const templateFilePath = PathUtils.joinPath(templatesPath, DAILY_NOTES_TEMPLATE_NAME)
-  if (!vault.getAbstractFileByPath(templateFilePath)) {
-    const templateContent = DirectoryManager.getDailyNotesTemplateContent()
-    await vault.create(templateFilePath, templateContent)
-  }
-}
-```
-
-### JournalManager (`managers/journalManager.ts`)
-
-Handles journal entry creation and management:
-
-#### Journal Entry Creation Algorithm
-```typescript
-async createOrOpenJournalEntry(date: any): Promise<TFile> {
+async createOrOpenDailyNote(date: any): Promise<TFile> {
   // 1. Create monthly folder structure
   await this.ensureMonthlyFolderExists(date)
   
   // 2. Generate file path
   const monthlyFolderPath = this.getMonthlyFolderPath(date)
-  const fileName = DateService.getJournalFilename(date, journalDateFormat)
+  const fileName = DateService.getDailyNoteFilename(date, dailyNoteDateFormat)
   const filePath = normalizePath(`${monthlyFolderPath}/${fileName}.md`)
   
   // 3. Create file if it doesn't exist
@@ -457,18 +412,18 @@ async ensureMonthlyFolderExists(date: any): Promise<void> {
 }
 
 public getMonthlyFolderPath(date: any): string {
-  const journalBasePath = this.plugin.directoryManager.getJournalPath()
+  const dailyNotesBasePath = this.plugin.directoryManager.getDailyNotesPath()
   
-  if (this.plugin.settings.simpleJournalMode) {
-    return journalBasePath // Simple: just use journal root folder
+  if (this.plugin.settings.simpleDailyNotesMode) {
+    return dailyNotesBasePath // Simple: just use daily notes root folder
   }
   
   // Dynamic: use year/month folder structure
   return DateService.getMonthlyFolderPath(
-    journalBasePath, 
+    dailyNotesBasePath, 
     date, 
-    this.plugin.settings.journalYearFormat,
-    this.plugin.settings.journalMonthFormat
+    this.plugin.settings.dailyNoteYearFormat,
+    this.plugin.settings.dailyNoteMonthFormat
   )
 }
 ```
@@ -494,7 +449,7 @@ static format(date: any, format: string): string {
   return moment(date).format(format)
 }
 
-static getJournalFilename(date: any, format: string): string {
+static getDailyNoteFilename(date: any, format: string): string {
   return this.format(date, format)
 }
 ```
@@ -556,12 +511,12 @@ Provides conditional logging based on debug mode settings:
 ```typescript
 static log(message: string, ...args: any[]): void {
   if (this.isDebugEnabled()) {
-    console.log(`[Link Plugin] ${message}`, ...args)
+    console.log(`[DateFolders Plugin] ${message}`, ...args)
   }
 }
 
 static error(message: string, error?: any): void {
-  console.error(`[Link Plugin] ${message}`, error)
+  console.error(`[DateFolders Plugin] ${message}`, error)
 }
 ```
 
@@ -582,9 +537,6 @@ display(): void {
   
   // 3. Add Core Settings section
   this.addCoreSettings(containerEl)
-  
-  // 4. Add Journal Template Settings section
-  this.addJournalTemplateSettings(containerEl)
 }
 ```
 
@@ -598,7 +550,7 @@ initializeRibbon(): void {
   this.clearRibbon()
   this.addCreateFutureNoteButton()
   this.addSettingsButton()
-  DebugUtils.log('Ribbon initialized - Core journal functionality enabled')
+  DebugUtils.log('Ribbon initialized - Core daily notes functionality enabled')
 }
 ```
 
@@ -614,25 +566,25 @@ async rebuildDirectoryStructure(): Promise<void> {
   }
   
   // 2. Create configured directories
-  for (const dirName of directoryStructure || ['journal']) {
+  for (const dirName of directoryStructure || ['daily-notes']) {
     const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName
     await this.getOrCreateDirectory(dirPath)
   }
   
-  // 3. Create journal structure
-  await this.createJournalStructure(basePath)
+  // 3. Create daily notes structure
+  await this.createDailyNotesStructure(basePath)
 }
 ```
 
-### 2. Journal Entry Creation
+### 2. Daily Note Creation
 ```typescript
-async createOrOpenJournalEntry(date: any): Promise<TFile> {
+async createOrOpenDailyNote(date: any): Promise<TFile> {
   // 1. Create monthly folder structure
   await this.ensureMonthlyFolderExists(date)
   
   // 2. Generate file path
   const monthlyFolderPath = this.getMonthlyFolderPath(date)
-  const fileName = DateService.getJournalFilename(date, journalDateFormat)
+  const fileName = DateService.getDailyNoteFilename(date, dailyNoteDateFormat)
   const filePath = normalizePath(`${monthlyFolderPath}/${fileName}.md`)
   
   // 3. Create file if it doesn't exist
@@ -658,18 +610,18 @@ async ensureMonthlyFolderExists(date: any): Promise<void> {
 }
 
 public getMonthlyFolderPath(date: any): string {
-  const journalBasePath = this.plugin.directoryManager.getJournalPath()
+  const dailyNotesBasePath = this.plugin.directoryManager.getDailyNotesPath()
   
-  if (this.plugin.settings.simpleJournalMode) {
-    return journalBasePath // Simple: just use journal root folder
+  if (this.plugin.settings.simpleDailyNotesMode) {
+    return dailyNotesBasePath // Simple: just use daily notes root folder
   }
   
   // Dynamic: use year/month folder structure
   return DateService.getMonthlyFolderPath(
-    journalBasePath, 
+    dailyNotesBasePath, 
     date, 
-    this.plugin.settings.journalYearFormat,
-    this.plugin.settings.journalMonthFormat
+    this.plugin.settings.dailyNoteYearFormat,
+    this.plugin.settings.dailyNoteMonthFormat
   )
 }
 ```
@@ -680,7 +632,7 @@ public getMonthlyFolderPath(date: any): string {
 1. Initialize DateService
 2. Load and validate settings
 3. Initialize error handler
-4. Initialize managers (Directory, Journal, Ribbon)
+4. Initialize managers (Directory, DailyNotes, Ribbon)
 5. Setup UI components
 6. Register commands and event handlers
 7. Create directory structure
@@ -689,7 +641,7 @@ public getMonthlyFolderPath(date: any): string {
 10. Start date change monitoring
 
 ### 2. Daily Operations
-1. User creates/opens journal entries
+1. User creates/opens daily notes
 2. System automatically creates monthly folders as needed
 3. Daily Notes integration keeps settings synchronized
 4. Date change monitoring creates new month folders automatically
@@ -717,13 +669,6 @@ public getMonthlyFolderPath(date: any): string {
 - **Core Plugin**: Internal Daily Notes plugin
 - **Community Plugin**: Community Daily Notes plugin
 - **Settings Backup**: Automatic backup and restore
-- **Template Integration**: Template synchronization
-
-### Third-Party Plugin Integration
-- **Templater**: Advanced templating functionality
-- **Calendar**: Visual calendar integration
-- **Periodic Notes**: Additional note types
-- **Dataview**: Query and display journal entries
 
 ## Error Handling
 
@@ -770,7 +715,7 @@ public getMonthlyFolderPath(date: any): string {
 
 ## Conclusion
 
-The Obsidian Link Plugin is a well-architected application that provides intelligent daily note organization with automatic monthly folder management and seamless Daily Notes integration. The modular design, comprehensive error handling, and user-friendly interface make it a robust solution for journal management in Obsidian.
+The DateFolders for DailyNotes plugin is a well-architected application that provides essential daily note management with automatic folder organization and optional Daily Notes integration. The modular design and focused functionality make it a robust solution for daily note management in Obsidian.
 
 For detailed component analysis, see [Component Documentation](COMPONENT_DOCUMENTATION.md).
 For application-level documentation, see [Application Documentation](APPLICATION_DOCUMENTATION.md).

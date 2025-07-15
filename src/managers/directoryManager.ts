@@ -2,9 +2,7 @@ import { TFolder, normalizePath } from 'obsidian'
 import LinkPlugin from '../main'
 import {
   DEFAULT_DIRECTORIES,
-  DEFAULT_JOURNAL_STRUCTURE,
-  DEFAULT_TEMPLATES_PATH,
-  DAILY_NOTES_TEMPLATE_NAME
+  DEFAULT_JOURNAL_STRUCTURE
 } from '../constants'
 import { PathUtils } from '../utils/pathUtils'
 import { DirectoryTemplate } from '../types'
@@ -32,18 +30,7 @@ import { DebugUtils } from '../utils/debugUtils'
  *      b. Format the year and month.
  *      c. Create year and month subdirectories under journalPath.
  * 
- * - setupTemplates():
- *   1. Get baseFolder from settings.
- *   2. Join baseFolder and DEFAULT_TEMPLATES_PATH to get templatesPath.
- *   3. Create the templates directory.
- *   4. Join templatesPath and DAILY_NOTES_TEMPLATE_NAME to get templateFilePath.
- *   5. If the template file does not exist:
- *      a. Get the template content.
- *      b. Create the template file.
- *   6. Otherwise, do nothing.
- * 
- * - getDailyNotesTemplateContent():
- *   1. Return a static string containing the daily notes template with Templater syntax.
+
  * 
  * - getJournalPath():
  *   1. Get baseFolder from settings.
@@ -86,15 +73,14 @@ export class DirectoryManager {
 
       // Only create folders that are toggled on (in directoryStructure)
       for (const dirName of directoryStructure || ['journal']) {
-        // Never create templates folder here
-        if (dirName === 'templates') continue
-        // Only create reference or workspace if toggled on
-        const dirPath = basePath
-          ? PathUtils.joinPath(basePath, dirName)
-          : dirName
-        await this.getOrCreateDirectory(dirPath)
-        DebugUtils.log(`Created directory: ${dirPath}`)
-
+        // Only create journal folder for MVP
+        if (dirName === 'journal') {
+          const dirPath = basePath
+            ? PathUtils.joinPath(basePath, dirName)
+            : dirName
+          await this.getOrCreateDirectory(dirPath)
+          DebugUtils.log(`Created directory: ${dirPath}`)
+        }
       }
 
       // Always create journal structure (only journal folder needed)
@@ -115,7 +101,7 @@ export class DirectoryManager {
     DebugUtils.log(`Created journal directory: ${journalPath}`)
 
     // Only create complex structure if simple mode is disabled
-    if (!this.plugin.settings.simpleJournalMode) {
+    if (!this.plugin.settings.simpleDailyNotesMode) {
       // Create CURRENT YEAR/MONTH structure using proper format
       const currentDate = DateService.now()
       const currentYear = DateService.format(currentDate, 'YYYY')
@@ -134,72 +120,7 @@ export class DirectoryManager {
     }
   }
 
-  /**
-   * Creates templates directory and copies the daily notes template when enabled
-   * Templates are siblings to journal structure for proper organization
-   */
-  async setupTemplates(): Promise<void> {
-    try {
-      const { baseFolder } = this.plugin.settings
-      const templatesPath = baseFolder
-        ? PathUtils.joinPath(baseFolder, DEFAULT_TEMPLATES_PATH)
-        : DEFAULT_TEMPLATES_PATH
 
-      // Create templates directory as sibling to journal
-      await this.getOrCreateDirectory(templatesPath)
-      DebugUtils.log(`Created templates directory: ${templatesPath}`)
-
-      // Copy daily notes template if it doesn't exist
-      const templateFilePath = PathUtils.joinPath(
-        templatesPath,
-        DAILY_NOTES_TEMPLATE_NAME
-      )
-      const { vault } = this.plugin.app
-
-      if (!vault.getAbstractFileByPath(templateFilePath)) {
-        const templateContent = DirectoryManager.getDailyNotesTemplateContent()
-        await vault.create(templateFilePath, templateContent)
-        DebugUtils.log(`Created template file: ${templateFilePath}`)
-      } else {
-        DebugUtils.log(`Template already exists: ${templateFilePath}`)
-      }
-    } catch (error) {
-      throw new Error(`Failed to setup templates: ${error}`)
-    }
-  }
-
-  /**
-   * Gets the daily notes template content from the plugin assets
-   * Always returns the raw template with Templater syntax to avoid conflicts
-   */
-  public static getDailyNotesTemplateContent(): string {
-    return `---
-previous: '[[<% tp.date.now("YYYY-MM-DD dddd", -1) %>]]'
-next: '[[<% tp.date.now("YYYY-MM-DD dddd", 1) %>]]'
-tags:
-  - ☀️
-  - <% tp.date.now("MM-DD dddd") %>
-resources: []
----
----
-## Log
-
-### Routine Checklist
-
-- [ ] Open Daily Note
-- [ ] **Morning Checks**
-	- [ ] Bed and Clothes 🛏️🧺
-  - [ ] Self Care🛀🧴
-  - [ ] Make Breakfast 🍽✨
-	- [ ] Pet Care 🐕🚶🏻‍♂️
-	- [ ] Get Focused 🖥️💊
-  - [ ] Check [Calendar](https://calendar.google.com) 📆
-	- [ ] Check [Mail](https://mail.google.com) ✉️ 
-  - [ ] Review [[Yearly List]] ✅
-	- [ ] Review [July Log](Yearly%20Log.md#July) 🗓️
-
----`
-  }
 
   /**
    * Returns the full path to the journal directory, respecting baseFolder and settings

@@ -10,7 +10,7 @@
  *
  * - addCoreSettings(containerEl):
  *   1. Add a setting for the base folder, with a text input and a "/" prefix.
- *   2. For each optional folder (Workspace, Reference), add a toggle to include/exclude it in the directory structure.
+
  *   3. Add a button to rebuild the journal directory structure, showing an alert on success or error.
  *   4. Add journal settings (year/month/daily note formats) by calling addJournalSettings.
  *
@@ -73,11 +73,7 @@ export class SettingsTab extends PluginSettingTab {
       .setHeading();
     this.addCoreSettings(containerEl)
 
-    // Journal Template Settings section
-    new Setting(containerEl)
-      .setName('Journal Template Settings')
-      .setHeading();
-    this.addJournalTemplateSettings(containerEl)
+
   }
 
   private addPluginStatusSettings(containerEl: HTMLElement): void {
@@ -96,9 +92,13 @@ export class SettingsTab extends PluginSettingTab {
               // If enabling, perform the operations that would normally happen on load
               try {
                 await this.plugin.directoryManager.rebuildDirectoryStructure()
-                await this.plugin.directoryManager.setupTemplates() // Add template setup
-                await this.plugin.journalManager.checkAndCreateCurrentMonthFolder()
-                await this.plugin.updateDailyNotesSettings()
+                await this.plugin.dailyNotesManager.checkAndCreateCurrentMonthFolder()
+                
+                // Update Daily Notes settings
+                if (this.plugin.settings.dailyNotesIntegration.enabled) {
+                  await this.plugin.updateDailyNotesSettings()
+                }
+                
                 this.plugin.errorHandler.showNotice(
                   '✅ Plugin enabled - Journal management features are now active!'
                 )
@@ -174,31 +174,7 @@ export class SettingsTab extends PluginSettingTab {
         }
       })
 
-    // Optional Folders (except templates)
-    const optionalFolders = [
-      { name: 'Workspace', key: 'workspace' },
-      { name: 'Reference', key: 'reference' }
-    ]
-    optionalFolders.forEach((folder) => {
-      new Setting(containerEl)
-        .setName(`${folder.name} Folder`)
-        .setDesc(
-          `Create a ${folder.name.toLowerCase()} folder alongside journal`
-        )
-        .addToggle((toggle) => {
-          const enabled = this.plugin.settings.directoryStructure.includes(
-            folder.key
-          )
-          toggle.setValue(enabled).onChange(async (value) => {
-            const dirs = this.plugin.settings.directoryStructure.filter(
-              (d: string) => d !== folder.key
-            )
-            if (value) dirs.push(folder.key)
-            this.plugin.settings.directoryStructure = dirs
-            await this.plugin.saveSettings()
-          })
-        })
-    })
+
 
     // Rebuild Directory Structure
     new Setting(containerEl)
@@ -253,10 +229,10 @@ export class SettingsTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('YYYY')
-          .setValue(this.plugin.settings.journalYearFormat)
+          .setValue(this.plugin.settings.dailyNoteYearFormat)
           .onChange(async (value) => {
             if (value.trim()) {
-              this.plugin.settings.journalYearFormat = value.trim()
+              this.plugin.settings.dailyNoteYearFormat = value.trim()
               await this.plugin.saveSettings()
             }
           })
@@ -269,10 +245,10 @@ export class SettingsTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('MM MMMM')
-          .setValue(this.plugin.settings.journalMonthFormat)
+          .setValue(this.plugin.settings.dailyNoteMonthFormat)
           .onChange(async (value) => {
             if (value.trim()) {
-              this.plugin.settings.journalMonthFormat = value.trim()
+              this.plugin.settings.dailyNoteMonthFormat = value.trim()
               await this.plugin.saveSettings()
             }
           })
@@ -285,73 +261,17 @@ export class SettingsTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('YYYY-MM-DD dddd')
-          .setValue(this.plugin.settings.journalDateFormat)
+          .setValue(this.plugin.settings.dailyNoteDateFormat)
           .onChange(async (value) => {
             if (value.trim()) {
-              this.plugin.settings.journalDateFormat = value.trim()
+              this.plugin.settings.dailyNoteDateFormat = value.trim()
               await this.plugin.saveSettings()
             }
           })
       )
   }
 
-  private addJournalTemplateSettings(containerEl: HTMLElement): void {
 
-    // Daily Note Template Location
-    new Setting(containerEl)
-      .setName('Daily Note Template Location')
-      .setDesc(
-        'Override the default template path (e.g. "templates/Daily Notes Template.md")'
-      )
-      .addText((text) =>
-        text
-          .setPlaceholder('templates/Daily Notes Template.md')
-          .setValue(this.plugin.settings.customTemplateLocation || '')
-          .onChange(async (value) => {
-            this.plugin.settings.customTemplateLocation = value.trim()
-            await this.plugin.saveSettings()
-          })
-      )
-
-    // Setup Templates
-    new Setting(containerEl)
-      .setName('Setup Templates')
-      .setDesc(
-        'Create templates directory alongside journal and copy Daily Notes template (works with Templater plugin)'
-      )
-      .addButton((button) =>
-        button.setButtonText('Setup Templates').onClick(async () => {
-          try {
-            await this.plugin.directoryManager.setupTemplates()
-            const templatesPath = this.plugin.settings.baseFolder
-              ? `${this.plugin.settings.baseFolder}/templates`
-              : 'templates'
-            // Check if Templater is available for user feedback
-            // @ts-ignore - Access Obsidian's plugin system
-            const templaterPlugin = (this.plugin.app as any).plugins?.plugins?.[
-              'templater-obsidian'
-            ]
-            const hasTemplater = templaterPlugin && templaterPlugin._loaded
-            const templaterStatus = hasTemplater
-              ? '\n\n✅ Templater plugin detected - Template will work with dynamic dates'
-              : '\n\n⚠️ Templater plugin not detected - Template contains Templater syntax that may not render'
-            alert(
-              '✅ Templates setup successfully!\n\nTemplates directory created alongside journal at: ' +
-                templatesPath +
-                templaterStatus
-            )
-          } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error)
-            alert('❌ Failed to setup templates.\n\nError: ' + errorMessage)
-            this.plugin.errorHandler.handleError(
-              error,
-              'Failed to setup templates'
-            )
-          }
-        })
-      )
-  }
 
   /**
    * Adds Daily Notes integration settings with backup and restore functionality

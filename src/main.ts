@@ -2,7 +2,7 @@ import { Plugin, TFile, Notice, Modal } from 'obsidian'
 import { DEFAULT_SETTINGS, validateSettings } from './settings'
 import { LinkPluginSettings } from './types'
 import { DirectoryManager } from './managers/directoryManager'
-import { JournalManager } from './managers/journalManager'
+import { DailyNotesManager } from './managers/dailyNotesManager'
 import { ErrorHandler } from './utils/errorHandler'
 import { RibbonManager } from './ui/ribbonManager'
 import { SettingsTab } from './ui/settingsTab'
@@ -55,21 +55,21 @@ import { COMMAND_IDS } from './constants'
 export default class LinkPlugin extends Plugin {
   settings!: LinkPluginSettings
   directoryManager!: DirectoryManager
-  journalManager!: JournalManager
+  dailyNotesManager!: DailyNotesManager
   errorHandler!: ErrorHandler
   ribbonManager!: RibbonManager
 
   async onload() {
     // Algorithm 1: Initialization Sequence
     DebugUtils.initialize(this)
-    DebugUtils.log('Loading Obsidian Link Journal v2.2.0 - Pure Journal Management...')
+    DebugUtils.log('Loading DateFolders for DailyNotes v2.2.0 - Pure Date-Based Organization...')
 
     try {
       DateService.initialize()
       await this.loadSettings()
       this.errorHandler = new ErrorHandler(this)
       this.directoryManager = new DirectoryManager(this)
-      this.journalManager = new JournalManager(this)
+      this.dailyNotesManager = new DailyNotesManager(this)
       this.ribbonManager = new RibbonManager(this)
       this.addSettingTab(new SettingsTab(this.app, this))
       this.ribbonManager.initializeRibbon()
@@ -79,9 +79,13 @@ export default class LinkPlugin extends Plugin {
       // Only perform directory structure and integration operations if plugin is enabled
       if (this.settings.enabled) {
         await this.directoryManager.rebuildDirectoryStructure()
-        await this.directoryManager.setupTemplates() // Add template setup
-        await this.journalManager.checkAndCreateCurrentMonthFolder()
-        await this.updateDailyNotesSettings()
+        await this.dailyNotesManager.checkAndCreateCurrentMonthFolder()
+        
+        // Update Daily Notes settings
+        if (this.settings.dailyNotesIntegration.enabled) {
+          await this.updateDailyNotesSettings()
+        }
+        
         this.startDateChangeMonitoring()
         const debugInfo = DateService.getDebugInfo()
         DebugUtils.log('DateService initialized:', debugInfo)
@@ -158,7 +162,7 @@ export default class LinkPlugin extends Plugin {
           return
         }
         try {
-          this.journalManager.openTodayJournal()
+          this.dailyNotesManager.openTodayDailyNote()
         } catch (error) {
           this.errorHandler.handleError(error, "Failed to open today's journal")
         }
@@ -175,7 +179,7 @@ export default class LinkPlugin extends Plugin {
           return
         }
         try {
-          const file = await this.journalManager.createTodayNote()
+          const file = await this.dailyNotesManager.createTodayNote()
           const leaf = this.app.workspace.getLeaf()
           await leaf.openFile(file)
         } catch (error) {
@@ -196,7 +200,7 @@ export default class LinkPlugin extends Plugin {
         try {
           const dateInput = await this.promptForDate()
           if (dateInput) {
-            const file = await this.journalManager.createFutureDailyNote(
+            const file = await this.dailyNotesManager.createFutureDailyNote(
               dateInput
             )
             const leaf = this.app.workspace.getLeaf()
@@ -226,7 +230,7 @@ export default class LinkPlugin extends Plugin {
         try {
           const startOfYear = DateService.startOfYear()
           const endOfYear = DateService.endOfYear()
-          await this.journalManager.createMonthlyFoldersForRange(
+          await this.dailyNotesManager.createMonthlyFoldersForRange(
             startOfYear,
             endOfYear
           )
@@ -271,9 +275,9 @@ export default class LinkPlugin extends Plugin {
           'stat' in file &&
           'basename' in file &&
           'extension' in file &&
-          file.path.includes(this.settings.journalRootFolder)
+          file.path.includes(this.settings.dailyNotesRootFolder)
         ) {
-          this.journalManager.updateJournalLinks(file as TFile)
+          this.dailyNotesManager.updateDailyNoteLinks(file as TFile)
         }
       })
     )
@@ -284,7 +288,7 @@ export default class LinkPlugin extends Plugin {
         if (
           this.settings.enabled &&
           this.settings.debugMode &&
-          file.path.includes(this.settings.journalRootFolder)
+          file.path.includes(this.settings.dailyNotesRootFolder)
         ) {
           DebugUtils.log('Journal file modified:', file.path)
         }
@@ -413,7 +417,7 @@ export default class LinkPlugin extends Plugin {
             DebugUtils.log(
               `Month changed from ${lastCheckedMonth} to ${currentMonth} - creating new monthly folder`
             )
-            await this.journalManager.checkAndCreateCurrentMonthFolder()
+            await this.dailyNotesManager.checkAndCreateCurrentMonthFolder()
             await this.updateDailyNotesSettings()
             lastCheckedMonth = currentMonth
             const monthName = DateService.format(DateService.now(), 'MMMM YYYY')
@@ -481,16 +485,10 @@ export default class LinkPlugin extends Plugin {
 
     const currentDate = DateService.now()
     const monthlyFolderPath =
-      this.journalManager.getMonthlyFolderPath(currentDate)
+      this.dailyNotesManager.getMonthlyFolderPath(currentDate)
 
     dailyNotesSettings.folder = monthlyFolderPath
-    dailyNotesSettings.format = this.settings.journalDateFormat
-    const templatesPath = this.settings.customTemplateLocation
-      ? this.settings.customTemplateLocation
-      : this.settings.baseFolder
-      ? `${this.settings.baseFolder}/templates/Daily Notes Template.md`
-      : 'templates/Daily Notes Template.md'
-    dailyNotesSettings.template = templatesPath
+    dailyNotesSettings.format = this.settings.dailyNoteDateFormat
 
     DebugUtils.log(`Updated Core Daily Notes plugin settings`)
     this.errorHandler.showNotice(`✅ Daily Notes settings updated`)
@@ -512,16 +510,10 @@ export default class LinkPlugin extends Plugin {
 
     const currentDate = DateService.now()
     const monthlyFolderPath =
-      this.journalManager.getMonthlyFolderPath(currentDate)
+      this.dailyNotesManager.getMonthlyFolderPath(currentDate)
 
     communityDailyNotes.settings.folder = monthlyFolderPath
-    communityDailyNotes.settings.format = this.settings.journalDateFormat
-    const templatesPath = this.settings.customTemplateLocation
-      ? this.settings.customTemplateLocation
-      : this.settings.baseFolder
-      ? `${this.settings.baseFolder}/templates/Daily Notes Template.md`
-      : 'templates/Daily Notes Template.md'
-    communityDailyNotes.settings.template = templatesPath
+    communityDailyNotes.settings.format = this.settings.dailyNoteDateFormat
 
     await communityDailyNotes.saveSettings()
     DebugUtils.log(`Updated Community Daily Notes plugin settings`)

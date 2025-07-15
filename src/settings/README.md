@@ -1,6 +1,6 @@
 # Settings Module
 
-This directory contains the modularized settings system for the Obsidian Link Plugin.
+This directory contains the modularized settings system for the DateFolders for DailyNotes plugin.
 
 ## Structure
 
@@ -11,7 +11,7 @@ This directory contains the modularized settings system for the Obsidian Link Pl
 
 ### Setting Categories
 - **`directorySettings.ts`** - Directory structure and base folder settings
-- **`journalSettings.ts`** - Journal date formats and templates
+- **`dailyNotesSettings.ts`** - Daily note date formats and settings
 - **`generalSettings.ts`** - Debug mode and other general settings
 
 ## Usage
@@ -31,7 +31,7 @@ const validatedSettings = validateSettings(userSettings);
 ```typescript
 import { 
   DirectorySettings, 
-  JournalSettings,
+  DailyNotesSettings,
   validateSettingsWithDetails 
 } from '../settings';
 

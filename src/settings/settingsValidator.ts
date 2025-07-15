@@ -5,8 +5,7 @@
  *   1. Create a validatedSettings object by merging defaults from DirectorySettings, JournalSettings, DailyNotesSettings, and GeneralSettings.
  *   2. Validate each category of settings using their respective validate() methods.
  *   3. Merge the validated results from each category into validatedSettings.
- *   4. If customTemplateLocation is a string, trim and assign it; otherwise, set it to undefined.
- *   5. Return the validatedSettings object.
+ *   4. Return the validatedSettings object.
  * 
  * - validateSettingsWithDetails(settings):
  *   1. Initialize empty errors and warnings arrays.
@@ -18,7 +17,7 @@
 
 import { LinkPluginSettings } from '../types'
 import { DirectorySettings } from './directorySettings'
-import { JournalSettings } from './journalSettings'
+import { DailyNotesSettings as JournalSettings } from './journalSettings'
 import { DailyNotesSettings } from './dailyNotesSettings'
 // import { ShortcodeSettings } from './shortcodeSettings'; // Deprecated - moved to quarantine
 import { GeneralSettings } from './generalSettings'
@@ -49,14 +48,6 @@ export function validateSettings(
     generalValidation
   )
 
-  // Validate customTemplateLocation
-  if (typeof settings.customTemplateLocation === 'string') {
-    validatedSettings.customTemplateLocation =
-      settings.customTemplateLocation.trim()
-  } else {
-    validatedSettings.customTemplateLocation = undefined
-  }
-
   return validatedSettings
 }
 
@@ -73,12 +64,12 @@ export function validateSettingsWithDetails(
   const errors: string[] = []
   const warnings: string[] = []
 
-  // Validate journal date format if provided
+  // Validate daily note date format if provided
   if (
-    settings.journalDateFormat &&
-    !JournalSettings.isValidDateFormat(settings.journalDateFormat)
+    settings.dailyNoteDateFormat &&
+    !JournalSettings.isValidDateFormat(settings.dailyNoteDateFormat)
   ) {
-    warnings.push('Invalid journal date format provided, using default')
+    warnings.push('Invalid daily note date format provided, using default')
   }
   // Basic directory structure validation
   if (settings.directoryStructure && settings.directoryStructure.length === 0) {

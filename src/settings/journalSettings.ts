@@ -1,20 +1,20 @@
 /**
- * Algorithms for JournalSettings:
+ * Algorithms for DailyNotesSettings:
  * 
  * - getDefaults():
- *   1. Return an object with default values for each journal setting:
- *      a. journalDateFormat: 'YYYY-MM-DD dddd'
- *      b. journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT
- *      c. journalYearFormat: 'YYYY'
- *      d. journalMonthFormat: 'MM MMMM'
- *      e. simpleJournalMode: false
+ *   1. Return an object with default values for each daily notes setting:
+ *      a. dailyNoteDateFormat: 'YYYY-MM-DD dddd'
+ *      b. dailyNoteFolderFormat: DATE_FORMATS.FOLDER_FORMAT
+ *      c. dailyNoteYearFormat: 'YYYY'
+ *      d. dailyNoteMonthFormat: 'MM MMMM'
+ *      e. simpleDailyNotesMode: false
  * 
  * - validate(settings):
  *   1. Create an empty validated object.
  *   2. For each property in settings:
- *      a. If journalDateFormat is a string, copy it to validated.
- *      b. If journalFolderFormat is a string, copy it to validated.
- *      c. If simpleJournalMode is a boolean, copy it to validated.
+ *      a. If dailyNoteDateFormat is a string, copy it to validated.
+ *      b. If dailyNoteFolderFormat is a string, copy it to validated.
+ *      c. If simpleDailyNotesMode is a boolean, copy it to validated.
  *   3. Return the validated object.
  * 
  * - isValidDateFormat(format):
@@ -25,38 +25,38 @@
 
 import { DATE_FORMATS } from '../constants';
 
-export interface JournalSettingsConfig {
-  journalDateFormat: string;
-  journalFolderFormat: string;
-  journalYearFormat: string;
-  journalMonthFormat: string;
-  simpleJournalMode: boolean;
+export interface DailyNotesSettingsConfig {
+  dailyNoteDateFormat: string;
+  dailyNoteFolderFormat: string;
+  dailyNoteYearFormat: string;
+  dailyNoteMonthFormat: string;
+  simpleDailyNotesMode: boolean;
 }
 
-export class JournalSettings {
-  static getDefaults(): JournalSettingsConfig {
+export class DailyNotesSettings {
+  static getDefaults(): DailyNotesSettingsConfig {
     return {
-      journalDateFormat: 'YYYY-MM-DD dddd',
-      journalFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
-      journalYearFormat: 'YYYY',
-      journalMonthFormat: 'MM MMMM',
-      simpleJournalMode: false,
+      dailyNoteDateFormat: 'YYYY-MM-DD dddd',
+      dailyNoteFolderFormat: DATE_FORMATS.FOLDER_FORMAT,
+      dailyNoteYearFormat: 'YYYY',
+      dailyNoteMonthFormat: 'MM MMMM',
+      simpleDailyNotesMode: false,
     };
   }
 
-  static validate(settings: Partial<JournalSettingsConfig>): Partial<JournalSettingsConfig> {
-    const validated: Partial<JournalSettingsConfig> = {};
+  static validate(settings: Partial<DailyNotesSettingsConfig>): Partial<DailyNotesSettingsConfig> {
+    const validated: Partial<DailyNotesSettingsConfig> = {};
 
-    if (settings.journalDateFormat && typeof settings.journalDateFormat === 'string') {
-      validated.journalDateFormat = settings.journalDateFormat;
+    if (settings.dailyNoteDateFormat && typeof settings.dailyNoteDateFormat === 'string') {
+      validated.dailyNoteDateFormat = settings.dailyNoteDateFormat;
     }
 
-    if (settings.journalFolderFormat && typeof settings.journalFolderFormat === 'string') {
-      validated.journalFolderFormat = settings.journalFolderFormat;
+    if (settings.dailyNoteFolderFormat && typeof settings.dailyNoteFolderFormat === 'string') {
+      validated.dailyNoteFolderFormat = settings.dailyNoteFolderFormat;
     }
 
-    if (typeof settings.simpleJournalMode === 'boolean') {
-      validated.simpleJournalMode = settings.simpleJournalMode;
+    if (typeof settings.simpleDailyNotesMode === 'boolean') {
+      validated.simpleDailyNotesMode = settings.simpleDailyNotesMode;
     }
 
     return validated;
