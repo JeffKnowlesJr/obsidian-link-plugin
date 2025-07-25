@@ -1,9 +1,6 @@
 import { TFolder, normalizePath } from 'obsidian'
 import LinkPlugin from '../main'
-import {
-  DEFAULT_DIRECTORIES,
-  DEFAULT_JOURNAL_STRUCTURE
-} from '../constants'
+import { DEFAULT_DIRECTORIES, DEFAULT_JOURNAL_STRUCTURE } from '../constants'
 import { PathUtils } from '../utils/pathUtils'
 import { DirectoryTemplate } from '../types'
 import { DateService } from '../services/dateService'
@@ -23,7 +20,7 @@ import { DebugUtils } from '../utils/debugUtils'
  *   6. Catch and throw errors if any step fails.
  * 
  * - createJournalStructure(basePath):
- *   1. Join basePath and 'journal' to get journalPath.
+ *   1. Join basePath and the configured dailyNotesRootFolder to get journalPath.
  *   2. Create the journal directory.
  *   3. If simpleJournalMode is false:
  *      a. Get the current date.
@@ -33,8 +30,8 @@ import { DebugUtils } from '../utils/debugUtils'
 
  * 
  * - getJournalPath():
- *   1. Get baseFolder from settings.
- *   2. Return the joined path of baseFolder and 'journal', or just 'journal' if baseFolder is empty.
+ *   1. Get baseFolder and dailyNotesRootFolder from settings.
+ *   2. Return the joined path of baseFolder and dailyNotesRootFolder, or just dailyNotesRootFolder if baseFolder is empty.
  * 
  * - getOrCreateDirectory(path):
  *   1. Normalize the input path.
@@ -72,9 +69,11 @@ export class DirectoryManager {
       }
 
       // Only create folders that are toggled on (in directoryStructure)
-      for (const dirName of directoryStructure || ['journal']) {
+      for (const dirName of directoryStructure || [
+        this.plugin.settings.dailyNotesRootFolder
+      ]) {
         // Only create journal folder for MVP
-        if (dirName === 'journal') {
+        if (dirName === this.plugin.settings.dailyNotesRootFolder) {
           const dirPath = basePath
             ? PathUtils.joinPath(basePath, dirName)
             : dirName
@@ -94,7 +93,10 @@ export class DirectoryManager {
    * Creates journal structure - simple or dynamic based on single setting
    */
   async createJournalStructure(basePath: string): Promise<void> {
-    const journalPath = PathUtils.joinPath(basePath, 'journal')
+    const journalPath = PathUtils.joinPath(
+      basePath,
+      this.plugin.settings.dailyNotesRootFolder
+    )
 
     // Always create the basic journal directory
     await this.getOrCreateDirectory(journalPath)
@@ -120,15 +122,15 @@ export class DirectoryManager {
     }
   }
 
-
-
   /**
    * Returns the full path to the journal directory, respecting baseFolder and settings
    */
   public getJournalPath(): string {
-    const { baseFolder } = this.plugin.settings
-    // Always use 'journal' as the subfolder
-    return baseFolder ? PathUtils.joinPath(baseFolder, 'journal') : 'journal'
+    const { baseFolder, dailyNotesRootFolder } = this.plugin.settings
+    // Use configurable journal folder name instead of hardcoded 'journal'
+    return baseFolder
+      ? PathUtils.joinPath(baseFolder, dailyNotesRootFolder)
+      : dailyNotesRootFolder
   }
 
   /**

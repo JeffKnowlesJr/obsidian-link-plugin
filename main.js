@@ -52,21 +52,21 @@ var DirectorySettings = class {
       // Creates all directories under 'DateFolders/' by default
       directoryStructure: ["daily-notes"],
       dailyNotesRootFolder: "daily-notes"
-      // Updated to match README structure
+      // Default to 'daily-notes' but fully configurable
     };
   }
   /**
-    * This function validates and sanitizes a partial DirectorySettingsConfig object.
-    * 
-    * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
-    * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
-     * - For array properties (`directoryStructure`), it checks if they are arrays and copies them if so.
-  * - For string properties (`dailyNotesRootFolder`), it checks if they are strings and copies them if so.
-    * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
-    * 
-    * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
-    * malformed or unexpected input from causing issues in the application.
-    */
+   * This function validates and sanitizes a partial DirectorySettingsConfig object.
+   *
+   * - For each property in the input `settings` object, it checks if the property exists and is of the correct type.
+   * - For `baseFolder`, it trims whitespace and, if the result is empty or only slashes, sets it to the root (empty string).
+   * - For array properties (`directoryStructure`), it checks if they are arrays and copies them if so.
+   * - For string properties (`dailyNotesRootFolder`), it checks if they are strings and copies them if so.
+   * - Only valid and present properties are included in the returned object; missing or invalid properties are omitted.
+   *
+   * This is a defensive programming pattern to ensure that only valid, sanitized settings are used, and to prevent
+   * malformed or unexpected input from causing issues in the application.
+   */
   static validate(settings) {
     const validated = {};
     if (settings.baseFolder !== void 0 && typeof settings.baseFolder === "string") {
@@ -394,8 +394,10 @@ var DirectoryManager = class {
       } else {
         DebugUtils.log("Using vault root as base directory");
       }
-      for (const dirName of directoryStructure || ["journal"]) {
-        if (dirName === "journal") {
+      for (const dirName of directoryStructure || [
+        this.plugin.settings.dailyNotesRootFolder
+      ]) {
+        if (dirName === this.plugin.settings.dailyNotesRootFolder) {
           const dirPath = basePath ? PathUtils.joinPath(basePath, dirName) : dirName;
           await this.getOrCreateDirectory(dirPath);
           DebugUtils.log(`Created directory: ${dirPath}`);
@@ -410,7 +412,10 @@ var DirectoryManager = class {
    * Creates journal structure - simple or dynamic based on single setting
    */
   async createJournalStructure(basePath) {
-    const journalPath = PathUtils.joinPath(basePath, "journal");
+    const journalPath = PathUtils.joinPath(
+      basePath,
+      this.plugin.settings.dailyNotesRootFolder
+    );
     await this.getOrCreateDirectory(journalPath);
     DebugUtils.log(`Created journal directory: ${journalPath}`);
     if (!this.plugin.settings.simpleDailyNotesMode) {
@@ -429,8 +434,8 @@ var DirectoryManager = class {
    * Returns the full path to the journal directory, respecting baseFolder and settings
    */
   getJournalPath() {
-    const { baseFolder } = this.plugin.settings;
-    return baseFolder ? PathUtils.joinPath(baseFolder, "journal") : "journal";
+    const { baseFolder, dailyNotesRootFolder } = this.plugin.settings;
+    return baseFolder ? PathUtils.joinPath(baseFolder, dailyNotesRootFolder) : dailyNotesRootFolder;
   }
   /**
    * Gets a directory path, creating it if it doesn't exist

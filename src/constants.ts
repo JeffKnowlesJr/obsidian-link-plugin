@@ -33,12 +33,10 @@
 // Default base folder to prevent collision with existing vault structure
 export const DEFAULT_BASE_FOLDER = 'DateFolders'
 
-// Core directory structure - daily notes only by default
+// Core directory structure - daily-notes by default (configurable)
 export const DEFAULT_DIRECTORIES = ['daily-notes']
 
-
-
-// Detailed daily notes structure with new format matching user preferences
+// Detailed daily-notes structure with new format matching user preferences
 export const DEFAULT_JOURNAL_STRUCTURE = {
   'daily-notes': {
     Misc: null,
@@ -65,8 +63,6 @@ export const DEFAULT_JOURNAL_STRUCTURE = {
     }
   }
 }
-
-
 
 export const COMMAND_IDS = {
   REBUILD_DIRECTORY: 'rebuild-directory-structure',
